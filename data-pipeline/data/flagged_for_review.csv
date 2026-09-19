@@ -1,0 +1,51 @@
+id,name,slug,government_name,category,confidence_score,review_flags,eligibility_sample,benefits_sample,source_url
+47,National Solar Science Fellowship Programme,nssfp,Central Government,Electricity & Energy,0.805,['AGE_PROSE_UNPARSED'],"- The applicant should be Indian or of Indian origin.
+ - The programme is open to all Scientists working in the field of solar energy sciences, engineering, and technology including those currently em",- Each selected Fellow will receive a total annual grant of up to ₹32.00 lakhs comprising (i) emolument of up to ₹12.00 lakhs (ii) contingencies of up to ₹5.00 lakhs and (iii) research grant of up to ,https://www.myscheme.gov.in/schemes/nssfp
+449,Viksit Delhi CM Internship Programme,vdcmip,Delhi Government,"Labour, Employment & Worker Welfare",1.0,['STATUS_CLOSED'],"- The applicant must be pursuing a graduation or post-graduation course.
+- The applicant must be enrolled in the electoral roll of Delhi or have any residential proof in Delhi.
+- The applicant must ha","- Interns will be eligible for 5 days' leave during the entire duration of the internship.
+ - Each intern shall be paid an amount of ₹20,000/- per month, i.e. ₹60,000/- for a complete term, subject to",https://www.myscheme.gov.in/schemes/vdcmip
+460,Delhi Higher & Technical Education Support Scheme,dhtess,Delhi Government,Education & Learning,0.805,['AGE_PROSE_UNPARSED'],"- The applicant must be a bona fide resident of Delhi.
+ - The applicant must have passed Class XII from a recognized school located in Delhi.
+ - The applicant must be enrolled in a regular undergradua",- **Tuition Fee Assistance:** Financial assistance covering the tuition fee for eligible undergraduate students.,https://www.myscheme.gov.in/schemes/dhtess
+478,Marriage Grant Scheme,mgs,Uttar Pradesh Government,"Labour, Employment & Worker Welfare",0.765,['AGE_PROSE_UNPARSED'],"- To the daughters of poor individuals of other backward classes (excluding minorities in backward classes).
+ - The annual income of the applicant in urban areas should not exceed Rs. 56,460/- and in ","The assistance of ₹20,000/- is provided per marriage.",https://www.myscheme.gov.in/schemes/mgs
+511,Janani Suraksha Yojana (JSY),jsy1,Central Government,"Labour, Employment & Worker Welfare",0.79,['INCOME_PROSE_UNPARSED'],"> **For Institutional Delivery (General):**
+
+- The applicant must deliver in a government health centre, such as a Sub-centre (specifically approved for institutional delivery by the state), Primary H","> **One-Time Cash Assistance for Institutional Delivery (Mother's Package):**
+
+- **In Low Performing States (LPS):** ₹1,400/- for rural areas and ₹1,000/- for urban areas.- **In High Performing States",https://www.myscheme.gov.in/schemes/jsy1
+567,Swachh Bharat Mission – Grameen PHASE I,sbm-g-i,Central Government,Water & Sanitation,1.0,['STATUS_CLOSED'],"- The applicant should be from a rural household that lacked a toilet before the scheme.
+- The applicant should belong to poor, underprivileged, or marginalized sections.
+
+> **Note:** Preference given","- ₹12,000 financial assistance per toilet to rural households for construction.
+- Enhanced rural sanitation coverage through individual and community toilets.
+- Significant reduction in open defecatio",https://www.myscheme.gov.in/schemes/sbm-g-i
+584,Pradhan Mantri Anusuchit Jaati Abhyuday Yojana (PM-AJAY) - Adarsh Gram,pmajay-ag,Central Government,Education & Learning,0.675,"['AGE_PROSE_UNPARSED', 'CATEGORY_PROSE_UNPARSED']","- The village must have more than 40% Scheduled Caste population as per the latest available Census data.
+
+- The village must have total population ≥ 500 as per the latest available Census data.
+- The","- **Gap-filling Fund:** ₹20,00,000/- per newly selected village for carrying out infrastructure developmental requirements which cannot be carried out through convergence with other schemes.- **Admini",https://www.myscheme.gov.in/schemes/pmajay-ag
+590,Research and Development Programme in Water Sector,rdpws,Central Government,"Labour, Employment & Worker Welfare",0.675,"['AGE_PROSE_UNPARSED', 'CATEGORY_PROSE_UNPARSED']","- The applicant must be an academician or expert working in Indian Institutes of Technology, recognized universities, recognized engineering and agricultural colleges, or Water and Land Management Ins","- The scheme provides Grants-in-Aid for Basic Research, Applied Research, and Action Research.
+- The scheme provides remuneration and emoluments for research personnel assisting the investigators.
+- T",https://www.myscheme.gov.in/schemes/rdpws
+602,Production Linked Incentive Scheme Tranche-I under National Programme on High Efficiency Solar PV Modules,plinphespvm,Central Government,Electricity & Energy,1.0,['STATUS_CLOSED'],"- The applicant should be a manufacturer proposing minimum integration across solar cells and modules.
+- The applicant should undertake to set up a manufacturing plant of minimum 1,000 MW capacity.
+- ","> **Incentive Benefit:**
+
+- Production Linked Incentive (PLI) to eligible manufacturers.
+- Financial outlay: ₹4,500 crore.
+- PLI available for 5 years from commissioning or scheduled commissioning dat",https://www.myscheme.gov.in/schemes/plinphespvm
+611,Indira Gandhi National Widow Pension Scheme,ignwps,Central Government,Women & Child,1.0,['STATUS_OUTDATED_RATES'],"The eligibility criteria under Indira Gandhi National Widow Pension Scheme (IGNWPS) is:
+
+- The applicant must be a widow in the age group of 40-79 years.
+- The applicant should belong to a household l","A pension of ₹ 300/- per month is provided to Widows between 40 years and 79 years. For persons who are 80 years and above, the pension is ₹ 500/- per month.",https://www.myscheme.gov.in/schemes/ignwps
+615,Pradhan Mantri Garib Kalyan Package : Insurance Scheme For Health Workers Fighting COVID-19,pmgkp,Central Government,Health & Wellness,1.0,['STATUS_LAPSED'],"- The applicant must be a healthcare worker; including doctors, nurses, paramedics, and support staff.
+- The applicant must be directly involved in COVID-19 related duties.
+- The applicant must be a c","- **Insurance Coverage:** ₹50,00,000/- provided in case of death or permanent disability due to COVID-19.- **Risk Coverage:** Covers loss of life due to COVID-19; covers accidental death during COVID-",https://www.myscheme.gov.in/schemes/pmgkp
+651,NSAP - Indira Gandhi National Old Age Pension Scheme,nsap-ignoaps,Central Government,Women & Child,1.0,['STATUS_OUTDATED_RATES'],"- The applicant should be a citizen of India.
+- The applicant should belong to a Below Poverty Line (BPL) household.
+- The applicant should be 60 years of age or above.","- ₹200 per month for beneficiaries aged 60–79 years.
+- ₹500 per month for beneficiaries aged 80 years and above.
+
+> **Note:** At present old age beneficiaries are getting anywhere between ₹200/- to ₹1",https://www.myscheme.gov.in/schemes/nsap-ignoaps
+690,Credit Linked Subsidy Scheme for Middle Income Group,clssmig,Central Government,Housing & Shelter,0.87,['CATEGORY_PROSE_UNPARSED'],- The beneficiary family should not own a pucca house (an all-weather dwelling unit) either in his/her name or in the name of any member of his/her family in any part of India. In in case of a married,- Scheme will support the acquisition/construction of houses (including repurchase) of 160 sq. mts. (For MIG I) and 200 sq. mts. (For MIG II) carpet area as per income eligibility with basic civic inf,https://www.myscheme.gov.in/schemes/clssmig
