@@ -250,18 +250,19 @@ def check_eligibility(profile: Dict[str, Any], candidate_schemes: List[Dict[str,
         profile: Citizen demographic profile dictionary.
         candidate_schemes: List of candidate scheme dictionaries retrieved via search_schemes.
     """
-    # Architectural stub for Phase 5: returns placeholder verdict
-    # Full deterministic rule-based evaluation implemented in Phase 6
+    from app.services.eligibility_engine import EligibilityEngine
+    ranked_verdicts = EligibilityEngine.evaluate_and_rank_candidates(profile, candidate_schemes)
+
     results: List[Dict[str, Any]] = []
-    for s in candidate_schemes:
+    for v in ranked_verdicts:
         results.append({
-            "scheme_id": s.get("id"),
-            "scheme_name": s.get("name"),
-            "verdict": "NEEDS_MORE_INFO",
-            "reason": "Eligibility evaluation pending Phase 6 deterministic rule verification",
-            "missing_fields": ["income", "category"],
-            "disqualification_reasons": [],
-            "manual_review_flags": []
+            "scheme_id": v.scheme_id,
+            "scheme_name": v.scheme_name,
+            "verdict": v.verdict.value,
+            "reason": v.overall_reason,
+            "missing_fields": v.missing_fields,
+            "disqualification_reasons": v.disqualification_reasons,
+            "manual_review_flags": v.manual_review_flags
         })
     return results
 
