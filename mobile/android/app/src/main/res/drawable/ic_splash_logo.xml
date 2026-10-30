@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+
+    <!-- Mic Capsule / Head -->
+    <path
+        android:fillColor="#FF9933"
+        android:pathData="M64,28 C56.27,28 50,34.27 50,42 L50,62 C50,69.73 56.27,76 64,76 C71.73,76 78,69.73 78,62 L78,42 C78,34.27 71.73,28 64,28 Z" />
+
+    <!-- Mic Cradle (U-shape) -->
+    <path
+        android:strokeColor="#FF9933"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M42,56 L42,62 C42,74.15 51.85,84 64,84 C76.15,84 86,74.15 86,62 L86,56" />
+
+    <!-- Mic Stem -->
+    <path
+        android:strokeColor="#FF9933"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M64,84 L64,98" />
+
+    <!-- Mic Base -->
+    <path
+        android:strokeColor="#FF9933"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M48,98 L80,98" />
+
+    <!-- Left Voice Wave Arc -->
+    <path
+        android:strokeColor="#FF9933"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:strokeAlpha="0.65"
+        android:pathData="M32,48 C28,54 28,66 32,72" />
+
+    <!-- Right Voice Wave Arc -->
+    <path
+        android:strokeColor="#FF9933"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:strokeAlpha="0.65"
+        android:pathData="M96,48 C100,54 100,66 96,72" />
+</vector>
