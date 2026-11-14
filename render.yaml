@@ -17,3 +17,4 @@ services:
         value: sqlite:////app/yojanavaani.db
       - key: HF_HUB_OFFLINE
         value: "0"
+

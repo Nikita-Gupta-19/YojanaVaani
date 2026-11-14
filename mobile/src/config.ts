@@ -2,13 +2,9 @@ import { Platform } from 'react-native';
 
 /**
  * Backend service configuration for YojanaVaani.
- * Uses 10.0.2.2 for Android emulator loopback and localhost for iOS / desktop.
+ * Points to the 24/7 standalone cloud deployment on Render.
  */
-export const BACKEND_BASE_URL = Platform.select({
-  android: 'http://127.0.0.1:8000',
-  ios: 'http://localhost:8000',
-  default: 'http://127.0.0.1:8000',
-});
+export const BACKEND_BASE_URL = 'https://yojanavaani-backend.onrender.com';
 
 export const API_ENDPOINTS = {
   health: `${BACKEND_BASE_URL}/health`,
@@ -30,7 +26,7 @@ export const API_ENDPOINTS = {
  * Checks backend health endpoint with a configurable timeout.
  * Returns true if server responds with HTTP 200 and status 'ok', false otherwise.
  */
-export async function checkBackendHealth(timeoutMs: number = 4000): Promise<boolean> {
+export async function checkBackendHealth(timeoutMs: number = 8000): Promise<boolean> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
