@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
+  Animated,
   PermissionsAndroid,
   Platform,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -11,62 +10,118 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { API_ENDPOINTS } from '../config';
+import { playTTSAudio, stopTTSAudio } from '../services/audioService';
 
 interface OnboardingScreenProps {
   onStartConversation: () => void;
 }
 
+const INTRO_VOICE_TEXT =
+  'नमस्ते! मैं योजनावाणी सहायक हूँ। सिर्फ बोलकर सरकारी योजनाएं खोजने के लिए नीचे दिए गए माइक बटन को दबाएं।';
+
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onStartConversation }) => {
-  const [micGranted, setMicGranted] = useState<boolean>(false);
-  const [cameraGranted, setCameraGranted] = useState<boolean>(false);
-  const [isRequesting, setIsRequesting] = useState<boolean>(false);
+  const [isPlayingIntro, setIsPlayingIntro] = useState<boolean>(false);
+  const [isStarting, setIsStarting] = useState<boolean>(false);
+
+  // Pulsing animation for the big highlighted mic button
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    // Start continuous pulsing animation
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(pulseAnim, {
+            toValue: 1.08,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0.85,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(pulseAnim, {
+            toValue: 1.0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0.4,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
+      ])
+    );
+    pulseLoop.start();
+
+    // Automatically introduce itself in voice on launch
+    const timer = setTimeout(() => {
+      speakIntroGreeting();
+    }, 400);
+
+    return () => {
+      pulseLoop.stop();
+      clearTimeout(timer);
+      stopTTSAudio().catch(() => {});
+    };
+  }, []);
 
   /**
-   * Plain-language permission request with prior vernacular explanation.
-   * Complies with Android runtime permission requirements.
+   * Synthesize and play the Hindi voice introduction.
    */
-  const requestAppPermissions = async () => {
-    if (Platform.OS !== 'android') {
-      setMicGranted(true);
-      setCameraGranted(true);
-      onStartConversation();
-      return;
-    }
-
-    setIsRequesting(true);
+  const speakIntroGreeting = async () => {
     try {
-      const results = await PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        PermissionsAndroid.PERMISSIONS.CAMERA,
-      ]);
+      setIsPlayingIntro(true);
+      const res = await fetch(API_ENDPOINTS.tts, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: INTRO_VOICE_TEXT,
+          return_format: 'base64',
+          language_code: 'hi',
+        }),
+      });
 
-      const micOk =
-        results[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] ===
-        PermissionsAndroid.RESULTS.GRANTED;
-      const camOk =
-        results[PermissionsAndroid.PERMISSIONS.CAMERA] ===
-        PermissionsAndroid.RESULTS.GRANTED;
-
-      setMicGranted(micOk);
-      setCameraGranted(camOk);
-
-      if (micOk && camOk) {
-        onStartConversation();
-      } else {
-        Alert.alert(
-          'अनुमति आवश्यक है (Permissions Needed)',
-          'योजनावाणी में बिना लिखे केवल बोलकर और दस्तावेज़ स्कैन करके योजनाएं खोजने के लिए माइक्रोफ़ोन और कैमरा आवश्यक है।',
-          [
-            { text: 'पुनः प्रयास करें', onPress: () => requestAppPermissions() },
-            { text: 'आगे बढ़ें', onPress: () => onStartConversation() },
-          ]
-        );
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.audio_base64) {
+          await playTTSAudio(data.audio_base64);
+        }
       }
     } catch (_err) {
-      onStartConversation();
+      // Audio fallback gracefully handled
     } finally {
-      setIsRequesting(false);
+      setIsPlayingIntro(false);
     }
+  };
+
+  /**
+   * User clicks the big highlighted mic button to move ahead.
+   * Silently ensures Android runtime permissions and navigates to Conversation.
+   */
+  const handleStart = async () => {
+    if (isStarting) return;
+    setIsStarting(true);
+    await stopTTSAudio().catch(() => {});
+
+    if (Platform.OS === 'android') {
+      try {
+        await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+        ]);
+      } catch (_e) {
+        // Continue even if permission dialog was dismissed
+      }
+    }
+
+    onStartConversation();
   };
 
   return (
@@ -80,85 +135,86 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onStartConve
         <View style={[styles.tricolorSegment, { backgroundColor: '#138808' }]} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.content}>
         {/* Header Branding */}
         <View style={styles.header}>
           <Text style={styles.devanagariTitle}>योजनावाणी</Text>
           <Text style={styles.englishTitle}>YojanaVaani</Text>
-          <Text style={styles.hindiSubtitle}>
-            सिर्फ बोलकर अपने हक की सरकारी योजनाएं खोजें
-          </Text>
+          <Text style={styles.hindiSubtitle}>बोलिए, हम योजनाएं ढूंढेंगे</Text>
         </View>
 
-        {/* Purpose Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>यह ऐप कैसे काम करता है?</Text>
-          <Text style={styles.cardText}>
-            १. कुछ भी लिखने की ज़रूरत नहीं — सिर्फ बोलकर बात करें।{'\n'}
-            २. सहायक आपसे आसान भाषा में ९ सवाल पूछेगा।{'\n'}
-            ३. आप बोलकर जवाब दें, हम आपके लिए सही योजना ढूंढेंगे।
+        {/* Minimal Voice Assistant Card */}
+        <View style={styles.assistantCard}>
+          <View style={styles.assistantHeaderRow}>
+            <Text style={styles.assistantIcon}>🤖</Text>
+            <Text style={styles.assistantTitle}>योजनावाणी सहायक</Text>
+          </View>
+          <Text style={styles.assistantMessage}>
+            नमस्ते! सिर्फ अपनी आवाज़ में बोलकर अपने हक की सरकारी योजनाएं खोजें।
           </Text>
+
+          {/* Voice indicator / replay button */}
+          <TouchableOpacity
+            style={[
+              styles.voiceBadge,
+              isPlayingIntro && styles.voiceBadgeActive,
+            ]}
+            onPress={speakIntroGreeting}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.voiceBadgeIcon}>{isPlayingIntro ? '🔊' : '▶️'}</Text>
+            <Text style={styles.voiceBadgeText}>
+              {isPlayingIntro ? 'सहायक बोल रहा है...' : 'आवाज़ दोबारा सुनें'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Vernacular Permission Explanations */}
-        <View style={styles.permissionSection}>
-          <Text style={styles.permissionSectionTitle}>
-            माइक और कैमरे की अनुमति
-          </Text>
+        {/* Big Highlighted Mic Button Centerpiece */}
+        <View style={styles.micSection}>
+          <View style={styles.micAnchor}>
+            <Animated.View
+              style={[
+                styles.outerGlowRing,
+                {
+                  opacity: glowAnim,
+                  transform: [{ scale: pulseAnim }],
+                },
+              ]}
+            />
 
-          {/* Microphone Card */}
-          <View style={[styles.permissionCard, micGranted && styles.permissionCardGranted]}>
-            <View style={styles.permissionIconBadge}>
-              <Text style={styles.permissionIcon}>🎙️</Text>
-            </View>
-            <View style={styles.permissionTextContainer}>
-              <Text style={styles.permissionTitle}>
-                माइक (बोलने के लिए) {micGranted ? '✓ स्वीकृत' : ''}
-              </Text>
-              <Text style={styles.permissionDescription}>
-                अपनी आवाज़ में बोलकर जवाब देने और अपनी बात बताने के लिए।
-              </Text>
-            </View>
+            <TouchableOpacity
+              style={styles.bigMicButton}
+              activeOpacity={0.82}
+              onPress={handleStart}
+              disabled={isStarting}
+            >
+              <View style={styles.micInnerCircle}>
+                <Text style={styles.bigMicIcon}>🎙️</Text>
+              </View>
+            </TouchableOpacity>
           </View>
 
-          {/* Camera Card */}
-          <View style={[styles.permissionCard, cameraGranted && styles.permissionCardGranted]}>
-            <View style={styles.permissionIconBadge}>
-              <Text style={styles.permissionIcon}>📷</Text>
-            </View>
-            <View style={styles.permissionTextContainer}>
-              <Text style={styles.permissionTitle}>
-                कैमरा (कागज़ दिखाने के लिए) {cameraGranted ? '✓ स्वीकृत' : ''}
-              </Text>
-              <Text style={styles.permissionDescription}>
-                राशन कार्ड या आय प्रमाण पत्र की फोटो खींचकर जांचने के लिए।
-              </Text>
-            </View>
-          </View>
+          <TouchableOpacity
+            onPress={handleStart}
+            activeOpacity={0.8}
+            style={styles.callToActionContainer}
+          >
+            <Text style={styles.callToActionTitle}>
+              {isStarting ? 'शुरू हो रहा है...' : 'शुरू करने के लिए यहाँ दबाएं'}
+            </Text>
+            <Text style={styles.callToActionSubtitle}>
+              (माइक पर टैप करें और बोलें)
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Privacy Note */}
-        <View style={styles.privacyNote}>
-          <Text style={styles.privacyText}>
-            🔒 आपकी आवाज़ और जानकारी पूरी तरह सुरक्षित रखी जाती है।
+        {/* Subtle footer */}
+        <View style={styles.footerNote}>
+          <Text style={styles.footerText}>
+            🔒 लिखना नहीं पड़ेगा — सिर्फ बोलकर बातचीत करें
           </Text>
         </View>
-
-        {/* Action Button */}
-        <TouchableOpacity
-          style={styles.startButton}
-          activeOpacity={0.85}
-          onPress={requestAppPermissions}
-          disabled={isRequesting}
-        >
-          <Text style={styles.startButtonText}>
-            {isRequesting ? 'शुरू हो रहा है...' : 'बातचीत शुरू करें (यहाँ दबाएं) 🎙️'}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -176,133 +232,174 @@ const styles = StyleSheet.create({
   tricolorSegment: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 40,
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginTop: 8,
   },
   devanagariTitle: {
-    fontSize: 42,
+    fontSize: 44,
     fontWeight: '900',
     color: '#FF9933',
     letterSpacing: 1.5,
   },
   englishTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
-    marginTop: 2,
+    color: '#94A3B8',
     letterSpacing: 2,
+    marginTop: 2,
   },
   hindiSubtitle: {
-    fontSize: 20,
-    color: '#E0E1DD',
+    fontSize: 21,
+    color: '#FFFFFF',
     marginTop: 8,
     textAlign: 'center',
     fontWeight: '600',
-    lineHeight: 28,
   },
-  card: {
+  assistantCard: {
+    width: '100%',
     backgroundColor: '#1B263B',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: '#384E6E',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    alignItems: 'center',
+  },
+  assistantHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  assistantIcon: {
+    fontSize: 26,
+    marginRight: 8,
+  },
+  assistantTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFD166',
+  },
+  assistantMessage: {
+    fontSize: 17,
+    color: '#E0E1DD',
+    textAlign: 'center',
+    lineHeight: 25,
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  voiceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#415A77',
   },
-  cardHeader: {
-    fontSize: 22,
-    fontWeight: '800',
+  voiceBadgeActive: {
+    borderColor: '#FF9933',
+    backgroundColor: '#2A1B0A',
+  },
+  voiceBadgeIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  voiceBadgeText: {
+    fontSize: 14,
     color: '#FFD166',
-    marginBottom: 10,
+    fontWeight: '700',
   },
-  cardText: {
-    fontSize: 18,
-    color: '#E0E1DD',
-    lineHeight: 28,
-    fontWeight: '500',
-  },
-  permissionSection: {
-    marginBottom: 20,
-  },
-  permissionSectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 14,
-  },
-  permissionCard: {
-    flexDirection: 'row',
+  micSection: {
     alignItems: 'center',
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
+    justifyContent: 'center',
+    marginVertical: 12,
   },
-  permissionCardGranted: {
-    borderColor: '#10B981',
-    backgroundColor: '#064E3B22',
-  },
-  permissionIconBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#0F172A',
+  micAnchor: {
+    width: 156,
+    height: 156,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    position: 'relative',
   },
-  permissionIcon: {
-    fontSize: 28,
+  outerGlowRing: {
+    position: 'absolute',
+    width: 156,
+    height: 156,
+    borderRadius: 78,
+    borderWidth: 3,
+    borderColor: '#FF9933',
+    backgroundColor: '#FF993318',
   },
-  permissionTextContainer: {
-    flex: 1,
-  },
-  permissionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#F8FAFC',
-    marginBottom: 4,
-  },
-  permissionDescription: {
-    fontSize: 15,
-    color: '#CBD5E1',
-    lineHeight: 22,
-  },
-  privacyNote: {
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3B82F6',
-  },
-  privacyText: {
-    fontSize: 15,
-    color: '#94A3B8',
-    lineHeight: 22,
-    fontWeight: '500',
-  },
-  startButton: {
+  bigMicButton: {
+    width: 136,
+    height: 136,
+    borderRadius: 68,
     backgroundColor: '#FF9933',
-    paddingVertical: 18,
-    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#FF9933',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+    elevation: 10,
+    borderWidth: 4,
+    borderColor: '#FFE0B2',
   },
-  startButtonText: {
+  micInnerCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#E67E00',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFD166',
+  },
+  bigMicIcon: {
+    fontSize: 66,
+  },
+  callToActionContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  callToActionTitle: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#0D1B2A',
+    color: '#FFD166',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  callToActionSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#94A3B8',
+    marginTop: 4,
+  },
+  footerNote: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#1E293B88',
+    borderRadius: 12,
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#94A3B8',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

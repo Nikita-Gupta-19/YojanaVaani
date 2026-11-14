@@ -70,3 +70,41 @@ def test_post_stt_empty_file_error():
     files = {"file": ("empty.mp3", b"", "audio/mpeg")}
     response = client.post("/stt", files=files)
     assert response.status_code == 400
+
+
+def test_normalize_phonetics_for_tts_sc_and_purush():
+    """Verify phonetic normalizer handles SC and purush without Supreme Court / purus artifacts."""
+    from app.services.tts_service import normalize_phonetics_for_tts
+
+    # 1. SC expansion to Scheduled Caste / अनुसूचित जाति (not Supreme Court)
+    sc_text = "आप सामान्य, ओबीसी, एससी, या एसटी वर्ग में आते हैं?"
+    norm_sc = normalize_phonetics_for_tts(sc_text)
+    assert "अनुसूचित जाति" in norm_sc
+    assert "एससी" not in norm_sc
+    assert "Supreme Court" not in norm_sc
+    assert "सुप्रीम कोर्ट" not in norm_sc
+
+    # 2. purush pronunciation mapping to palatal sh (पुरुश)
+    gender_text = "आप महिला हैं या पुरुष?"
+    norm_gender = normalize_phonetics_for_tts(gender_text)
+    assert "पुरुश" in norm_gender
+    assert "पुरुष" not in norm_gender
+
+
+def test_baseline_shahdara_and_sc_spelling():
+    """Verify baseline interview questions have correct Hindi spellings without mixed English."""
+    from app.services.baseline_interview import BASELINE_QUESTIONS
+
+    # Question 3: Shahdara suggestion must be purely in Devanagari 'शाहदरा'
+    q_loc = BASELINE_QUESTIONS[3]
+    assert any("दिल्ली, शाहदरा" == ans for ans in q_loc.sample_answers), "Shahdara must be purely Devanagari"
+    assert not any("शाहदra" in ans for ans in q_loc.sample_answers), "Mixed english 'शाहदra' must be eliminated"
+
+    # Question 5: Social category must use 'अनुसूचित जाति (SC)' and 'अनुसूचित जनजाति (ST)'
+    q_cat = BASELINE_QUESTIONS[5]
+    assert "अनुसूचित जाति (SC)" in q_cat.hindi_text
+    assert "अनुसूचित जनजाति (ST)" in q_cat.hindi_text
+    assert "सुप्रीम कोर्ट" not in q_cat.hindi_text
+    assert any("अनुसूचित जाति (SC)" == opt for opt in q_cat.sample_answers)
+    assert any("अनुसूचित जनजाति (ST)" == opt for opt in q_cat.sample_answers)
+

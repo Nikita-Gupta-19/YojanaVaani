@@ -1,3 +1,8 @@
+import os
+# Ensure HuggingFace hub and ChromaDB operate in deterministic offline mode without stalling on network DNS/telemetry
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

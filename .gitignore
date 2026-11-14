@@ -69,3 +69,6 @@ mobile/ios/DerivedData/
 
 # Temporary test logs and outputs
 *.log
+*.aiff
+*.wav
+*.ses

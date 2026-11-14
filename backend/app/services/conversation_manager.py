@@ -114,12 +114,21 @@ COMMON_DISTRICTS_MAP: Dict[str, Tuple[str, str]] = {
     "shahdara": ("Shahdara", "Delhi"),
     "शाहदरा": ("Shahdara", "Delhi"),
     "central delhi": ("Central Delhi", "Delhi"),
+    "सेंट्रल दिल्ली": ("Central Delhi", "Delhi"),
     "new delhi": ("New Delhi", "Delhi"),
     "नई दिल्ली": ("New Delhi", "Delhi"),
     "south delhi": ("South Delhi", "Delhi"),
+    "साउथ दिल्ली": ("South Delhi", "Delhi"),
+    "दक्षिण दिल्ली": ("South Delhi", "Delhi"),
     "north delhi": ("North Delhi", "Delhi"),
+    "नॉर्थ दिल्ली": ("North Delhi", "Delhi"),
+    "उत्तर दिल्ली": ("North Delhi", "Delhi"),
     "east delhi": ("East Delhi", "Delhi"),
+    "ईस्ट दिल्ली": ("East Delhi", "Delhi"),
+    "पूर्वी दिल्ली": ("East Delhi", "Delhi"),
     "west delhi": ("West Delhi", "Delhi"),
+    "वेस्ट दिल्ली": ("West Delhi", "Delhi"),
+    "पश्चिम दिल्ली": ("West Delhi", "Delhi"),
 
     # Bihar
     "patna": ("Patna", "Bihar"),
@@ -230,6 +239,54 @@ class ConversationManager:
 
         return conv
 
+    def go_back(self, conversation_id: str) -> Optional[ConversationState]:
+        """
+        Rolls back the baseline interview to the previous question, allowing
+        the citizen to correct or re-record their answer if comprehended data was incorrect.
+        """
+        conv = self.get_conversation(conversation_id)
+        if not conv or conv.current_question_index <= 0:
+            return conv
+
+        conv.current_question_index -= 1
+        conv.baseline_complete = False
+        conv.status = ConversationStatus.baseline_interview
+
+        # Reset the field corresponding to the target question index
+        field_order = [
+            "name", "age", "gender", "state_district",
+            "approx_income_bracket", "social_category",
+            "occupation", "disability_status", "stated_need"
+        ]
+        if conv.current_question_index < len(field_order):
+            target_field = field_order[conv.current_question_index]
+            if target_field == "name":
+                conv.citizen_profile.name = None
+            elif target_field == "age":
+                conv.citizen_profile.age = None
+            elif target_field == "gender":
+                conv.citizen_profile.gender = None
+            elif target_field == "state_district":
+                conv.citizen_profile.state = None
+                conv.citizen_profile.district = None
+            elif target_field == "approx_income_bracket":
+                conv.citizen_profile.approx_income_bracket = None
+            elif target_field == "social_category":
+                conv.citizen_profile.social_category = None
+            elif target_field == "occupation":
+                conv.citizen_profile.occupation = None
+            elif target_field == "disability_status":
+                conv.citizen_profile.disability_status = None
+            elif target_field == "stated_need":
+                conv.stated_need = None
+
+        # Clean up dialogue history turns past this point
+        max_turns = conv.current_question_index * 2
+        while len(conv.conversation_history) > max_turns:
+            conv.conversation_history.pop()
+
+        return conv
+
     def run_agentic_followup(self, conversation_id: str) -> ConversationState:
         """
         Stage 2 Agentic Follow-Up Loop handoff.
@@ -251,14 +308,14 @@ class ConversationManager:
         conv.candidate_schemes = result.candidate_schemes
         conv.missing_facts = result.missing_facts
 
-        if result.response_type == "request_document":
+        if result.response_type == "request_document" or any(f.startswith("document_") for f in result.missing_facts):
             conv.status = ConversationStatus.awaiting_document
         elif result.response_type == "escalated":
             conv.status = ConversationStatus.escalated
-        elif result.response_type == "results_ready":
+        elif result.response_type == "results_ready" or (conv.candidate_schemes and not result.missing_facts):
             conv.status = ConversationStatus.results_ready
         else:
-            conv.status = ConversationStatus.scheme_matching
+            conv.status = ConversationStatus.results_ready
 
         if result.response_text:
             conv.conversation_history.append(
@@ -367,7 +424,7 @@ class ConversationManager:
         lower = text.lower()
         if any(w in lower or w in text for w in ["महिला", "स्त्री", "aurat", "female", "woman", "लड़की", "बेटी"]):
             return GenderEnum.FEMALE.value
-        if any(w in lower or w in text for w in ["पुरुष", "आदमी", "male", "man", "लड़का", "बेटा", "मर्द"]):
+        if any(w in lower or w in text for w in ["पुरुष", "पुरुश", "पुरुस", "आदमी", "male", "man", "लड़का", "बेटा", "मर्द"]):
             return GenderEnum.MALE.value
         if any(w in lower or w in text for w in ["ट्रांसजेंडर", "किन्नर", "transgender", "third gender"]):
             return GenderEnum.TRANSGENDER.value
@@ -474,11 +531,11 @@ class ConversationManager:
         """Classifies social reservation category into General, OBC, SC, ST."""
         lower = text.lower()
 
-        # SC: अनुसूचित जाति, दलित
-        if any(term in lower or term in text for term in ["एससी", "sc", "अनुसूचित जाति", "scheduled caste", "दलित"]):
+        # SC: अनुसूचित जाति, एससी, दलित
+        if any(term in lower or term in text for term in ["एससी", "sc", "अनुसूचित जाति", "scheduled caste", "दलित", "सुप्रीम कोर्ट"]):
             return SocialCategoryEnum.SC.value
 
-        # ST: अनुसूचित जनजाति, आदिवासी
+        # ST: अनुसूचित जनजाति, एसटी, आदिवासी
         if any(term in lower or term in text for term in ["एसटी", "st", "अनुसूचित जनजाति", "scheduled tribe", "आदिवासी"]):
             return SocialCategoryEnum.ST.value
 
@@ -518,8 +575,8 @@ class ConversationManager:
         if any(term in lower or term in text for term in ["नहीं", "nahin", "nahi", "no", "नहीं है", "कोई नहीं", "none"]):
             return False
 
-        # Positive indicator: "हाँ", "haan", "दिव्यांग", "handicapped"
-        if any(term in lower or term in text for term in ["हाँ", "haan", "ha", "yes", "दिव्यांग", "divyang", "विकलांग"]):
+        # Positive indicator: "हाँ", "हां", "haan", "ha", "yes", "दिव्यांग", "divyang", "विकलांग", "%", "प्रतिशत", "percent"
+        if any(term in lower or term in text for term in ["हाँ", "हां", "haan", "ha", "yes", "दिव्यांग", "divyang", "विकलांग", "%", "प्रतिशत", "percent", "disab"]):
             return True
 
         return False

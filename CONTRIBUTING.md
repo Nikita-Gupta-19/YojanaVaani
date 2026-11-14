@@ -157,3 +157,4 @@ All 3 teammates must strictly follow these constraints (from `AGENTS.md`):
 ## 📞 6. Quick Communication & Escalation
 - If you encounter a database schema conflict or need to modify shared schemas (`Scheme`, `ConversationState`), discuss with the team before running new Alembic migrations.
 - If you find a breaking change in API response shapes, notify the mobile lead immediately.
+

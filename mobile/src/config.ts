@@ -5,18 +5,23 @@ import { Platform } from 'react-native';
  * Uses 10.0.2.2 for Android emulator loopback and localhost for iOS / desktop.
  */
 export const BACKEND_BASE_URL = Platform.select({
-  android: 'http://10.0.2.2:8000',
+  android: 'http://127.0.0.1:8000',
   ios: 'http://localhost:8000',
-  default: 'http://10.0.2.2:8000',
+  default: 'http://127.0.0.1:8000',
 });
 
 export const API_ENDPOINTS = {
   health: `${BACKEND_BASE_URL}/health`,
   conversationStart: `${BACKEND_BASE_URL}/conversation/start`,
   conversationRespond: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/respond`,
+  conversationBack: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/back`,
   conversationDocument: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/document`,
   conversationConfirm: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/confirm_document`,
   conversationState: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}`,
+  conversationReport: (id: string, schemeId?: number) =>
+    schemeId !== undefined
+      ? `${BACKEND_BASE_URL}/conversation/${id}/report?scheme_id=${schemeId}`
+      : `${BACKEND_BASE_URL}/conversation/${id}/report`,
   tts: `${BACKEND_BASE_URL}/tts`,
   stt: `${BACKEND_BASE_URL}/stt`,
 };

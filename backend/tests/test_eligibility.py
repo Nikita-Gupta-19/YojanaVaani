@@ -174,3 +174,30 @@ def test_evaluate_and_rank_candidates_order():
     # Last must be DOES_NOT_QUALIFY (Scheme A)
     assert ranked[2].verdict == EligibilityVerdictType.DOES_NOT_QUALIFY
     assert ranked[2].scheme_id == 1
+
+
+def test_street_vendor_vernacular_matching():
+    """Verify that vernacular Hindi occupation descriptions (e.g. 'ठेला लगाता हूँ') match Street Vendor criteria."""
+    profile = {
+        "name": "दीपक",
+        "age": 30,
+        "gender": "Male",
+        "state": "Delhi",
+        "district": "Central Delhi",
+        "approx_income_bracket": "below_2_lakh",
+        "social_category": "General",
+        "occupation": "ठेला लगाता हूँ"
+    }
+    scheme = {
+        "id": 542,
+        "name": "PM Street Vendor’s AtmaNirbhar Nidhi (PM SVANidhi)",
+        "eligibility_criteria": {
+            "occupations": ["Street Vendor"],
+            "gender": "All",
+            "social_categories": ["All"]
+        }
+    }
+    verdict = EligibilityEngine.evaluate_scheme(profile, scheme)
+    assert verdict.verdict == EligibilityVerdictType.QUALIFIES
+    assert len(verdict.disqualification_reasons) == 0
+

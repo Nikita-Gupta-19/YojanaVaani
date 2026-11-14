@@ -1,21 +1,38 @@
 package com.mobile
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.util.Base64
+import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import java.io.File
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
 import java.util.concurrent.atomic.AtomicBoolean
 
-class AudioRecorderModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+class AudioRecorderModule(private val reactContext: ReactApplicationContext) :
+    ReactContextBaseJavaModule(reactContext), ActivityEventListener {
 
     private var audioRecord: AudioRecord? = null
     private var recordingThread: Thread? = null
@@ -23,7 +40,235 @@ class AudioRecorderModule(reactContext: ReactApplicationContext) : ReactContextB
     private var outputFile: File? = null
     private var mediaPlayer: MediaPlayer? = null
 
+    private var speechRecognizer: SpeechRecognizer? = null
+    private var activeSpeechPromise: Promise? = null
+    private var lastPartialSpeechText: String = ""
+
+    init {
+        reactContext.addActivityEventListener(this)
+    }
+
     override fun getName(): String = "AudioRecorderModule"
+
+    private fun sendEvent(eventName: String, params: Any?) {
+        try {
+            if (reactContext.hasActiveReactInstance()) {
+                reactContext
+                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                    .emit(eventName, params)
+            }
+        } catch (_: Exception) {}
+    }
+
+    override fun onActivityResult(activity: Activity, requestCode: Int, resultCode: Int, data: Intent?) {
+        // No external activities used - speech recognition is 100% headless and in-app
+    }
+
+    override fun onNewIntent(intent: Intent) {}
+
+    @ReactMethod
+    fun isSpeechRecognitionAvailable(promise: Promise) {
+        val context = reactContext.currentActivity ?: reactContext
+        val available = SpeechRecognizer.isRecognitionAvailable(context)
+        promise.resolve(available)
+    }
+
+    @ReactMethod
+    fun startVoiceRecognition(language: String?, promise: Promise) {
+        Handler(Looper.getMainLooper()).post {
+            try {
+                // If there's an unresolved active promise from a previous invocation, settle it now
+                activeSpeechPromise?.let { prevPromise ->
+                    try {
+                        prevPromise.resolve(lastPartialSpeechText)
+                    } catch (_: Exception) {}
+                }
+                activeSpeechPromise = promise
+                lastPartialSpeechText = ""
+
+                // Ensure any prior speech recognizer instance is cleanly cancelled and released
+                try {
+                    speechRecognizer?.cancel()
+                    speechRecognizer?.destroy()
+                } catch (_: Exception) {}
+                speechRecognizer = null
+
+                val context = reactContext.currentActivity ?: reactContext
+                if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+                    activeSpeechPromise = null
+                    promise.resolve("")
+                    return@post
+                }
+
+                // Connect to system default Speech Recognition service (Google on Android)
+                // 100% headless and in-app without any Google popup dialogs
+                val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
+                speechRecognizer = recognizer
+
+                val targetLang = language ?: "hi-IN"
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, targetLang)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, targetLang)
+                    putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, targetLang)
+                    putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, reactContext.packageName)
+                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+                    putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L)
+                }
+
+                var hasSettled = false
+
+                recognizer.setRecognitionListener(object : RecognitionListener {
+                    override fun onReadyForSpeech(params: Bundle?) {
+                        sendEvent("onSpeechReady", true)
+                    }
+
+                    override fun onBeginningOfSpeech() {
+                        sendEvent("onSpeechStart", true)
+                    }
+
+                    override fun onRmsChanged(rmsdB: Float) {
+                        sendEvent("onSpeechRmsChanged", rmsdB)
+                    }
+
+                    override fun onBufferReceived(buffer: ByteArray?) {}
+
+                    override fun onEndOfSpeech() {
+                        sendEvent("onSpeechEnd", true)
+                    }
+
+                    override fun onError(error: Int) {
+                        Handler(Looper.getMainLooper()).post {
+                            if (!hasSettled) {
+                                hasSettled = true
+                                sendEvent("onSpeechError", error)
+                                try {
+                                    speechRecognizer?.cancel()
+                                    speechRecognizer?.destroy()
+                                } catch (_: Exception) {}
+                                speechRecognizer = null
+
+                                val p = activeSpeechPromise
+                                activeSpeechPromise = null
+                                val result = if (lastPartialSpeechText.isNotEmpty()) lastPartialSpeechText else ""
+                                p?.resolve(result)
+                            }
+                        }
+                    }
+
+                    override fun onResults(results: Bundle?) {
+                        Handler(Looper.getMainLooper()).post {
+                            if (!hasSettled) {
+                                hasSettled = true
+                                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                                try {
+                                    speechRecognizer?.destroy()
+                                } catch (_: Exception) {}
+                                speechRecognizer = null
+
+                                val recognized = if (matches != null && matches.isNotEmpty() && matches[0].trim().isNotEmpty()) {
+                                    matches[0].trim()
+                                } else if (lastPartialSpeechText.isNotEmpty()) {
+                                    lastPartialSpeechText
+                                } else {
+                                    ""
+                                }
+                                sendEvent("onSpeechResults", recognized)
+                                val p = activeSpeechPromise
+                                activeSpeechPromise = null
+                                p?.resolve(recognized)
+                            }
+                        }
+                    }
+
+                    override fun onPartialResults(partialResults: Bundle?) {
+                        Handler(Looper.getMainLooper()).post {
+                            val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                            if (matches != null && matches.isNotEmpty()) {
+                                val partial = matches[0].trim()
+                                if (partial.isNotEmpty()) {
+                                    lastPartialSpeechText = partial
+                                    sendEvent("onSpeechPartialResults", partial)
+                                }
+                            }
+                        }
+                    }
+
+                    override fun onEvent(eventType: Int, params: Bundle?) {}
+                })
+
+                recognizer.startListening(intent)
+            } catch (e: Exception) {
+                try {
+                    speechRecognizer?.destroy()
+                } catch (_: Exception) {}
+                speechRecognizer = null
+                val p = activeSpeechPromise
+                activeSpeechPromise = null
+                p?.resolve(lastPartialSpeechText)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun stopVoiceRecognition(promise: Promise) {
+        Handler(Looper.getMainLooper()).post {
+            try {
+                try {
+                    speechRecognizer?.stopListening()
+                } catch (_: Exception) {}
+
+                // Give recognizer up to 500ms to dispatch onResults; if not settled, resolve active promise with fallback text
+                Handler(Looper.getMainLooper()).postDelayed({
+                    val p = activeSpeechPromise
+                    if (p != null) {
+                        activeSpeechPromise = null
+                        val fallback = lastPartialSpeechText
+                        try {
+                            speechRecognizer?.cancel()
+                            speechRecognizer?.destroy()
+                        } catch (_: Exception) {}
+                        speechRecognizer = null
+                        try {
+                            p.resolve(fallback)
+                        } catch (_: Exception) {}
+                    }
+                }, 500)
+                promise.resolve(true)
+            } catch (e: Exception) {
+                val p = activeSpeechPromise
+                activeSpeechPromise = null
+                try {
+                    p?.resolve(lastPartialSpeechText)
+                } catch (_: Exception) {}
+                promise.resolve(false)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun cancelVoiceRecognition(promise: Promise) {
+        Handler(Looper.getMainLooper()).post {
+            try {
+                val p = activeSpeechPromise
+                activeSpeechPromise = null
+                try {
+                    p?.resolve("")
+                } catch (_: Exception) {}
+                try {
+                    speechRecognizer?.cancel()
+                    speechRecognizer?.destroy()
+                } catch (_: Exception) {}
+                speechRecognizer = null
+                promise.resolve(true)
+            } catch (e: Exception) {
+                promise.resolve(false)
+            }
+        }
+    }
 
     @SuppressLint("MissingPermission")
     @ReactMethod
@@ -109,12 +354,42 @@ class AudioRecorderModule(reactContext: ReactApplicationContext) : ReactContextB
     fun playAudioBase64(base64Audio: String, promise: Promise) {
         try {
             stopCurrentPlayback()
+
+            try {
+                val audioManager = reactApplicationContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                audioManager?.mode = AudioManager.MODE_NORMAL
+                audioManager?.isSpeakerphoneOn = true
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                        .setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .build()
+                        )
+                        .build()
+                    audioManager?.requestAudioFocus(focusRequest)
+                } else {
+                    @Suppress("DEPRECATION")
+                    audioManager?.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                }
+            } catch (_: Exception) {}
+
             val audioBytes = Base64.decode(base64Audio, Base64.DEFAULT)
-            val tempFile = File.createTempFile("tts_playback_", ".mp3", reactApplicationContext.cacheDir)
+            val extension = if (audioBytes.size >= 4 && audioBytes[0] == 'R'.code.toByte() && audioBytes[1] == 'I'.code.toByte()) ".wav" else ".mp3"
+            val tempFile = File.createTempFile("tts_playback_", extension, reactApplicationContext.cacheDir)
             tempFile.writeBytes(audioBytes)
 
             mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .build()
+                )
                 setDataSource(tempFile.absolutePath)
+                setVolume(1.0f, 1.0f)
                 setOnPreparedListener { mp ->
                     try {
                         mp.start()

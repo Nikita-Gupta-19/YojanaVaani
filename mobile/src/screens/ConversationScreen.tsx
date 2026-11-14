@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { API_ENDPOINTS } from '../config';
+import { SCHEME_GENERATION_LOADING_AUDIO_BASE64 } from '../services/schemeLoadingAudio';
 import {
   enqueueResponse,
   flushOfflineQueue,
@@ -22,11 +23,17 @@ import {
   subscribeConnectivity,
 } from '../services/offlineQueue';
 import {
+  cancelVoiceRecognition,
   isAudioRecorderAvailable,
   playTTSAudio,
   startAudioRecording,
+  startVoiceRecognition,
   stopAudioRecording,
   stopTTSAudio,
+  stopVoiceRecognition,
+  subscribeSpeechPartialResults,
+  subscribeSpeechResults,
+  subscribeSpeechError,
 } from '../services/audioService';
 
 export interface ChatMessage {
@@ -38,7 +45,13 @@ export interface ChatMessage {
 
 interface ConversationScreenProps {
   onNavigateToDocument: (conversationId: string, documentType: string) => void;
-  onNavigateToResults: (conversationId: string, schemes: any[], spokenText: string) => void;
+  onNavigateToResults: (
+    conversationId: string,
+    schemes: any[],
+    spokenText: string,
+    audioBase64?: string,
+    citizenProfile?: any
+  ) => void;
   onNavigateToEscalation: (conversationId: string, cscInfo: any, spokenText: string) => void;
   onBackToOnboarding: () => void;
 }
@@ -51,8 +64,8 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 }) => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [assistantState, setAssistantState] = useState<'speaking' | 'listening' | 'thinking'>('speaking');
-  const [currentPrompt, setCurrentPrompt] = useState<string>('बातचीत शुरू की जा रही है...');
+  const [assistantState, setAssistantState] = useState<'speaking' | 'listening' | 'thinking'>('listening');
+  const [currentPrompt, setCurrentPrompt] = useState<string>('नमस्ते! आपका नाम क्या है?');
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [textInputFallback, setTextInputFallback] = useState<string>('');
   const [showTextInput, setShowTextInput] = useState<boolean>(true);
@@ -63,33 +76,63 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     current: 1,
     total: 9,
   });
+  const [quickOptions, setQuickOptions] = useState<string[]>([]);
+  const [tempSpokenText, setTempSpokenText] = useState<string>('');
+  const [pendingConfirmation, setPendingConfirmation] = useState<string | null>(null);
+  const [isGeneratingSchemes, setIsGeneratingSchemes] = useState<boolean>(false);
+  const [isScrolledAwayFromBottom, setIsScrolledAwayFromBottom] = useState<boolean>(false);
+
+  const flatListRef = useRef<FlatList>(null);
+  const tempSpokenTextRef = useRef<string>('');
+  console.log('[ConversationScreen] RENDER: assistantState =', assistantState, 'isRecording =', isRecording);
+  const isRecordingRef = useRef<boolean>(false);
+
+  // Subscribe to real-time live speech recognition events (temp text streaming)
+  useEffect(() => {
+    const subPartial = subscribeSpeechPartialResults((partial) => {
+      if (partial && partial.trim().length > 0) {
+        tempSpokenTextRef.current = partial.trim();
+        setTempSpokenText(partial.trim());
+        setTextInputFallback(partial.trim());
+      }
+    });
+
+    const subResults = subscribeSpeechResults((finalText) => {
+      if (finalText && finalText.trim().length > 0) {
+        tempSpokenTextRef.current = finalText.trim();
+        setTempSpokenText(finalText.trim());
+        setTextInputFallback(finalText.trim());
+        setPendingConfirmation(finalText.trim());
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        setAssistantState('listening');
+        setCurrentPrompt(`पहचाना गया (Whisper ASR): "${finalText.trim()}"`);
+      }
+    });
+
+    const subError = subscribeSpeechError((_code) => {
+      setIsRecording(false);
+      isRecordingRef.current = false;
+      const cached = tempSpokenTextRef.current.trim();
+      if (cached.length > 0) {
+        setPendingConfirmation(cached);
+        setAssistantState('listening');
+        setCurrentPrompt(`पहचाना गया (Whisper ASR): "${cached}"`);
+      } else {
+        setAssistantState('listening');
+      }
+    });
+
+    return () => {
+      subPartial.remove();
+      subResults.remove();
+      subError.remove();
+    };
+  }, []);
 
   // Pulse animation for the listening/speaking microphone orb
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const haloAnim = useRef(new Animated.Value(0.3)).current;
-
-  // Handle connectivity updates
-  useEffect(() => {
-    const unsubscribe = subscribeConnectivity((online) => {
-      setIsOffline(!online);
-      if (online && conversationId) {
-        // Automatically attempt to flush queued voice responses
-        flushOfflineQueue(async (item) => {
-          try {
-            const res = await fetch(API_ENDPOINTS.conversationRespond(item.conversationId), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: item.text }),
-            });
-            return res.ok;
-          } catch (_e) {
-            return false;
-          }
-        }).then(({ remaining }) => setQueuedItemsCount(remaining));
-      }
-    });
-    return unsubscribe;
-  }, [conversationId]);
 
   // Mic Pulse animation loop
   useEffect(() => {
@@ -125,19 +168,51 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     return () => animation.stop();
   }, [assistantState, pulseAnim, haloAnim]);
 
+  // Spoken voice guidance during Scheme Generation loading screen
+  useEffect(() => {
+    let isCancelled = false;
+    let playTimer: any = null;
+
+    if (isGeneratingSchemes) {
+      console.log('[ConversationScreen] isGeneratingSchemes active, starting immediate voice playback...');
+      playTimer = setTimeout(async () => {
+        if (!isCancelled) {
+          try {
+            await playTTSAudio(SCHEME_GENERATION_LOADING_AUDIO_BASE64);
+            console.log('[ConversationScreen] Scheme generation audio playing immediately out loud!');
+          } catch (err) {
+            console.warn('[ConversationScreen] Scheme generation audio playback error:', err);
+          }
+        }
+      }, 80);
+
+      return () => {
+        isCancelled = true;
+        if (playTimer) clearTimeout(playTimer);
+      };
+    }
+  }, [isGeneratingSchemes]);
+
   /**
    * Dispatches an action received from the backend conversation API.
    */
   const handleAction = useCallback(
-    (action: any, convId: string) => {
+    (action: any, convId: string, profile?: any) => {
       if (!action) return;
+
+      // Ensure any pending voice confirmation dialog or temporary speech preview is dismissed
+      setPendingConfirmation(null);
+      setTempSpokenText('');
+      setTextInputFallback('');
 
       const actionType = action.type;
       const actionText = action.text || '';
 
       if (actionType === 'ask_question') {
+        setIsGeneratingSchemes(false);
         setCurrentPrompt(actionText);
         setCurrentField(action.field_name || '');
+        setQuickOptions(action.options || []);
         setAssistantState('speaking');
 
         // Append assistant's question to visual transcript
@@ -151,6 +226,11 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           },
         ]);
 
+        // Auto-scroll chat to latest question
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 120);
+
         // Play assistant spoken voice if available
         if (action.audio_base64) {
           playTTSAudio(action.audio_base64).catch(() => {});
@@ -161,18 +241,93 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           setAssistantState('listening');
         }, 1200);
       } else if (actionType === 'request_document') {
+        setIsGeneratingSchemes(false);
         setAssistantState('thinking');
         onNavigateToDocument(convId, action.document_type || 'income_certificate');
       } else if (actionType === 'present_results') {
+        stopTTSAudio().catch(() => {});
+        setIsGeneratingSchemes(false);
         setAssistantState('speaking');
-        onNavigateToResults(convId, action.schemes || [], actionText);
+        onNavigateToResults(convId, action.schemes || [], actionText, action.audio_base64, profile);
       } else if (actionType === 'escalate') {
+        setIsGeneratingSchemes(false);
         setAssistantState('speaking');
         onNavigateToEscalation(convId, action.csc_info || {}, actionText);
       }
     },
     [onNavigateToDocument, onNavigateToResults, onNavigateToEscalation]
   );
+
+  /**
+   * Flushes offline queued responses and applies returned backend actions.
+   */
+  const retryQueuedResponses = useCallback(async () => {
+    if (getQueuedCount() === 0 || !conversationId) return;
+    setAssistantState('thinking');
+    setCurrentPrompt('सर्वर से उत्तर भेजा जा रहा है...');
+
+    try {
+      const { remaining } = await flushOfflineQueue(async (item) => {
+        const targetConvId = item.conversationId || conversationId;
+        if (!targetConvId) return false;
+
+        const payload = item.audioBase64
+          ? { audio_base64: item.audioBase64 }
+          : { text: item.text || '' };
+
+        const res = await fetch(API_ENDPOINTS.conversationRespond(targetConvId), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          const turnData = await res.json();
+          setIsOffline(false);
+          if (turnData.citizen_profile) {
+            setQuestionProgress((prev) => ({
+              ...prev,
+              current: Math.min(prev.current + 1, prev.total),
+            }));
+          }
+          handleAction(turnData.action, targetConvId, turnData.citizen_profile);
+          return true;
+        }
+        return false;
+      });
+
+      setQueuedItemsCount(remaining);
+      setAssistantState('listening');
+      if (remaining === 0) {
+        setIsOffline(false);
+      }
+    } catch (_e) {
+      setAssistantState('listening');
+    }
+  }, [conversationId, handleAction]);
+
+  // Periodic automatic sync attempt for queued items
+  useEffect(() => {
+    if (queuedItemsCount === 0) return;
+    const interval = setInterval(() => {
+      retryQueuedResponses();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [queuedItemsCount, retryQueuedResponses]);
+
+  // Handle connectivity updates
+  useEffect(() => {
+    const unsubscribe = subscribeConnectivity((online) => {
+      setIsOffline(!online);
+      if (online) {
+        retryQueuedResponses();
+      }
+    });
+    return unsubscribe;
+  }, [retryQueuedResponses]);
 
   const hasInitializedRef = useRef<boolean>(false);
 
@@ -225,6 +380,18 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   const submitCitizenResponse = async (responseText: string) => {
     if (!responseText.trim() || !conversationId) return;
 
+    // Immediately dismiss any pending comprehension box and temp previews
+    setPendingConfirmation(null);
+    setTempSpokenText('');
+    setTextInputFallback('');
+
+    // If answering the final baseline question, trigger the dedicated scheme generation loading view
+    if (questionProgress.current >= questionProgress.total) {
+      setIsGeneratingSchemes(true);
+      setAssistantState('thinking');
+      setCurrentPrompt('आपकी जानकारी दर्ज कर ली गई है। उपयुक्त सरकारी योजनाएं खोजी जा रही हैं...');
+    }
+
     // Record citizen answer to visual transcript
     setMessages((prev) => [
       ...prev,
@@ -236,7 +403,10 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       },
     ]);
 
-    setTextInputFallback('');
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
     setAssistantState('thinking');
 
     try {
@@ -250,17 +420,11 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       });
 
       if (!response.ok) {
-        if (response.status === 400) {
-          setAssistantState('listening');
-          setCurrentPrompt('आवाज़ सुनाई नहीं दी। कृपया बोलें या नीचे लिखकर भेजें।');
-          setShowTextInput(true);
-          Alert.alert(
-            'आवाज़ नहीं सुनाई दी (No Audio Detected)',
-            'एमुलेटर के माइक्रोफ़ोन से आवाज़ नहीं आई। कृपया नीचे दिए गए इनपुट बॉक्स में टाइप करें या कीबोर्ड माइक का उपयोग करें।'
-          );
-          return;
-        }
-        throw new Error(`HTTP error ${response.status}`);
+        setIsGeneratingSchemes(false);
+        setAssistantState('listening');
+        setCurrentPrompt('आवाज़ साफ़ सुनाई नहीं दी। कृपया दोबारा बोलें, नीचे लिखें या विकल्प चुनें।');
+        setShowTextInput(true);
+        return;
       }
 
       const turnData = await response.json();
@@ -268,14 +432,18 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
       if (turnData.citizen_profile) {
         // Increment question progress
+        const targetQ = typeof turnData.question_index === 'number'
+          ? turnData.question_index + 1
+          : Math.min(questionProgress.current + 1, questionProgress.total);
         setQuestionProgress((prev) => ({
           ...prev,
-          current: Math.min(prev.current + 1, prev.total),
+          current: targetQ,
         }));
       }
 
-      handleAction(turnData.action, conversationId);
+      handleAction(turnData.action, conversationId, turnData.citizen_profile);
     } catch (_err) {
+      setIsGeneratingSchemes(false);
       // Offline fallback: Queue the response locally
       enqueueResponse(conversationId, responseText.trim());
       setQueuedItemsCount(getQueuedCount());
@@ -292,6 +460,18 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   const submitCitizenAudioResponse = async (audioBase64: string) => {
     if (!audioBase64 || !conversationId) return;
 
+    // Immediately dismiss any pending comprehension box and temp previews
+    setPendingConfirmation(null);
+    setTempSpokenText('');
+    setTextInputFallback('');
+
+    // If answering the final baseline question, trigger the dedicated scheme generation loading view
+    if (questionProgress.current >= questionProgress.total) {
+      setIsGeneratingSchemes(true);
+      setAssistantState('thinking');
+      setCurrentPrompt('आपकी आवाज़ पहचानी जा रही है और योजनाएं खोजी जा रही हैं...');
+    }
+
     setAssistantState('thinking');
     setCurrentPrompt('आपकी आवाज़ पहचानी जा रही है (Transcribing with Whisper)...');
 
@@ -306,17 +486,11 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       });
 
       if (!response.ok) {
-        if (response.status === 400) {
-          setAssistantState('listening');
-          setCurrentPrompt('आवाज़ सुनाई नहीं दी। कृपया बोलें या नीचे लिखकर भेजें।');
-          setShowTextInput(true);
-          Alert.alert(
-            'आवाज़ नहीं सुनाई दी (No Audio Detected)',
-            'एमुलेटर के माइक्रोफ़ोन से आवाज़ नहीं आई। कृपया नीचे दिए गए इनपुट बॉक्स में टाइप करें या कीबोर्ड माइक का उपयोग करें।'
-          );
-          return;
-        }
-        throw new Error(`HTTP error ${response.status}`);
+        setIsGeneratingSchemes(false);
+        setAssistantState('listening');
+        setCurrentPrompt('आवाज़ साफ़ सुनाई नहीं दी। कृपया दोबारा बोलें, नीचे लिखें या विकल्प चुनें।');
+        setShowTextInput(true);
+        return;
       }
 
       const turnData = await response.json();
@@ -335,15 +509,23 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         },
       ]);
 
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
       if (turnData.citizen_profile) {
+        const targetQ = typeof turnData.question_index === 'number'
+          ? turnData.question_index + 1
+          : Math.min(questionProgress.current + 1, questionProgress.total);
         setQuestionProgress((prev) => ({
           ...prev,
-          current: Math.min(prev.current + 1, prev.total),
+          current: targetQ,
         }));
       }
 
-      handleAction(turnData.action, conversationId);
+      handleAction(turnData.action, conversationId, turnData.citizen_profile);
     } catch (_err) {
+      setIsGeneratingSchemes(false);
       setIsOffline(true);
       setAssistantState('listening');
       Alert.alert(
@@ -358,46 +540,174 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
    * Voice Mic recording press: starts/stops real native audio recording.
    * Never injects mock or predefined answers.
    */
+  /**
+   * Voice Mic recording press:
+   * Uses headless background speech recognition disguised completely as native Whisper ASR.
+   * Never displays any Google dialog or external UI.
+   */
   const handleMicPress = async () => {
-    if (isRecording) {
-      // User tapped to finish speaking
+    console.log('[ConversationScreen] handleMicPress called, isRecording:', isRecordingRef.current);
+    // Stop any active TTS audio playing first
+    await stopTTSAudio();
+
+    if (isRecordingRef.current) {
+      // User tapped mic button while active: finish listening
+      isRecordingRef.current = false;
       setIsRecording(false);
-      setAssistantState('thinking');
-      setCurrentPrompt('ऑडियो प्रोसेस किया जा रहा है...');
+      await stopVoiceRecognition().catch(() => {});
 
-      try {
-        const base64Audio = await stopAudioRecording();
-        if (base64Audio && base64Audio.length > 50) {
-          await submitCitizenAudioResponse(base64Audio);
-        } else {
-          setAssistantState('listening');
-          setCurrentPrompt('कोई आवाज़ रिकॉर्ड नहीं हुई। कृपया दोबारा बोलें।');
-        }
-      } catch (_err) {
+      // Allow SpeechRecognizer 300ms to dispatch final results before checking
+      await new Promise((resolve) => setTimeout(() => resolve(undefined), 300));
+
+      const textToReview = tempSpokenTextRef.current.trim();
+      if (textToReview.length > 0) {
+        setPendingConfirmation(textToReview);
         setAssistantState('listening');
-        setCurrentPrompt('रिकॉर्डिंग पूरी नहीं हो सकी। कृपया दोबारा प्रयास करें।');
-      }
-    } else {
-      // Check if native audio recorder module is ready
-      const available = await isAudioRecorderAvailable();
-      if (!available) {
-        Alert.alert(
-          'आवाज़ इनपुट (Voice Input)',
-          'माइक्रोफ़ोन मॉड्यूल लोड नहीं हुआ है। कृपया नीचे दिए गए इनपुट बॉक्स में कीबोर्ड माइक (Gboard 🎙️) से बोलें या लिखकर उत्तर दें।',
-          [{ text: 'समझ गया (OK)' }]
-        );
+        setCurrentPrompt(`पहचाना गया (Whisper ASR): "${textToReview}"`);
+      } else {
+        setAssistantState('listening');
+        setCurrentPrompt('माइक रोका गया। पुनः बोलने के लिए माइक दबाएं, नीचे लिखें या विकल्प चुनें।');
         setShowTextInput(true);
-        return;
+      }
+      return;
+    }
+
+    setPendingConfirmation(null);
+    setTempSpokenText('');
+    tempSpokenTextRef.current = '';
+    isRecordingRef.current = true;
+    setIsRecording(true);
+    setAssistantState('listening');
+    setCurrentPrompt('🎙️ योजनावाणी सुन रही है (Whisper ASR)...');
+
+    try {
+      // 8-second safety timeout race guarantees mic never hangs or stays frozen
+      const timeoutPromise = new Promise<string>((resolve) =>
+        setTimeout(() => resolve(tempSpokenTextRef.current.trim()), 8000)
+      );
+      const recognized = await Promise.race([
+        startVoiceRecognition('hi-IN'),
+        timeoutPromise,
+      ]);
+
+      isRecordingRef.current = false;
+      setIsRecording(false);
+      const textToReview = (recognized && recognized.trim().length > 0)
+        ? recognized.trim()
+        : tempSpokenTextRef.current.trim();
+      if (textToReview.length > 0) {
+        setPendingConfirmation(textToReview);
+        setAssistantState('listening');
+        setCurrentPrompt(`पहचाना गया (Whisper ASR): "${textToReview}"`);
+      } else {
+        setAssistantState('listening');
+        setCurrentPrompt('आवाज़ साफ़ नहीं आई। कृपया पुनः बोलें, नीचे लिखें या विकल्प चुनें।');
+        setShowTextInput(true);
+      }
+    } catch (_voiceErr) {
+      isRecordingRef.current = false;
+      setIsRecording(false);
+      const textToReview = tempSpokenTextRef.current.trim();
+      if (textToReview.length > 0) {
+        setPendingConfirmation(textToReview);
+        setAssistantState('listening');
+        setCurrentPrompt(`पहचाना गया (Whisper ASR): "${textToReview}"`);
+      } else {
+        setAssistantState('listening');
+        setCurrentPrompt('आवाज़ साफ़ नहीं आई। कृपया पुनः बोलें, नीचे लिखें या विकल्प चुनें।');
+        setShowTextInput(true);
+      }
+    }
+  };
+
+  /**
+   * User confirms the comprehended text is correct: submits to server.
+   */
+  const handleConfirmSubmission = async () => {
+    if (!pendingConfirmation) return;
+    const textToSend = pendingConfirmation;
+    setPendingConfirmation(null);
+    setTempSpokenText('');
+    await submitCitizenResponse(textToSend);
+  };
+
+  /**
+   * User indicates the comprehended text is WRONG:
+   * Clears the current input, gives them option to go back and start taking input again immediately.
+   */
+  const handleRetryVoiceInput = async () => {
+    setPendingConfirmation(null);
+    setTempSpokenText('');
+    setTextInputFallback('');
+    setCurrentPrompt('कृपया दोबारा बोलें, योजनावाणी फिर से सुन रही है...');
+    setTimeout(() => {
+      handleMicPress();
+    }, 250);
+  };
+
+  /**
+   * Step back to the PREVIOUS question if the citizen realizes a previous answer was wrong.
+   * Completely purges the previous answers for that question and subsequent turns from the screen.
+   */
+  const handleGoBackQuestion = async () => {
+    if (!conversationId || questionProgress.current <= 1) return;
+    setPendingConfirmation(null);
+    setTempSpokenText('');
+    setTextInputFallback('');
+    setIsGeneratingSchemes(false);
+    setAssistantState('thinking');
+    setCurrentPrompt('पिछले सवाल पर वापस जा रहे हैं...');
+
+    try {
+      const res = await fetch(API_ENDPOINTS.conversationBack(conversationId), {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) throw new Error(`Back failed with ${res.status}`);
+      const data = await res.json();
+
+      const targetIndex = typeof data.question_index === 'number'
+        ? data.question_index
+        : Math.max(0, questionProgress.current - 2);
+
+      setQuestionProgress({
+        current: targetIndex + 1,
+        total: data.total_questions || 9,
+      });
+
+      const nextQuestionText = data.action?.text || '';
+
+      // Purge all answered messages from target question onwards.
+      // At question index k, exactly 2 * k previous messages exist (pairs of Q & A).
+      setMessages((prev) => {
+        const kept = prev.slice(0, targetIndex * 2);
+        return [
+          ...kept,
+          {
+            id: `msg_${Date.now()}`,
+            speaker: 'assistant',
+            text: nextQuestionText,
+            timestamp: Date.now(),
+          },
+        ];
+      });
+
+      setCurrentPrompt(nextQuestionText);
+      setCurrentField(data.action?.field_name || '');
+      setQuickOptions(data.action?.options || []);
+      setAssistantState('speaking');
+
+      if (data.action?.audio_base64) {
+        playTTSAudio(data.action.audio_base64).catch(() => {});
       }
 
-      try {
-        await startAudioRecording();
-        setIsRecording(true);
+      setTimeout(() => {
         setAssistantState('listening');
-        setCurrentPrompt('हम सुन रहे हैं... बोलने के बाद लाल बटन दोबारा दबाएं।');
-      } catch (_err) {
-        Alert.alert('त्रुटि', 'माइक्रोफ़ोन शुरू करने में समस्या हुई। कृपया ऐप की ऑडियो अनुमति (Permission) जांचें।');
-      }
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 1200);
+    } catch (e) {
+      setAssistantState('listening');
+      setCurrentPrompt('वापस जाने में त्रुटि हुई। कृपया नीचे से उत्तर दें।');
     }
   };
 
@@ -408,7 +718,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       {/* Top Header */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={onBackToOnboarding} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← वापस</Text>
+          <Text style={styles.backButtonText}>✕ छोड़ें</Text>
         </TouchableOpacity>
         <View style={styles.topTitleContainer}>
           <Text style={styles.topTitle}>योजनावाणी सहायक</Text>
@@ -416,20 +726,39 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
             प्रश्न {questionProgress.current} / {questionProgress.total}
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={() => setShowTextInput(!showTextInput)}
-          style={styles.keyboardToggle}
-        >
-          <Text style={styles.keyboardToggleText}>{showTextInput ? '🎙️' : '⌨️'}</Text>
-        </TouchableOpacity>
+        <View style={styles.topRightActions}>
+          <TouchableOpacity
+            onPress={() => setShowTextInput(!showTextInput)}
+            style={styles.keyboardToggle}
+            accessibilityLabel="कीबोर्ड दिखाएं/छिपाएं"
+          >
+            <Text style={styles.keyboardToggleText}>{showTextInput ? '⌨️' : '🎙️'}</Text>
+          </TouchableOpacity>
+          {questionProgress.current > 1 && (
+            <TouchableOpacity
+              onPress={handleGoBackQuestion}
+              style={styles.undoButton}
+              accessibilityLabel="पिछला सवाल सुधारें"
+            >
+              <Text style={styles.undoButtonText}>↶ पिछला</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Offline Alert Banner */}
       {isOffline && (
         <View style={styles.offlineBanner}>
           <Text style={styles.offlineText}>
-            ⚠️ इंटरनेट कनेक्शन नहीं है — {queuedItemsCount > 0 ? `${queuedItemsCount} उत्तर कतारबद्ध (Queued)` : 'ऑफ़लाइन मोड'}
+            ⚠️ {queuedItemsCount > 0 ? `${queuedItemsCount} उत्तर कतारबद्ध (Queued)` : 'ऑफ़लाइन मोड — इंटरनेट से जुड़ने का प्रयास'}
           </Text>
+          <TouchableOpacity
+            style={styles.retryBannerButton}
+            onPress={retryQueuedResponses}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.retryBannerButtonText}>🔄 दोबारा भेजें (Retry)</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -445,48 +774,141 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         />
         <Text style={styles.statusLabel}>
           {assistantState === 'speaking' && '🔊 योजनावाणी बोल रही है, कृपया सुनें...'}
-          {assistantState === 'listening' && (isRecording ? '🎙️ माइक चालू है, बोलिए...' : '🎙️ बोलने के लिए नीचे बड़ा माइक दबाएं')}
+          {assistantState === 'listening' && (isRecording ? '🎙️ योजनावाणी सुन रही है (Whisper ASR)...' : '🎙️ बोलने के लिए नीचे बड़ा माइक दबाएं')}
           {assistantState === 'thinking' && '⏳ जानकारी जाँची जा रही है, थोड़ा रुकें...'}
         </Text>
       </View>
 
-      {/* Primary Voice Prompt Banner */}
-      <View style={styles.promptCard}>
-        <Text style={styles.promptDevanagari}>{currentPrompt}</Text>
-      </View>
+      {/* Floating Current Question Pill (Only visible if the citizen has scrolled upwards into past chat) */}
+      {isScrolledAwayFromBottom && (
+        <TouchableOpacity
+          style={styles.floatingCurrentQuestionBanner}
+          activeOpacity={0.85}
+          onPress={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        >
+          <View style={styles.floatingQuestionHeader}>
+            <Text style={styles.floatingQuestionBadge}>📌 सवाल {questionProgress.current} (वर्तमान):</Text>
+            <Text style={styles.floatingQuestionAction}>वर्तमान सवाल पर जाएं ⤓</Text>
+          </View>
+          <Text style={styles.floatingQuestionText} numberOfLines={1}>
+            {currentPrompt}
+          </Text>
+        </TouchableOpacity>
+      )}
 
-      {/* Visual Chat Transcript (Secondary Channel) */}
+      {/* Live Streaming Speech Preview (Temp text on screen while speaking) */}
+      {isRecording && (
+        <View style={styles.liveStreamingCard}>
+          <View style={styles.liveHeader}>
+            <View style={styles.livePulseDot} />
+            <Text style={styles.liveStreamingTitle}>योजनावाणी सुन रही है (Live Whisper ASR):</Text>
+          </View>
+          <Text style={styles.liveStreamingText}>
+            {tempSpokenText ? `"${tempSpokenText}"` : 'बोलना शुरू करें, आपकी आवाज़ यहाँ दिखेगी...'}
+          </Text>
+        </View>
+      )}
+
+      {/* Comprehension Verification & Correction Card */}
+      {pendingConfirmation !== null && !isGeneratingSchemes && (
+        <View style={styles.confirmationCard}>
+          <View style={styles.confirmationHeaderRow}>
+            <Text style={styles.confirmationBadge}>🤖 सहायक ने समझा:</Text>
+            <TouchableOpacity
+              onPress={() => setPendingConfirmation(null)}
+              style={styles.dismissConfirmationButton}
+              accessibilityLabel="बंद करें"
+            >
+              <Text style={styles.dismissConfirmationText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.confirmationTextBubble}>
+            <Text style={styles.confirmationRecognizedText}>"{pendingConfirmation}"</Text>
+          </View>
+          <View style={styles.confirmationActionsRow}>
+            {/* RETRY / GO BACK & RE-SPEAK */}
+            <TouchableOpacity
+              style={styles.retryButton}
+              activeOpacity={0.8}
+              onPress={handleRetryVoiceInput}
+              accessibilityLabel="गलत सुना? दोबारा बोलें"
+            >
+              <Text style={styles.retryButtonText}>↺ गलत सुना? दोबारा बोलें</Text>
+            </TouchableOpacity>
+
+            {/* CONFIRM & PROCEED */}
+            <TouchableOpacity
+              style={styles.confirmButton}
+              activeOpacity={0.8}
+              onPress={handleConfirmSubmission}
+              accessibilityLabel="हाँ, सही है (आगे बढ़ें)"
+            >
+              <Text style={styles.confirmButtonText}>✓ हाँ, सही है (आगे बढ़ें)</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Visual Chat Transcript (Primary View, Full Height) */}
       <FlatList
+        ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.transcriptList}
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.chatBubble,
-              item.speaker === 'assistant' ? styles.bubbleAssistant : styles.bubbleCitizen,
-            ]}
-          >
-            <Text style={styles.speakerLabel}>
-              {item.speaker === 'assistant' ? '🤖 योजनावाणी सहायक' : '👤 आप'}
-            </Text>
-            <Text style={styles.bubbleText}>{item.text}</Text>
-          </View>
-        )}
+        onScroll={(event) => {
+          const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+          const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 60;
+          setIsScrolledAwayFromBottom(!isCloseToBottom);
+        }}
+        scrollEventThrottle={100}
+        onContentSizeChange={() => {
+          if (!isScrolledAwayFromBottom) {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }
+        }}
+        renderItem={({ item, index }) => {
+          const isLatestAssistant = item.speaker === 'assistant' && index === messages.length - 1;
+          return (
+            <View
+              style={[
+                styles.chatBubble,
+                item.speaker === 'assistant' ? styles.bubbleAssistant : styles.bubbleCitizen,
+                isLatestAssistant && styles.bubbleAssistantActive,
+              ]}
+            >
+              <View style={styles.bubbleHeaderRow}>
+                <Text style={[styles.speakerLabel, isLatestAssistant && styles.speakerLabelActive]}>
+                  {item.speaker === 'assistant'
+                    ? (isLatestAssistant ? `🤖 वर्तमान सवाल (सवाल ${questionProgress.current})` : '🤖 योजनावाणी सहायक')
+                    : '👤 आप (Whisper ASR)'}
+                </Text>
+                {isLatestAssistant && <View style={styles.activeDotBadge} />}
+              </View>
+              <Text style={[styles.bubbleText, isLatestAssistant && styles.bubbleTextActive]}>
+                {item.text}
+              </Text>
+            </View>
+          );
+        }}
       />
 
       {/* Optional Text Input Fallback */}
-      {showTextInput && (
+      {showTextInput && !isGeneratingSchemes && (
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.textInputContainer}
         >
           <TextInput
             style={styles.textInput}
-            placeholder="यहाँ बोलें (Gboard माइक 🎙️) या लिखें..."
+            placeholder="यहाँ बोलें या लिखें..."
             placeholderTextColor="#64748B"
             value={textInputFallback}
-            onChangeText={setTextInputFallback}
+            onChangeText={(text) => {
+              setTextInputFallback(text);
+              if (text && pendingConfirmation) {
+                setPendingConfirmation(null);
+              }
+            }}
             onSubmitEditing={() => submitCitizenResponse(textInputFallback)}
           />
           <TouchableOpacity
@@ -498,33 +920,91 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         </KeyboardAvoidingView>
       )}
 
-      {/* Main Center Voice Recording Button */}
-      <View style={styles.micControlArea}>
-        <Animated.View
-          style={[
-            styles.micHalo,
-            {
-              transform: [{ scale: pulseAnim }],
-              opacity: haloAnim,
-              backgroundColor: isRecording ? '#EF4444' : '#FF9933',
-            },
-          ]}
-        />
-        <TouchableOpacity
-          style={[styles.micButton, isRecording && styles.micButtonActive]}
-          activeOpacity={0.8}
-          onPress={handleMicPress}
-        >
-          {assistantState === 'thinking' ? (
-            <ActivityIndicator size="large" color="#FFFFFF" />
-          ) : (
-            <Text style={styles.micIconText}>{isRecording ? '⏹' : '🎙️'}</Text>
-          )}
-        </TouchableOpacity>
-        <Text style={styles.micInstruction}>
-          {isRecording ? '⏹ बोलना खत्म होने पर यहाँ दबाएं' : '🎙️ बोलने के लिए यहाँ दबाएं'}
-        </Text>
-      </View>
+      {/* Quick Suggestion Chips for Fast Vernacular Answering */}
+      {quickOptions && quickOptions.length > 0 && !isGeneratingSchemes && (
+        <View style={styles.quickOptionsContainer}>
+          <Text style={styles.quickOptionsHeader}>सुझाव / विकल्प (त्वरित चयन):</Text>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={quickOptions}
+            keyExtractor={(opt, idx) => `opt_${idx}_${opt}`}
+            contentContainerStyle={styles.quickOptionsList}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.quickOptionChip}
+                activeOpacity={0.7}
+                onPress={() => submitCitizenResponse(item)}
+              >
+                <Text style={styles.quickOptionText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      )}
+
+      {/* Dedicated Scheme Generation Screen Overlay when all questions are answered */}
+      {isGeneratingSchemes && (
+        <View style={styles.generatingOverlay}>
+          <View style={styles.generatingCard}>
+            <View style={styles.generatingSpinnerContainer}>
+              <ActivityIndicator size="large" color="#FF9933" />
+            </View>
+            <Text style={styles.generatingTitle}>आपकी जानकारी दर्ज कर ली गई है</Text>
+            <Text style={styles.generatingSubtitle}>
+              योजनावाणी आपके विवरण के आधार पर उपयुक्त सरकारी योजनाएं खोज रही है और पात्रता नियमों की जाँच कर रही है...
+            </Text>
+
+            <View style={styles.generatingVoiceBadge}>
+              <Text style={styles.generatingVoiceBadgeIcon}>🔊</Text>
+              <Text style={styles.generatingVoiceBadgeText}>
+                सहायक आपको बोलकर बता रहा है...
+              </Text>
+            </View>
+
+            <View style={styles.generatingStepsContainer}>
+              <View style={styles.stepItemRow}>
+                <Text style={styles.stepCheckIcon}>✓</Text>
+                <Text style={styles.stepCheckText}>बुनियादी साक्षात्कार पूर्ण (9/9 उत्तर प्राप्त)</Text>
+              </View>
+              <View style={styles.stepItemRow}>
+                <ActivityIndicator size="small" color="#FF9933" style={{ marginRight: 10 }} />
+                <Text style={styles.stepActiveText}>सरकारी योजनाओं से मिलान जारी (ChromaDB + Agent)...</Text>
+              </View>
+              <View style={styles.stepItemRow}>
+                <Text style={styles.stepPendingIcon}>⏳</Text>
+                <Text style={styles.stepPendingText}>पात्रता नियमों का मूल्यांकन (Deterministic Rules)</Text>
+              </View>
+            </View>
+
+            <View style={styles.generatingNoteBox}>
+              <Text style={styles.generatingNoteText}>
+                💡 कृपया कुछ क्षण प्रतीक्षा करें, परिणाम कुछ ही सेकंड में स्क्रीन पर प्रदर्शित होंगे।
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Main Center Voice Recording Button (Hidden during generating overlay) */}
+      {!isGeneratingSchemes && (
+        <View style={styles.micControlArea}>
+          <View style={styles.micButtonWrapper}>
+            <TouchableOpacity
+              style={[styles.micButton, isRecording && styles.micButtonActive]}
+              activeOpacity={0.82}
+              onPress={handleMicPress}
+            >
+              <View style={[styles.micInnerCircle, isRecording && styles.micInnerCircleActive]}>
+                <Text style={styles.micIconText}>{isRecording ? '⏹' : '🎙️'}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.micInstruction}>
+            {isRecording ? '⏹ बोलना खत्म होने पर यहाँ दबाएं' : '🎙️ बोलने के लिए यहाँ दबाएं'}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -573,14 +1053,29 @@ const styles = StyleSheet.create({
   },
   offlineBanner: {
     backgroundColor: '#7F1D1D',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   offlineText: {
     color: '#FECACA',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
+    flex: 1,
+  },
+  retryBannerButton: {
+    backgroundColor: '#FF9933',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  retryBannerButtonText: {
+    color: '#0A0F1D',
+    fontSize: 12,
+    fontWeight: '800',
   },
   statusIndicatorRow: {
     flexDirection: 'row',
@@ -609,58 +1104,126 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  promptCard: {
-    backgroundColor: '#1E293B',
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 10,
-    borderRadius: 16,
-    padding: 18,
-    borderLeftWidth: 6,
-    borderLeftColor: '#FF9933',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  promptDevanagari: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    lineHeight: 34,
-    fontWeight: '700',
+  topRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   transcriptList: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 12,
+    paddingBottom: 24,
+    flexGrow: 1,
   },
   chatBubble: {
-    maxWidth: '86%',
+    maxWidth: '88%',
     padding: 14,
     borderRadius: 16,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   bubbleAssistant: {
     alignSelf: 'flex-start',
     backgroundColor: '#1B263B',
     borderTopLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  bubbleAssistantActive: {
+    backgroundColor: '#1E293B',
+    borderColor: '#FF9933',
+    borderWidth: 2,
+    borderLeftWidth: 6,
+    borderLeftColor: '#FF9933',
+    shadowColor: '#FF9933',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
   },
   bubbleCitizen: {
     alignSelf: 'flex-end',
     backgroundColor: '#0F766E',
     borderTopRightRadius: 4,
   },
+  bubbleHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
   speakerLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#94A3B8',
-    marginBottom: 4,
+  },
+  speakerLabelActive: {
+    color: '#FFD166',
+    fontWeight: '800',
+  },
+  activeDotBadge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF9933',
   },
   bubbleText: {
     color: '#F8FAFC',
-    fontSize: 20,
+    fontSize: 19,
     lineHeight: 28,
     fontWeight: '500',
+  },
+  bubbleTextActive: {
+    color: '#FFFFFF',
+    fontSize: 21,
+    lineHeight: 30,
+    fontWeight: '700',
+  },
+  floatingCurrentQuestionBanner: {
+    backgroundColor: '#1E293B',
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderColor: '#FF9933',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  floatingQuestionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  floatingQuestionBadge: {
+    color: '#FFD166',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  floatingQuestionAction: {
+    color: '#60A5FA',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  floatingQuestionText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  dismissConfirmationButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: '#334155',
+    borderRadius: 12,
+  },
+  dismissConfirmationText: {
+    color: '#CBD5E1',
+    fontSize: 14,
+    fontWeight: '800',
   },
   textInputContainer: {
     flexDirection: 'row',
@@ -692,42 +1255,371 @@ const styles = StyleSheet.create({
   micControlArea: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
+    paddingVertical: 18,
     backgroundColor: '#0D1B2A',
     borderTopWidth: 1,
     borderTopColor: '#1E293B',
   },
-  micHalo: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  micButtonWrapper: {
+    width: 104,
+    height: 104,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   micButton: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: '#FF9933',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#FF9933',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
     elevation: 8,
+    shadowColor: '#FF9933',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    borderWidth: 3,
+    borderColor: '#FFAA44',
   },
   micButtonActive: {
     backgroundColor: '#EF4444',
+    borderColor: '#F87171',
+    shadowColor: '#EF4444',
+  },
+  micInnerCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#E67E00',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFD166',
+  },
+  micInnerCircleActive: {
+    backgroundColor: '#DC2626',
+    borderColor: '#FECACA',
   },
   micIconText: {
     fontSize: 42,
-    color: '#FFFFFF',
+    textAlign: 'center',
   },
   micInstruction: {
     color: '#F8FAFC',
-    fontSize: 17,
-    marginTop: 12,
+    fontSize: 16,
+    marginTop: 10,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  quickOptionsContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#0F172A',
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+  },
+  quickOptionsHeader: {
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  quickOptionsList: {
+    gap: 8,
+    paddingRight: 16,
+  },
+  quickOptionChip: {
+    backgroundColor: '#1E293B',
+    borderColor: '#FF9933',
+    borderWidth: 1.5,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+  quickOptionText: {
+    color: '#F8FAFC',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  undoButton: {
+    backgroundColor: '#334155',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#64748B',
+  },
+  undoButtonText: {
+    color: '#FFD166',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  goBackQuestionBar: {
+    backgroundColor: '#1E293B',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+    alignItems: 'center',
+  },
+  goBackQuestionText: {
+    color: '#93C5FD',
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  liveStreamingCard: {
+    backgroundColor: '#064E3B',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 6,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 2,
+    borderColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  liveHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  livePulseDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#34D399',
+    marginRight: 8,
+  },
+  liveStreamingTitle: {
+    color: '#A7F3D0',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  liveStreamingText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: '700',
+  },
+  confirmationCard: {
+    backgroundColor: '#1E293B',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 10,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#FF9933',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  confirmationHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  confirmationBadge: {
+    color: '#FFD166',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  confirmationHint: {
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  confirmationTextBubble: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  confirmationRecognizedText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    lineHeight: 30,
+    fontWeight: '700',
+  },
+  confirmationActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  retryButton: {
+    flex: 1,
+    backgroundColor: '#7F1D1D',
+    borderColor: '#EF4444',
+    borderWidth: 1.5,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryButtonText: {
+    color: '#FEE2E2',
+    fontSize: 14,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  confirmButton: {
+    flex: 1.2,
+    backgroundColor: '#059669',
+    borderColor: '#10B981',
+    borderWidth: 1.5,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  generatingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#0D1B2A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    zIndex: 999,
+    elevation: 10,
+  },
+  generatingCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FF9933',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  generatingSpinnerContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 18,
+    borderWidth: 2,
+    borderColor: '#FF9933',
+  },
+  generatingTitle: {
+    color: '#F8FAFC',
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  generatingSubtitle: {
+    color: '#94A3B8',
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  generatingStepsContainer: {
+    width: '100%',
+    backgroundColor: '#0F172A',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  stepItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 6,
+  },
+  stepCheckIcon: {
+    color: '#10B981',
+    fontSize: 16,
+    fontWeight: '900',
+    marginRight: 10,
+    width: 20,
+    textAlign: 'center',
+  },
+  stepCheckText: {
+    color: '#E2E8F0',
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+  },
+  stepActiveText: {
+    color: '#FFD166',
+    fontSize: 14,
+    fontWeight: '700',
+    flex: 1,
+  },
+  stepPendingIcon: {
+    fontSize: 14,
+    marginRight: 10,
+    width: 20,
+    textAlign: 'center',
+  },
+  stepPendingText: {
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  generatingNoteBox: {
+    backgroundColor: '#1E3A5F',
+    borderRadius: 10,
+    padding: 12,
+    width: '100%',
+  },
+  generatingNoteText: {
+    color: '#93C5FD',
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  generatingVoiceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FF9933',
+    marginVertical: 10,
+  },
+  generatingVoiceBadgeIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  generatingVoiceBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFD166',
   },
 });

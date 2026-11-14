@@ -84,12 +84,22 @@ def test_respond_audio_file_upload():
         wav.writeframes(b'\x00\x00' * 8000)
     buf.seek(0)
 
-    files = {"file": ("response.wav", buf, "audio/wav")}
-    res = client.post(f"/conversation/{cid}/respond", files=files)
-    assert res.status_code == 200
-    data = res.json()
-    assert "transcribed_text" in data
-    assert data["action"]["type"] == "ask_question"
+    from unittest.mock import patch
+    from app.services.asr_service import TranscriptionResult
+
+    with patch("app.api.conversation.get_asr_provider") as mock_asr:
+        mock_asr.return_value.transcribe.return_value = TranscriptionResult(
+            text="सावित्री देवी",
+            confidence=0.95,
+            language_code="hi",
+            low_confidence=False
+        )
+        files = {"file": ("response.wav", buf, "audio/wav")}
+        res = client.post(f"/conversation/{cid}/respond", files=files)
+        assert res.status_code == 200
+        data = res.json()
+        assert "transcribed_text" in data
+        assert data["action"]["type"] == "ask_question"
 
 
 def test_document_ocr_and_confirm_endpoints():
@@ -147,3 +157,43 @@ def test_get_conversation_state():
 
     missing_res = client.get("/conversation/non_existent_uuid_12345")
     assert missing_res.status_code == 404
+
+
+def test_get_conversation_report():
+    """Verify GET /conversation/{id}/report returns structured citizen report."""
+    start_res = client.post("/conversation/start")
+    cid = start_res.json()["conversation_id"]
+
+    # Confirm a document to populate collected_documents
+    client.post(
+        f"/conversation/{cid}/confirm_document",
+        data={
+            "confirmed": True,
+            "fields": json.dumps({"annual_income": 45000, "name": "रमेश कुमार", "document_type": "income_certificate"})
+        }
+    )
+
+    report_res = client.get(f"/conversation/{cid}/report")
+    assert report_res.status_code == 200
+    report = report_res.json()
+    assert report["conversation_id"] == cid
+    assert report["citizen_profile"]["name"] == "रमेश कुमार"
+
+
+def test_document_upload_json_and_sample():
+    """Verify POST /conversation/{id}/document with sample_key works seamlessly without manual file."""
+    start_res = client.post("/conversation/start")
+    cid = start_res.json()["conversation_id"]
+
+    # Post JSON specifying sample_key
+    res = client.post(
+        f"/conversation/{cid}/document",
+        json={"document_type": "income_certificate", "sample_key": "income_certificate"}
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["conversation_id"] == cid
+    assert data["document_type"] == "income_certificate"
+    assert "annual_income" in data["extracted_fields"]
+    assert data["extracted_fields"]["annual_income"] in [48000, 60000, "48000", "60000"]
+    assert data["mean_confidence"] > 0.80

@@ -239,8 +239,8 @@ class VasistaWhisperProvider(ASRProvider):
         rms_energy = float(np.sqrt(np.mean(waveform ** 2)))
         peak_amplitude = float(np.max(np.abs(waveform)))
         logger.info(f"ASR audio received: {len(waveform)} samples, sr={sr}, RMS energy={rms_energy:.6f}, Peak={peak_amplitude:.6f}")
-        if rms_energy < 0.005 and peak_amplitude < 0.035:
-            logger.warning(f"Audio energy below speech threshold (RMS {rms_energy:.6f} < 0.005, Peak {peak_amplitude:.6f} < 0.035). Treating as silence.")
+        if rms_energy < 0.001 and peak_amplitude < 0.01:
+            logger.warning(f"Audio energy below speech threshold (RMS {rms_energy:.6f} < 0.001, Peak {peak_amplitude:.6f} < 0.01). Treating as silence.")
             return TranscriptionResult(
                 text="",
                 confidence=0.0,
@@ -251,6 +251,7 @@ class VasistaWhisperProvider(ASRProvider):
         # Run inference through pipeline
         pipe = VasistaWhisperProvider._pipeline
         gen_kwargs = {
+            "max_new_tokens": 50,
             "no_repeat_ngram_size": 3,
             "repetition_penalty": 1.2,
         }

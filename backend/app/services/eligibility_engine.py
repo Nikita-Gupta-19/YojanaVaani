@@ -143,11 +143,12 @@ class EligibilityEngine:
         # 2. INCOME CHECK (income_ceiling, approx_income_bracket)
         # ---------------------------------------------------------------------
         ceiling = criteria.get("income_ceiling")
-        citizen_income_bracket = profile.get("approx_income_bracket")
+        citizen_income_bracket = profile.get("approx_income_bracket") or profile.get("income_bracket")
+        citizen_annual_income = profile.get("annual_income")
 
         if ceiling is not None and ceiling > 0:
             rule_desc = f"वार्षिक पारिवारिक आय अधिकतम ₹{ceiling:,.0f}"
-            if citizen_income_bracket is None:
+            if citizen_income_bracket is None and citizen_annual_income is None:
                 missing_fields.append("approx_income_bracket")
                 rule_details.append(RuleEvaluationDetail(
                     criterion_name="income",
@@ -157,17 +158,21 @@ class EligibilityEngine:
                     message="आय श्रेणी (Income Bracket) का विवरण अनुपलब्ध है।"
                 ))
             else:
-                # Deterministic bracket bounds mapping:
-                # "below_2_lakh" -> [0, 200,000]
-                # "2_to_5_lakh"  -> (200,000, 500,000]
-                # "above_5_lakh" -> > 500,000
                 disqualified = False
-                if ceiling <= 200000:
-                    if citizen_income_bracket in ["2_to_5_lakh", "above_5_lakh"]:
+                if citizen_annual_income is not None:
+                    if citizen_annual_income > ceiling:
                         disqualified = True
-                elif ceiling <= 500000:
-                    if citizen_income_bracket == "above_5_lakh":
-                        disqualified = True
+                elif citizen_income_bracket is not None:
+                    # Deterministic bracket bounds mapping:
+                    # "below_2_lakh" -> [0, 200,000]
+                    # "2_to_5_lakh"  -> (200,000, 500,000]
+                    # "above_5_lakh" -> > 500,000
+                    if ceiling <= 200000:
+                        if citizen_income_bracket in ["2_to_5_lakh", "above_5_lakh"]:
+                            disqualified = True
+                    elif ceiling <= 500000:
+                        if citizen_income_bracket == "above_5_lakh":
+                            disqualified = True
 
                 if disqualified:
                     reason = f"वार्षिक आय सीमा (₹{ceiling:,.0f}) से अधिक है (वर्तमान श्रेणी: {citizen_income_bracket})।"
@@ -191,7 +196,7 @@ class EligibilityEngine:
         # ---------------------------------------------------------------------
         # 3. SOCIAL RESERVATION CATEGORY (social_category)
         # ---------------------------------------------------------------------
-        allowed_cats_raw = criteria.get("social_category")
+        allowed_cats_raw = criteria.get("social_category") or criteria.get("social_categories")
         allowed_cats: Set[str] = set()
         if isinstance(allowed_cats_raw, list):
             allowed_cats = {c.strip().lower() for c in allowed_cats_raw if isinstance(c, str)}
@@ -343,9 +348,15 @@ class EligibilityEngine:
         # ---------------------------------------------------------------------
         # 6. OCCUPATION CHECK
         # ---------------------------------------------------------------------
-        req_occ = criteria.get("occupation")
-        if req_occ and isinstance(req_occ, str) and req_occ.strip().lower() not in ["all", "any"]:
-            rule_desc = f"व्यवसाय पात्रता: {req_occ}"
+        req_occ_raw = criteria.get("occupation") or criteria.get("occupations")
+        req_occs: List[str] = []
+        if isinstance(req_occ_raw, list):
+            req_occs = [str(o).strip() for o in req_occ_raw if str(o).strip().lower() not in ["all", "any"]]
+        elif isinstance(req_occ_raw, str) and req_occ_raw.strip().lower() not in ["all", "any"]:
+            req_occs = [req_occ_raw.strip()]
+
+        if req_occs:
+            rule_desc = f"व्यवसाय पात्रता: {', '.join(req_occs)}"
             citizen_occ = profile.get("occupation")
             if not citizen_occ:
                 missing_fields.append("occupation")
@@ -357,26 +368,80 @@ class EligibilityEngine:
                     message="नागरिक के व्यवसाय (Occupation) का विवरण अनुपलब्ध है।"
                 ))
             else:
-                c_occ_lower = citizen_occ.lower()
-                r_occ_lower = req_occ.lower()
+                c_occ_lower = citizen_occ.lower().strip()
 
-                # Specific check for farmer / kisan schemes
-                farmer_terms = ["farmer", "किसान", "खेती", "कृषि", "कृषक", "agriculture"]
-                is_farmer_scheme = any(t in r_occ_lower for t in farmer_terms)
-                is_citizen_farmer = any(t in c_occ_lower for t in farmer_terms)
+                # Comprehensive vernacular synonym clusters for statutory Indian occupations
+                OCCUPATION_CLUSTERS = {
+                    "street vendor": [
+                        "street vendor", "vendor", "hawker", "thela", "thele", "thelewala",
+                        "thele wala", "rehri", "patri", "pheri", "pheriwala", "khomcha",
+                        "khomchewala", "रेहड़ी", "ठेला", "पटरी", "फेरीवाला", "ठेले वाला",
+                        "खोमचा", "सड़क विक्रेता", "सड़क पर दुकान"
+                    ],
+                    "farmer": [
+                        "farmer", "kisan", "kheti", "krishi", "khet", "fasal", "agriculture",
+                        "krishak", "zamindar", "kashthakar", "किसान", "खेती", "कृषि", "कृषक", "फसल"
+                    ],
+                    "student": [
+                        "student", "chhatra", "vidyarthi", "padhai", "college", "school",
+                        "university", "matric", "छात्र", "छात्रा", "विद्यार्थी", "पढ़ाई", "कॉलेज", "स्कूल"
+                    ],
+                    "artisan": [
+                        "artisan", "karigar", "dastkar", "shilpkar", "bunkar", "weaver", "potter",
+                        "kumhar", "lohar", "badhai", "carpenter", "blacksmith", "goldsmith", "sonar",
+                        "vishwakarma", "कारीगर", "दस्तकार", "शिल्पकार", "बुनकर", "लोहार", "बढ़ई", "कुम्हार"
+                    ],
+                    "worker": [
+                        "worker", "labour", "majdoor", "majdoori", "dihadi", "bhavan nirman",
+                        "shramik", "construction", "beldaar", "mistri", "मजदूर", "मजदूरी", "दिहाड़ी",
+                        "श्रमिक", "निर्माण मजदूर"
+                    ],
+                    "safai karamchari": [
+                        "safai", "sweeper", "safai karmi", "safai karamchari", "cleaner",
+                        "sanitation", "सफाईकर्मी", "सफाई कर्मचारी", "सफाई"
+                    ],
+                    "self-employed": [
+                        "self-employed", "self employed", "swarojgar", "vyapar", "dukaan",
+                        "dukaandar", "chhota business", "apna kaam", "entrepreneur", "स्वरोजगार",
+                        "व्यापार", "दुकान", "व्यवसाय", "अपना काम"
+                    ],
+                    "unemployed": [
+                        "unemployed", "berojgar", "berojgari", "naukri", "jobless",
+                        "kaam dhoond raha", "बेरोजगार", "बेरोजगारी", "नौकरी", "युवा", "youth"
+                    ],
+                    "fisherman": [
+                        "fisherman", "machhuara", "machli", "fisheries", "मछुआरा", "मछली पालन"
+                    ],
+                }
 
-                if is_farmer_scheme and not is_citizen_farmer:
-                    reason = f"यह योजना किसानों के लिए है; नागरिक का व्यवसाय: {citizen_occ}।"
-                    disqualifications.append(reason)
-                    rule_details.append(RuleEvaluationDetail(
-                        criterion_name="occupation",
-                        status=EligibilityVerdictType.DOES_NOT_QUALIFY,
-                        expected_rule=rule_desc,
-                        citizen_value=citizen_occ,
-                        message=reason
-                    ))
-                elif not is_farmer_scheme and r_occ_lower not in c_occ_lower and c_occ_lower not in r_occ_lower:
-                    reason = f"यह योजना {req_occ} वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: {citizen_occ}।"
+                matched_any = False
+                for r_occ in req_occs:
+                    r_occ_lower = r_occ.lower().strip()
+
+                    # 1. Direct substring match
+                    if r_occ_lower in c_occ_lower or c_occ_lower in r_occ_lower:
+                        matched_any = True
+                        break
+
+                    # 2. Cluster matching
+                    for cluster_key, cluster_terms in OCCUPATION_CLUSTERS.items():
+                        scheme_in_cluster = (cluster_key in r_occ_lower) or any(t in r_occ_lower for t in cluster_terms)
+                        citizen_in_cluster = (cluster_key in c_occ_lower) or any(t in c_occ_lower for t in cluster_terms)
+                        if scheme_in_cluster and citizen_in_cluster:
+                            matched_any = True
+                            break
+
+                        # Street vendors and artisans are micro-enterprises / self-employed / informal workers
+                        if scheme_in_cluster and cluster_key in ["worker", "self-employed", "entrepreneur"]:
+                            if any(t in c_occ_lower for t in OCCUPATION_CLUSTERS["street vendor"]):
+                                matched_any = True
+                                break
+
+                    if matched_any:
+                        break
+
+                if not matched_any:
+                    reason = f"यह योजना {', '.join(req_occs)} वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: {citizen_occ}।"
                     disqualifications.append(reason)
                     rule_details.append(RuleEvaluationDetail(
                         criterion_name="occupation",
@@ -431,6 +496,46 @@ class EligibilityEngine:
                     citizen_value=True,
                     message="दिव्यांगता मानदंड सत्यापित है।"
                 ))
+
+        # ---------------------------------------------------------------------
+        # 7B. EDUCATION STAGE / SCHOLARSHIP LEVEL (Pre-Matric vs Post-Matric)
+        # ---------------------------------------------------------------------
+        s_name_lower = s_name.lower()
+        other_cond_text = str(criteria.get("other_conditions_text") or "").lower()
+        is_pre_matric_scheme = ("pre matric" in s_name_lower or "pre-matric" in s_name_lower or "पूर्व-दशम" in s_name_lower or "कक्षा 9" in other_cond_text or "class 9" in other_cond_text)
+        is_post_matric_scheme = ("post matric" in s_name_lower or "post-matric" in s_name_lower or "दशमोत्तर" in s_name_lower or "college" in s_name_lower or "higher education" in s_name_lower)
+
+        citizen_stated_need = str(profile.get("stated_need") or "").lower()
+        citizen_age_val = profile.get("age")
+        citizen_is_college_level = (
+            (citizen_age_val is not None and citizen_age_val >= 18) or
+            any(w in citizen_stated_need for w in ["post matric", "post-matric", "college", "university", "degree", "diploma", "कॉलेज", "विश्वविद्यालय"])
+        )
+        citizen_is_school_level = (
+            (citizen_age_val is not None and citizen_age_val < 16) or
+            any(w in citizen_stated_need for w in ["pre matric", "pre-matric", "school", "स्कूल", "कक्षा 9", "कक्षा 10"])
+        )
+
+        if is_pre_matric_scheme and citizen_is_college_level:
+            reason = "यह योजना पूर्व-दशम (Pre-Matric, कक्षा 9-10) स्कूली छात्रों के लिए है; कॉलेज या 18+ वर्ष के छात्र इसके पात्र नहीं हैं।"
+            disqualifications.append(reason)
+            rule_details.append(RuleEvaluationDetail(
+                criterion_name="education_stage",
+                status=EligibilityVerdictType.DOES_NOT_QUALIFY,
+                expected_rule="शिक्षा स्तर: पूर्व-दशम (Pre-Matric, कक्षा 9-10)",
+                citizen_value=f"कॉलेज/उच्च शिक्षा (आयु: {citizen_age_val} वर्ष)",
+                message=reason
+            ))
+        elif is_post_matric_scheme and citizen_is_school_level and not citizen_is_college_level:
+            reason = "यह योजना दशमोत्तर (Post-Matric / कॉलेज) छात्रों के लिए है; 10वीं कक्षा से नीचे के छात्र इसके पात्र नहीं हैं।"
+            disqualifications.append(reason)
+            rule_details.append(RuleEvaluationDetail(
+                criterion_name="education_stage",
+                status=EligibilityVerdictType.DOES_NOT_QUALIFY,
+                expected_rule="शिक्षा स्तर: दशमोत्तर (Post-Matric, 11वीं/कॉलेज)",
+                citizen_value=f"स्कूली स्तर (आयु: {citizen_age_val} वर्ष)",
+                message=reason
+            ))
 
         # ---------------------------------------------------------------------
         # 8. FREE-TEXT OTHER CONDITIONS (Manual Review Flags)

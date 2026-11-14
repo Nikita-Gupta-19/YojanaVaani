@@ -28,3 +28,4 @@ Please detail what command you ran and what it returned:
 - [ ] **Server-Side AI**: Mobile app remains a lightweight client (no local AI inference inside React Native).
 - [ ] **DPDP Privacy**: No real identity documents or citizen credentials committed.
 - [ ] **Tests Passing**: Pytest and Jest test suites execute with 0 failures.
+

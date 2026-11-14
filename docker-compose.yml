@@ -20,7 +20,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     container_name: yojanavaani_backend
     restart: unless-stopped

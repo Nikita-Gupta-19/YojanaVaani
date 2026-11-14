@@ -48,7 +48,7 @@ BASELINE_QUESTIONS: List[BaselineQuestion] = [
         hindi_text="आपकी उम्र कितने साल है?",
         transliteration="Aapki umar kitne saal hai?",
         prompt_explanation="Citizen's age in completed years",
-        sample_answers=["42 वर्ष", "पैंतालीस साल", "30", "पचपन"]
+        sample_answers=["25 साल", "35 साल", "45 साल", "59 साल", "65 साल"]
     ),
     BaselineQuestion(
         index=2,
@@ -56,7 +56,7 @@ BASELINE_QUESTIONS: List[BaselineQuestion] = [
         hindi_text="आप महिला हैं या पुरुष?",
         transliteration="Aap mahila hain ya purush?",
         prompt_explanation="Gender identification (Female, Male, Transgender, Other)",
-        sample_answers=["महिला", "पुरुष", "Female", "आदमी"]
+        sample_answers=["महिला", "पुरुष", "किन्नर / अन्य", "आदमी"]
     ),
     BaselineQuestion(
         index=3,
@@ -64,7 +64,7 @@ BASELINE_QUESTIONS: List[BaselineQuestion] = [
         hindi_text="आप किस राज्य और ज़िले में रहते हैं?",
         transliteration="Aap kis rajya aur zile mein rehte hain?",
         prompt_explanation="Geographic location (State and District of permanent residence)",
-        sample_answers=["उत्तर प्रदेश, बाराबंकी", "दिल्ली, शाहदra", "बिहार, पटना", "UP Lucknow"]
+        sample_answers=["उत्तर प्रदेश, लखनऊ", "दिल्ली, साउथ दिल्ली", "उत्तर प्रदेश, बाराबंकी", "बिहार, पटना"]
     ),
     BaselineQuestion(
         index=4,
@@ -77,10 +77,10 @@ BASELINE_QUESTIONS: List[BaselineQuestion] = [
     BaselineQuestion(
         index=5,
         field_name="social_category",
-        hindi_text="आप किस जाति या वर्ग में आते हैं — सामान्य, ओबीसी, एससी, या एसटी?",
-        transliteration="Aap kis jaati ya varg mein aate hain — Samanya, OBC, SC, ya ST?",
+        hindi_text="आप किस जाति या वर्ग में आते हैं — सामान्य, ओबीसी, अनुसूचित जाति (SC), या अनुसूचित जनजाति (ST)?",
+        transliteration="Aap kis jaati ya varg mein aate hain — Samanya, OBC, Scheduled Caste (SC), ya Scheduled Tribe (ST)?",
         prompt_explanation="Social category for statutory reservation/affirmative action benefits",
-        sample_answers=["ओबीसी", "सामान्य", "एससी", "एसटी", "OBC", "General"]
+        sample_answers=["सामान्य", "ओबीसी", "अनुसूचित जाति (SC)", "अनुसूचित जनजाति (ST)"]
     ),
     BaselineQuestion(
         index=6,

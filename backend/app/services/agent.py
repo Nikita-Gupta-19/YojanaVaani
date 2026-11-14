@@ -225,7 +225,10 @@ class YojanaVaaniAgent:
             verdicts = state.get("verdicts", [])
             qual_names = [v["scheme_name"] for v in verdicts if v.get("verdict") == "QUALIFIES"]
             if qual_names:
-                hindi_resp = f"आप {qual_names[0]} के लिए पात्र हैं। नियम सत्यापन पूर्ण हो चुका है।"
+                if len(qual_names) == 1:
+                    hindi_resp = f"बधाई हो! आप {qual_names[0]} के लिए पात्र हैं। नीचे योजना की पूरी जानकारी दी गई है।"
+                else:
+                    hindi_resp = f"बधाई हो! आप {len(qual_names)} सरकारी योजनाओं के लिए पात्र हैं, जिसमें {qual_names[0]} शामिल है।"
                 final_type = "results_ready"
             elif verdicts:
                 hindi_resp = f"जाँच पूरी हो गई है। {verdicts[0].get('scheme_name')}: {verdicts[0].get('reason', 'नियमों के अनुसार पात्रता सत्यापित नहीं हुई।')}"
@@ -299,7 +302,10 @@ class YojanaVaaniAgent:
                 verdicts = state.get("verdicts", [])
                 qual_names = [v["scheme_name"] for v in verdicts if v.get("verdict") == "QUALIFIES"]
                 if qual_names:
-                    hindi_resp = f"आप {qual_names[0]} के लिए पात्र हैं। नियम सत्यापन पूर्ण हो चुका है।"
+                    if len(qual_names) == 1:
+                        hindi_resp = f"बधाई हो! आप {qual_names[0]} के लिए पात्र हैं। नीचे योजना की पूरी जानकारी दी गई है।"
+                    else:
+                        hindi_resp = f"बधाई हो! आप {len(qual_names)} सरकारी योजनाओं के लिए पात्र हैं, जिसमें {qual_names[0]} शामिल है।"
                     final_type = "results_ready"
                 elif verdicts:
                     hindi_resp = f"जाँच पूरी हो गई है। {verdicts[0].get('scheme_name')}: {verdicts[0].get('reason', 'नियमों के अनुसार पात्रता सत्यापित नहीं हुई।')}"
@@ -382,7 +388,10 @@ class YojanaVaaniAgent:
         verdicts = state.get("verdicts", [])
         qual_names = [v["scheme_name"] for v in verdicts if v.get("verdict") == "QUALIFIES"]
         if qual_names:
-            hindi_resp = f"आप {qual_names[0]} के लिए पात्र हैं। नियम सत्यापन पूर्ण हो चुका है।"
+            if len(qual_names) == 1:
+                hindi_resp = f"बधाई हो! आप {qual_names[0]} के लिए पात्र हैं। नीचे योजना की पूरी जानकारी दी गई है।"
+            else:
+                hindi_resp = f"बधाई हो! आप {len(qual_names)} सरकारी योजनाओं के लिए पात्र हैं, जिसमें {qual_names[0]} शामिल है।"
         else:
             hindi_resp = "आपकी जानकारी के आधार पर योजना नियमों की जाँच पूरी कर ली गई है।"
 
@@ -416,7 +425,11 @@ class YojanaVaaniAgent:
 
             if t_name == "search_schemes":
                 query_str = t_args.get("query", state.get("stated_need", ""))
-                res_schemes = mcp_search_schemes(query=query_str, profile=state.get("citizen_profile"))
+                prof = dict(state.get("citizen_profile", {}))
+                if "stated_need" not in prof and state.get("stated_need"):
+                    prof["stated_need"] = state.get("stated_need")
+                top_k_arg = t_args.get("top_k", 5)
+                res_schemes = mcp_search_schemes(query=query_str, profile=prof, top_k=top_k_arg)
                 candidate_schemes = res_schemes
                 output_str = json.dumps(res_schemes, ensure_ascii=False)
 
@@ -429,11 +442,36 @@ class YojanaVaaniAgent:
 
             elif t_name == "check_eligibility":
                 # Execute deterministic rules tool
-                prof = state.get("citizen_profile", {})
+                prof = dict(state.get("citizen_profile", {}))
+                if "stated_need" not in prof and state.get("stated_need"):
+                    prof["stated_need"] = state.get("stated_need")
                 res_verdicts = mcp_check_eligibility(profile=prof, candidate_schemes=candidate_schemes)
                 verdicts = res_verdicts
                 final_type = "results_ready"
                 output_str = json.dumps(res_verdicts, ensure_ascii=False)
+
+                # Enrich candidate_schemes with verdicts and sort by eligibility rank
+                verdict_map = {v.get("scheme_id"): v for v in res_verdicts if v.get("scheme_id")}
+                verdict_name_map = {v.get("scheme_name", "").strip().lower(): v for v in res_verdicts if v.get("scheme_name")}
+
+                enriched_candidates = []
+                for cs in candidate_schemes:
+                    cs_copy = dict(cs)
+                    v_match = verdict_map.get(cs_copy.get("id")) or verdict_name_map.get(cs_copy.get("name", "").strip().lower())
+                    if v_match:
+                        cs_copy["verdict"] = v_match.get("verdict")
+                        cs_copy["reason"] = v_match.get("reason")
+                        cs_copy["disqualification_reasons"] = v_match.get("disqualification_reasons", [])
+                        cs_copy["missing_fields"] = v_match.get("missing_fields", [])
+                    else:
+                        cs_copy["verdict"] = "NEEDS_MORE_INFO"
+                        cs_copy["reason"] = "पात्रता नियमों की पुष्टि आवश्यक है।"
+                    enriched_candidates.append(cs_copy)
+
+                # Deterministic sorting: QUALIFIES (0) -> NEEDS_MORE_INFO (1) -> DOES_NOT_QUALIFY (2)
+                v_rank = {"QUALIFIES": 0, "NEEDS_MORE_INFO": 1, "DOES_NOT_QUALIFY": 2}
+                enriched_candidates.sort(key=lambda s: v_rank.get(s.get("verdict", ""), 3))
+                candidate_schemes = enriched_candidates
 
             elif t_name == "escalate_to_csc":
                 reason = t_args.get("reason", "Query unresolved")
@@ -518,11 +556,27 @@ class YojanaVaaniAgent:
             last_msg = final_state["messages"][-1]
             resp_text = getattr(last_msg, "content", "") or "योजना की जानकारी प्राप्त कर ली गई है।"
 
+        candidate_schemes = final_state.get("candidate_schemes", [])
+        verdicts = final_state.get("verdicts", [])
+        if verdicts and candidate_schemes:
+            verdict_map = {v.get("scheme_id"): v for v in verdicts if v.get("scheme_id")}
+            verdict_name_map = {v.get("scheme_name", "").strip().lower(): v for v in verdicts if v.get("scheme_name")}
+            for cs in candidate_schemes:
+                if not cs.get("verdict"):
+                    v_match = verdict_map.get(cs.get("id")) or verdict_name_map.get(cs.get("name", "").strip().lower())
+                    if v_match:
+                        cs["verdict"] = v_match.get("verdict")
+                        cs["reason"] = v_match.get("reason")
+                        cs["disqualification_reasons"] = v_match.get("disqualification_reasons", [])
+                        cs["missing_fields"] = v_match.get("missing_fields", [])
+            v_rank = {"QUALIFIES": 0, "NEEDS_MORE_INFO": 1, "DOES_NOT_QUALIFY": 2}
+            candidate_schemes.sort(key=lambda s: v_rank.get(s.get("verdict", ""), 3))
+
         return AgentRunResult(
             tools_called=final_state.get("tools_called", []),
-            candidate_schemes=final_state.get("candidate_schemes", []),
+            candidate_schemes=candidate_schemes,
             missing_facts=final_state.get("missing_facts", []),
-            verdicts=final_state.get("verdicts", []),
+            verdicts=verdicts,
             response_type=resp_type,
             response_text=resp_text,
             csc_info=final_state.get("csc_info"),

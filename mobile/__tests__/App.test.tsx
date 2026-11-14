@@ -8,7 +8,9 @@ import App from '../App';
 import { OnboardingScreen } from '../src/screens/OnboardingScreen';
 import { ConversationScreen } from '../src/screens/ConversationScreen';
 import { DocumentCaptureScreen } from '../src/screens/DocumentCaptureScreen';
-import { ResultsScreen } from '../src/screens/ResultsScreen';
+import { ResultsScreen, SchemeItem } from '../src/screens/ResultsScreen';
+import { SchemeDetailScreen } from '../src/screens/SchemeDetailScreen';
+import { ProfileReportScreen } from '../src/screens/ProfileReportScreen';
 import { EscalationScreen } from '../src/screens/EscalationScreen';
 import {
   clearQueue,
@@ -70,10 +72,10 @@ describe('Phase 7 React Native Mobile App Tests', () => {
     expect(root.findByProps({ children: 'योजनावाणी' })).toBeTruthy();
     // Check English title
     expect(root.findByProps({ children: 'YojanaVaani' })).toBeTruthy();
-    // Check permission description text
+    // Check greeting text
     expect(
       root.findByProps({
-        children: 'अपनी आवाज़ में बोलकर जवाब देने और अपनी बात बताने के लिए।',
+        children: 'नमस्ते! सिर्फ अपनी आवाज़ में बोलकर अपने हक की सरकारी योजनाएं खोजें।',
       })
     ).toBeTruthy();
 
@@ -92,7 +94,7 @@ describe('Phase 7 React Native Mobile App Tests', () => {
     });
 
     const root = renderer!.root;
-    const label = root.findByProps({ children: 'बातचीत शुरू करें (यहाँ दबाएं) 🎙️' });
+    const label = root.findByProps({ children: 'शुरू करने के लिए यहाँ दबाएं' });
     const touchable = findParentWithProp(label, 'onPress');
     expect(touchable).toBeTruthy();
 
@@ -267,5 +269,159 @@ describe('Phase 7 React Native Mobile App Tests', () => {
     expect(onlineStatus).toBe(true);
 
     unsub();
+  });
+
+  test('SchemeDetailScreen displays elaborate description, online vs CSC mention, and bulleted documents', async () => {
+    const mockScheme: SchemeItem = {
+      id: 542,
+      name: 'PM SVANidhi Micro Credit Scheme',
+      category: 'Labour & Employment',
+      government_name: 'Central Government',
+      verdict: 'QUALIFIES',
+      description: 'पीएम स्वनिधि योजना शहरी पथ विक्रेताओं (स्ट्रीट वेंडर्स) के लिए एक विशेष सूक्ष्म ऋण योजना है जिसके तहत कार्यशील पूंजी ऋण प्रदान किया जाता है।',
+      benefits: '₹10,000 से ₹50,000 तक का कार्यशील पूंजी ऋण एवं 7% ब्याज अनुदान सीधे बैंक खाते में।',
+      required_documents: [
+        { purpose: 'identity_proof', accepts: ['Aadhaar Card'], required: true },
+        { purpose: 'vendor_proof', accepts: ['Vending Certificate / LOR'], required: true },
+        { purpose: 'bank_account_proof', accepts: ['Bank Passbook'], required: true },
+      ],
+      application_process: 'Mode: Online. URL: https://pmsvanidhi.mohua.gov.in. Apply through portal or visit nearest CSC kiosk.',
+      application_url: 'https://pmsvanidhi.mohua.gov.in',
+    };
+
+    const mockScanDocs = jest.fn();
+    const mockViewReport = jest.fn();
+    const mockBack = jest.fn();
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <SchemeDetailScreen
+          conversationId="test_uuid_123"
+          scheme={mockScheme}
+          citizenProfile={{ name: 'रामवती', occupation: 'दुकानदार' }}
+          onNavigateToDocumentScan={mockScanDocs}
+          onNavigateToReport={mockViewReport}
+          onBack={mockBack}
+        />
+      );
+    });
+
+    const root = renderer!.root;
+    // Check scheme name and elaborate description
+    expect(root.findByProps({ children: 'PM SVANidhi Micro Credit Scheme' })).toBeTruthy();
+    expect(root.findByProps({ children: 'योजना का विस्तृत विवरण' })).toBeTruthy();
+    expect(
+      root.findByProps({
+        children: 'पीएम स्वनिधि योजना शहरी पथ विक्रेताओं (स्ट्रीट वेंडर्स) के लिए एक विशेष सूक्ष्म ऋण योजना है जिसके तहत कार्यशील पूंजी ऋण प्रदान किया जाता है।',
+      })
+    ).toBeTruthy();
+
+    // Check online vs offline CSC mention
+    expect(root.findByProps({ children: 'आवेदन का माध्यम (ऑनलाइन या सीएससी केंद्र?)' })).toBeTruthy();
+    expect(
+      root.findAllByProps({
+        children: '🌐 ऑनलाइन आवेदन (वेबसाइट / पोर्टल द्वारा सीधे घर बैठे)',
+      }).length
+    ).toBeGreaterThan(0);
+
+    // Check bulleted documents section
+    expect(root.findByProps({ children: 'आवश्यक दस्तावेज़ (Required Documents)' })).toBeTruthy();
+    expect(root.findByProps({ children: 'आधार कार्ड (Aadhaar Card)' })).toBeTruthy();
+    expect(root.findByProps({ children: 'बैंक पासबुक (Bank Passbook)' })).toBeTruthy();
+
+    // Check document scanning button triggers callback
+    const scanBtnLabel = root.findByProps({ children: '📸 आवश्यक दस्तावेज़ स्कैन करें (Scan Now)' });
+    const scanTouchable = findParentWithProp(scanBtnLabel, 'onPress');
+    expect(scanTouchable).toBeTruthy();
+
+    await ReactTestRenderer.act(async () => {
+      scanTouchable.props.onPress();
+    });
+    expect(mockScanDocs).toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      renderer.unmount();
+    });
+  });
+
+  test('ProfileReportScreen renders complete personal details, verified document facts, and scheme summary', async () => {
+    const mockProfile = {
+      name: 'रामवती',
+      age: 42,
+      gender: 'Female',
+      state: 'उत्तर प्रदेश',
+      district: 'बाराबंकी',
+      social_category: 'अन्य पिछड़ा वर्ग (OBC)',
+      occupation: 'खेती / किसान',
+      disability_status: false,
+      approx_income_bracket: 'below_2_lakh',
+      stated_need: 'सोलर पंप सिंचाई सहायता योजना',
+    };
+
+    const mockDocs = [
+      {
+        document_type: 'income_certificate',
+        extracted_fields: {
+          annual_income: 45000,
+          name: 'रामवती',
+          district: 'बाराबंकी',
+        },
+        confidence_score: 0.95,
+        verification_status: 'verified',
+      },
+    ];
+
+    const mockScheme: SchemeItem = {
+      id: 101,
+      name: 'पीएम कुसुम सोलर पंप योजना',
+      category: 'Agriculture',
+      verdict: 'QUALIFIES',
+      application_process: 'Mode: Offline via CSC and Agriculture Department',
+    };
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <ProfileReportScreen
+          conversationId="test_uuid_123"
+          citizenProfile={mockProfile}
+          selectedScheme={mockScheme}
+          verifiedDocuments={mockDocs}
+          onNavigateToScanMore={jest.fn()}
+          onBackToSchemes={jest.fn()}
+          onStartNewConversation={jest.fn()}
+        />
+      );
+    });
+
+    const root = renderer!.root;
+    // Check Title
+    expect(root.findByProps({ children: 'नागरिक संपूर्ण व्यक्तिगत विवरण' })).toBeTruthy();
+
+    // Check personal details
+    expect(root.findAllByProps({ children: 'रामवती' }).length).toBeGreaterThan(0);
+    expect(root.findByProps({ children: '42 वर्ष' })).toBeTruthy();
+    expect(root.findByProps({ children: 'महिला (Female)' })).toBeTruthy();
+    expect(root.findByProps({ children: 'राज्य व जिला (Location):' })).toBeTruthy();
+    expect(root.findByProps({ children: '₹2,00,000 से कम (गरीबी रेखा/कम आय वर्ग)' })).toBeTruthy();
+
+    // Check verified document OCR details
+    expect(root.findByProps({ children: 'आय प्रमाण पत्र (Income Certificate)' })).toBeTruthy();
+    expect(root.findByProps({ children: '45000' })).toBeTruthy();
+    expect(root.findByProps({ children: '✓ प्रमाणित (OCR)' })).toBeTruthy();
+    expect(root.findByProps({ children: '95% मैच' })).toBeTruthy();
+
+    // Check scheme and application mode
+    expect(root.findByProps({ children: 'पीएम कुसुम सोलर पंप योजना' })).toBeTruthy();
+    expect(
+      root.findByProps({
+        children: '🏢 ऑफलाइन आवेदन (CSC / जन सेवा केंद्र आवश्यक)',
+      })
+    ).toBeTruthy();
+
+    await ReactTestRenderer.act(async () => {
+      renderer.unmount();
+    });
   });
 });
