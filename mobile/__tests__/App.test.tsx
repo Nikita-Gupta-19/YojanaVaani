@@ -500,4 +500,44 @@ describe('Phase 7 React Native Mobile App Tests', () => {
     clearAllUserSessions();
     expect(getUserSessions().length).toBe(0);
   });
+
+  test('DocumentCaptureScreen and SchemeDetailScreen handle any required document dynamically (e.g. Bank Passbook, Caste Certificate)', async () => {
+    const { getDocumentTypeInfo } = require('../src/screens/SchemeDetailScreen');
+
+    // 1. Verify getDocumentTypeInfo maps documents distinctly
+    const bankInfo = getDocumentTypeInfo('बैंक पासबुक');
+    expect(bankInfo.key).toBe('bank_passbook');
+    expect(bankInfo.displayName).toContain('बैंक पासबुक');
+
+    const casteInfo = getDocumentTypeInfo('जाति प्रमाण पत्र');
+    expect(casteInfo.key).toBe('caste_certificate');
+    expect(casteInfo.displayName).toContain('जाति प्रमाण पत्र');
+
+    const customInfo = getDocumentTypeInfo('मत्स्य पालन पंजीकरण प्रमाण');
+    expect(customInfo.key).toContain('custom_');
+
+    // 2. Render DocumentCaptureScreen with Bank Passbook and verify banner shows exact title
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DocumentCaptureScreen
+          conversationId="test_conv_doc_dynamic"
+          documentType="bank_passbook"
+          documentDisplayName="बैंक पासबुक (Bank Passbook)"
+          alreadyVerifiedDocTypes={['aadhaar_card']}
+          onConfirmationComplete={jest.fn()}
+          onCancel={jest.fn()}
+        />
+      );
+    });
+
+    const root = renderer!.root;
+    // Must display the exact requested document title at top, NOT one of the 4 predefined fallback ones
+    const banners = root.findAllByProps({ children: 'बैंक पासबुक (Bank Passbook)' });
+    expect(banners.length).toBeGreaterThanOrEqual(1);
+
+    await ReactTestRenderer.act(async () => {
+      renderer.unmount();
+    });
+  });
 });

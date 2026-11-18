@@ -256,6 +256,9 @@ class OCRService:
         candidates.extend(cls._extract_ration_card_fields(raw_text, avg_base_conf))
         candidates.extend(cls._extract_khasra_fields(raw_text, avg_base_conf))
         candidates.extend(cls._extract_aadhaar_fields(raw_text, avg_base_conf, citizen_name=citizen_name))
+        candidates.extend(cls._extract_bank_passbook_fields(raw_text, avg_base_conf))
+        candidates.extend(cls._extract_caste_certificate_fields(raw_text, avg_base_conf))
+        candidates.extend(cls._extract_disability_certificate_fields(raw_text, avg_base_conf))
         candidates.extend(cls._extract_generic_key_values(raw_text, avg_base_conf))
 
         # Deduplicate fields keeping the one with highest confidence
@@ -274,17 +277,28 @@ class OCRService:
             fields_dict["name"] = citizen_name.strip()
             conf_dict["name"] = 0.96
 
-        # Auto-detect document type from OCR text keywords
+        # Auto-detect document type from OCR text keywords or preserve caller's explicit document_type
         detected_type = document_type
         text_lower = raw_text.lower()
-        if any(w in text_lower for w in ["aadhaar", "aadhar", "आधार", "uidai", "unique identification"]):
-            detected_type = "aadhaar_card"
-        elif any(w in text_lower for w in ["ration", "राशन", "nfsa", "खाद्य सुरक्षा"]):
-            detected_type = "ration_card"
-        elif any(w in text_lower for w in ["khasra", "khatauni", "खसरा", "खतौनी", "भूलेख", "रकबा"]):
-            detected_type = "khasra_khatauni"
-        elif any(w in text_lower for w in ["income", "आय प्रमाण", "revenue department", "वार्षिक आय"]):
-            detected_type = "income_certificate"
+        if document_type in [None, "", "generic"]:
+            if any(w in text_lower for w in ["aadhaar", "aadhar", "आधार", "uidai", "unique identification"]):
+                detected_type = "aadhaar_card"
+            elif any(w in text_lower for w in ["ration", "राशन", "nfsa", "खाद्य सुरक्षा"]):
+                detected_type = "ration_card"
+            elif any(w in text_lower for w in ["khasra", "khatauni", "खसरा", "खतौनी", "भूलेख", "रकबा"]):
+                detected_type = "khasra_khatauni"
+            elif any(w in text_lower for w in ["income", "आय प्रमाण", "revenue department", "वार्षिक आय"]):
+                detected_type = "income_certificate"
+            elif any(w in text_lower for w in ["bank", "passbook", "बैंक", "पासबुक", "खाता", "ifsc"]):
+                detected_type = "bank_passbook"
+            elif any(w in text_lower for w in ["caste", "जाति", "अनुसूची"]):
+                detected_type = "caste_certificate"
+            elif any(w in text_lower for w in ["disability", "दिव्यांग", "विकलांग", "udid"]):
+                detected_type = "disability_certificate"
+            elif any(w in text_lower for w in ["domicile", "निवास"]):
+                detected_type = "domicile_certificate"
+        else:
+            detected_type = document_type
 
         return OCRResult(
             document_type=detected_type,
@@ -817,6 +831,114 @@ class OCRService:
                 field_value=clean_state,
                 raw_text=state_match.group(0),
                 confidence=min(0.94, max(0.68, base_conf))
+            ))
+
+        return fields
+
+    @staticmethod
+    def _extract_bank_passbook_fields(text: str, base_conf: float) -> List[ExtractedField]:
+        """Extracts fields from Bank Passbooks (Account Number, IFSC, Bank Name)."""
+        fields: List[ExtractedField] = []
+
+        # 1. IFSC Code
+        ifsc_match = re.search(r"\b([A-Z]{4}0[A-Z0-9]{6})\b", text, re.IGNORECASE)
+        if ifsc_match:
+            fields.append(ExtractedField(
+                field_name="ifsc_code",
+                field_value=ifsc_match.group(1).upper(),
+                raw_text=ifsc_match.group(0),
+                confidence=min(0.98, max(0.85, base_conf + 0.08))
+            ))
+
+        # 2. Account Number (9 to 18 digits)
+        acc_match = re.search(
+            r"(?:खाता\s*(?:क्रमांक|संख्या|नं\.?)|A/?c\s*(?:No\.?|Number)|Account\s*(?:No\.?|Number))[^\d\n]*([0-9]{9,18})",
+            text, re.IGNORECASE
+        )
+        if not acc_match:
+            acc_match = re.search(r"\b([0-9]{11,18})\b", text)
+        if acc_match:
+            fields.append(ExtractedField(
+                field_name="account_number",
+                field_value=acc_match.group(1).strip(),
+                raw_text=acc_match.group(0),
+                confidence=min(0.96, max(0.80, base_conf + 0.05))
+            ))
+
+        # 3. Bank Name
+        for b_name in ["State Bank of India", "भारतीय स्टेट बैंक", "Bank of Baroda", "बैंक ऑफ बड़ौदा", "Punjab National Bank", "पंजाब नेशनल बैंक", "Canara Bank", "Union Bank"]:
+            if b_name.lower() in text.lower():
+                fields.append(ExtractedField(
+                    field_name="bank_name",
+                    field_value=b_name,
+                    raw_text=b_name,
+                    confidence=min(0.95, max(0.82, base_conf))
+                ))
+                break
+
+        return fields
+
+    @staticmethod
+    def _extract_caste_certificate_fields(text: str, base_conf: float) -> List[ExtractedField]:
+        """Extracts fields from Caste / Category Certificates."""
+        fields: List[ExtractedField] = []
+
+        # Category
+        if any(w in text.lower() for w in ["scheduled caste", "अनुसूचित जाति", "sc"]):
+            fields.append(ExtractedField(
+                field_name="social_category",
+                field_value="SC",
+                raw_text="अनुसूचित जाति (SC)",
+                confidence=min(0.96, max(0.85, base_conf))
+            ))
+        elif any(w in text.lower() for w in ["scheduled tribe", "अनुसूचित जनजाति", "st"]):
+            fields.append(ExtractedField(
+                field_name="social_category",
+                field_value="ST",
+                raw_text="अनुसूचित जनजाति (ST)",
+                confidence=min(0.96, max(0.85, base_conf))
+            ))
+        elif any(w in text.lower() for w in ["other backward", "अन्य पिछड़ा वर्ग", "obc"]):
+            fields.append(ExtractedField(
+                field_name="social_category",
+                field_value="OBC",
+                raw_text="अन्य पिछड़ा वर्ग (OBC)",
+                confidence=min(0.96, max(0.85, base_conf))
+            ))
+
+        # Certificate Number
+        cst_num = re.search(r"([A-Z]{2}-?[A-Z]{2,4}-?[0-9]{4}-?[0-9]{4,8})", text, re.IGNORECASE)
+        if cst_num:
+            fields.append(ExtractedField(
+                field_name="certificate_number",
+                field_value=cst_num.group(1).upper(),
+                raw_text=cst_num.group(0),
+                confidence=min(0.95, max(0.80, base_conf))
+            ))
+
+        return fields
+
+    @staticmethod
+    def _extract_disability_certificate_fields(text: str, base_conf: float) -> List[ExtractedField]:
+        """Extracts fields from Disability / UDID Certificates."""
+        fields: List[ExtractedField] = []
+
+        pct_match = re.search(r"(\d{1,3})\s*%", text)
+        if pct_match:
+            fields.append(ExtractedField(
+                field_name="disability_percentage",
+                field_value=f"{pct_match.group(1)}%",
+                raw_text=pct_match.group(0),
+                confidence=min(0.96, max(0.82, base_conf))
+            ))
+
+        udid_match = re.search(r"\b([A-Z]{2}[0-9]{10,16})\b", text)
+        if udid_match:
+            fields.append(ExtractedField(
+                field_name="udid_number",
+                field_value=udid_match.group(1).upper(),
+                raw_text=udid_match.group(0),
+                confidence=min(0.98, max(0.85, base_conf))
             ))
 
         return fields

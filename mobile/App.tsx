@@ -4,7 +4,7 @@ import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { ConversationScreen } from './src/screens/ConversationScreen';
 import { DocumentCaptureScreen } from './src/screens/DocumentCaptureScreen';
 import { ResultsScreen, SchemeItem } from './src/screens/ResultsScreen';
-import { SchemeDetailScreen } from './src/screens/SchemeDetailScreen';
+import { SchemeDetailScreen, getDocumentTypeInfo } from './src/screens/SchemeDetailScreen';
 import { ProfileReportScreen, VerifiedDocument } from './src/screens/ProfileReportScreen';
 import { EscalationScreen, CSCInfo } from './src/screens/EscalationScreen';
 import { stopTTSAudio } from './src/services/audioService';
@@ -26,6 +26,7 @@ export default function App(): React.JSX.Element {
   // Shared session parameters
   const [activeConversationId, setActiveConversationId] = useState<string>('');
   const [targetDocumentType, setTargetDocumentType] = useState<string>('income_certificate');
+  const [targetDocumentDisplayName, setTargetDocumentDisplayName] = useState<string>('');
   const [documentScanOrigin, setDocumentScanOrigin] = useState<'conversation' | 'schemeDetail'>('conversation');
   const [resultsSchemes, setResultsSchemes] = useState<SchemeItem[]>([]);
   const [resultsSpokenText, setResultsSpokenText] = useState<string>('');
@@ -45,10 +46,12 @@ export default function App(): React.JSX.Element {
   const navigateToDocument = (
     convId: string,
     docType: string,
-    origin: 'conversation' | 'schemeDetail' = 'conversation'
+    origin: 'conversation' | 'schemeDetail' = 'conversation',
+    docDisplayName?: string
   ) => {
     setActiveConversationId(convId);
     setTargetDocumentType(docType);
+    setTargetDocumentDisplayName(docDisplayName || '');
     setDocumentScanOrigin(origin);
     setCurrentScreen('DocumentCapture');
   };
@@ -92,23 +95,32 @@ export default function App(): React.JSX.Element {
     updatedProfile?: any
   ) => {
     if (confirmedFields && Object.keys(confirmedFields).length > 0) {
+      const docType = confirmedFields.document_type || targetDocumentType;
+      const docName = confirmedFields.document_name || targetDocumentDisplayName || docType;
       const newDoc: VerifiedDocument = {
-        document_type: confirmedFields.document_type || targetDocumentType,
-        extracted_fields: confirmedFields,
+        document_type: docType,
+        extracted_fields: {
+          ...confirmedFields,
+          document_type: docType,
+          document_name: docName,
+        },
         verification_status: 'verified',
         confidence_score: confirmedFields.confidence || 0.94,
         confirmed_at: new Date().toISOString(),
       };
-      setVerifiedDocuments((prev) => [...prev, newDoc]);
+      setVerifiedDocuments((prev) => {
+        const filtered = prev.filter((d) => d.document_type.toLowerCase() !== docType.toLowerCase());
+        return [...filtered, newDoc];
+      });
     }
 
     if (updatedProfile) {
       setCitizenProfile(updatedProfile);
     }
 
-    // If document scan was initiated from Scheme Detail Screen, transition immediately to Profile Report
+    // If document scan was initiated from Scheme Detail Screen, return to Scheme Detail Screen so user sees the verified badge!
     if (documentScanOrigin === 'schemeDetail') {
-      setCurrentScreen('ProfileReport');
+      setCurrentScreen('SchemeDetail');
       return;
     }
 
@@ -142,44 +154,49 @@ export default function App(): React.JSX.Element {
   const getNextNeededDocumentType = (
     verifiedList: VerifiedDocument[],
     scheme: SchemeItem | null
-  ): string => {
-    const verifiedSet = new Set((verifiedList || []).map((d) => d.document_type.toLowerCase()));
+  ): { key: string; name: string } => {
+    const verifiedKeys = new Set((verifiedList || []).map((d) => d.document_type.toLowerCase()));
 
-    if (scheme) {
-      const schemeText = `${scheme.name || ''} ${scheme.category || ''} ${(scheme as any).brief_description || ''}`.toLowerCase();
-      const schemeDocPriorities: string[] = [];
-      if (
-        schemeText.includes('किसान') ||
-        schemeText.includes('kisan') ||
-        schemeText.includes('कृषि') ||
-        schemeText.includes('bhoomi')
-      ) {
-        schemeDocPriorities.push('khasra_khatauni');
+    if (scheme && scheme.required_documents) {
+      let rawDocs: any[] = [];
+      const reqDocs = scheme.required_documents;
+      if (Array.isArray(reqDocs)) {
+        rawDocs = reqDocs;
+      } else if (typeof reqDocs === 'string') {
+        try {
+          rawDocs = JSON.parse(reqDocs);
+        } catch (_e) {
+          rawDocs = reqDocs.split(',');
+        }
       }
-      if (
-        schemeText.includes('राशन') ||
-        schemeText.includes('ration') ||
-        schemeText.includes('अन्न') ||
-        schemeText.includes('खाद्य')
-      ) {
-        schemeDocPriorities.push('ration_card');
-      }
-      schemeDocPriorities.push('income_certificate', 'aadhaar_card', 'ration_card', 'khasra_khatauni');
 
-      for (const doc of schemeDocPriorities) {
-        if (!verifiedSet.has(doc)) {
-          return doc;
+      for (const item of rawDocs) {
+        const rawName =
+          typeof item === 'object' && item !== null
+            ? item.accepts?.[0] || item.notes || item.purpose || ''
+            : String(item);
+        if (rawName) {
+          const info = getDocumentTypeInfo(rawName);
+          if (!verifiedKeys.has(info.key.toLowerCase())) {
+            return { key: info.key, name: info.displayName };
+          }
         }
       }
     }
 
-    const allOrder = ['income_certificate', 'ration_card', 'khasra_khatauni', 'aadhaar_card'];
-    for (const doc of allOrder) {
-      if (!verifiedSet.has(doc)) {
-        return doc;
+    const defaultPriorities = [
+      { key: 'bank_passbook', name: 'बैंक पासबुक (Bank Passbook)' },
+      { key: 'income_certificate', name: 'आय प्रमाण पत्र (Income Certificate)' },
+      { key: 'aadhaar_card', name: 'आधार कार्ड (Aadhaar Card)' },
+      { key: 'ration_card', name: 'राशन कार्ड (Ration Card)' },
+      { key: 'khasra_khatauni', name: 'खसरा / खतौनी भू-अभिलेख (Land Record)' },
+    ];
+    for (const d of defaultPriorities) {
+      if (!verifiedKeys.has(d.key.toLowerCase())) {
+        return d;
       }
     }
-    return 'income_certificate';
+    return { key: 'bank_passbook', name: 'बैंक पासबुक (Bank Passbook)' };
   };
 
   const renderActiveScreen = () => {
@@ -200,6 +217,7 @@ export default function App(): React.JSX.Element {
           <DocumentCaptureScreen
             conversationId={activeConversationId}
             documentType={targetDocumentType}
+            documentDisplayName={targetDocumentDisplayName}
             alreadyVerifiedDocTypes={verifiedDocuments.map((d) => d.document_type)}
             onConfirmationComplete={handleDocumentConfirmationComplete}
             onCancel={() => {
@@ -237,8 +255,8 @@ export default function App(): React.JSX.Element {
             scheme={selectedScheme}
             citizenProfile={citizenProfile}
             verifiedDocuments={verifiedDocuments}
-            onNavigateToDocumentScan={(docType) =>
-              navigateToDocument(activeConversationId, docType, 'schemeDetail')
+            onNavigateToDocumentScan={(docType, docDisplayName) =>
+              navigateToDocument(activeConversationId, docType, 'schemeDetail', docDisplayName)
             }
             onNavigateToReport={navigateToReport}
             onBack={() => setCurrentScreen('Results')}
@@ -266,7 +284,7 @@ export default function App(): React.JSX.Element {
             verifiedDocuments={verifiedDocuments}
             onNavigateToScanMore={() => {
               const nextDoc = getNextNeededDocumentType(verifiedDocuments, selectedScheme);
-              navigateToDocument(activeConversationId, nextDoc, 'schemeDetail');
+              navigateToDocument(activeConversationId, nextDoc.key, 'schemeDetail', nextDoc.name);
             }}
             onBackToSchemes={() => setCurrentScreen('Results')}
             onStartNewConversation={handleRestart}

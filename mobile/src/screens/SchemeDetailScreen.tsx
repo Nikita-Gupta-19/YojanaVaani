@@ -19,7 +19,7 @@ interface SchemeDetailScreenProps {
   scheme: SchemeItem;
   citizenProfile?: Record<string, any>;
   verifiedDocuments?: any[];
-  onNavigateToDocumentScan: (documentType: string) => void;
+  onNavigateToDocumentScan: (documentType: string, documentDisplayName?: string) => void;
   onNavigateToReport: () => void;
   onBack: () => void;
 }
@@ -457,17 +457,232 @@ export const formatBenefitsHindi = (benefits: any, schemeName?: string): string 
   return 'सरकारी नियमों के अनुसार निर्धारित आर्थिक सहायता, सब्सिडी अथवा छात्रवृत्ति सीधे लाभार्थी के बैंक खाते (DBT) में प्रदान की जाएगी।';
 };
 
+export interface DocumentTypeInfo {
+  key: string;
+  displayName: string;
+  hindiName: string;
+  emoji: string;
+}
+
+export const getDocumentTypeInfo = (docName: string): DocumentTypeInfo => {
+  const dLower = (docName || '').toLowerCase();
+
+  // 1. Aadhaar Card
+  if (dLower.includes('aadhaar') || dLower.includes('आधार') || dLower.includes('uidai') || dLower.includes('identity')) {
+    return {
+      key: 'aadhaar_card',
+      displayName: 'आधार कार्ड (Aadhaar Card)',
+      hindiName: 'आधार पहचान पत्र',
+      emoji: '🪪',
+    };
+  }
+
+  // 2. Land Record / Khasra-Khatauni
+  if (
+    dLower.includes('khasra') ||
+    dLower.includes('khatauni') ||
+    dLower.includes('खसरा') ||
+    dLower.includes('खतौनी') ||
+    dLower.includes('भू-अभिलेख') ||
+    dLower.includes('land') ||
+    dLower.includes('रकबा') ||
+    dLower.includes('patta') ||
+    dLower.includes('पट्टा')
+  ) {
+    return {
+      key: 'khasra_khatauni',
+      displayName: 'खसरा / खतौनी भू-अभिलेख (Land Record)',
+      hindiName: 'खसरा / खतौनी भू-अभिलेख',
+      emoji: '🚜',
+    };
+  }
+
+  // 3. Ration Card
+  if (dLower.includes('ration') || dLower.includes('राशन') || dLower.includes('bpl') || dLower.includes('aay')) {
+    return {
+      key: 'ration_card',
+      displayName: 'राशन कार्ड (Ration Card)',
+      hindiName: 'राशन कार्ड',
+      emoji: '🌾',
+    };
+  }
+
+  // 4. Income Certificate
+  if (dLower.includes('income') || dLower.includes('आय प्रमाण') || dLower.includes('salary slip')) {
+    return {
+      key: 'income_certificate',
+      displayName: 'आय प्रमाण पत्र (Income Certificate)',
+      hindiName: 'आय प्रमाण पत्र',
+      emoji: '📄',
+    };
+  }
+
+  // 5. Bank Passbook / Account
+  if (
+    dLower.includes('bank') ||
+    dLower.includes('passbook') ||
+    dLower.includes('बैंक') ||
+    dLower.includes('पासबुक') ||
+    dLower.includes('खाता') ||
+    dLower.includes('ifsc')
+  ) {
+    return {
+      key: 'bank_passbook',
+      displayName: 'बैंक पासबुक (Bank Passbook)',
+      hindiName: 'बैंक खाता पासबुक',
+      emoji: '🏦',
+    };
+  }
+
+  // 6. Caste Certificate
+  if (dLower.includes('caste') || dLower.includes('जाति') || dLower.includes('sc/st') || dLower.includes('obc')) {
+    return {
+      key: 'caste_certificate',
+      displayName: 'जाति प्रमाण पत्र (Caste Certificate)',
+      hindiName: 'जाति प्रमाण पत्र',
+      emoji: '📜',
+    };
+  }
+
+  // 7. Disability / Divyangjan
+  if (
+    dLower.includes('disability') ||
+    dLower.includes('divyang') ||
+    dLower.includes('दिव्यांग') ||
+    dLower.includes('udid') ||
+    dLower.includes('विकलांग')
+  ) {
+    return {
+      key: 'disability_certificate',
+      displayName: 'दिव्यांगता प्रमाण पत्र (Disability / UDID Card)',
+      hindiName: 'दिव्यांगता प्रमाण पत्र',
+      emoji: '♿',
+    };
+  }
+
+  // 8. Domicile / Residence
+  if (dLower.includes('domicile') || dLower.includes('residence') || dLower.includes('निवास') || dLower.includes('मूल निवास')) {
+    return {
+      key: 'domicile_certificate',
+      displayName: 'मूल निवास प्रमाण पत्र (Domicile Certificate)',
+      hindiName: 'मूल निवास प्रमाण पत्र',
+      emoji: '🏠',
+    };
+  }
+
+  // 9. Death Certificate
+  if (dLower.includes('death') || dLower.includes('मृत्यु') || dLower.includes('विधवा') || dLower.includes('widow')) {
+    return {
+      key: 'death_certificate',
+      displayName: 'पति का मृत्यु प्रमाण पत्र (Death Certificate)',
+      hindiName: 'मृत्यु प्रमाण पत्र',
+      emoji: '🕊️',
+    };
+  }
+
+  // 10. Age / Birth
+  if (dLower.includes('birth') || dLower.includes('जन्म') || dLower.includes('age') || dLower.includes('आयु')) {
+    return {
+      key: 'birth_certificate',
+      displayName: 'आयु / जन्म प्रमाण पत्र (Age / Birth Certificate)',
+      hindiName: 'आयु / जन्म प्रमाण पत्र',
+      emoji: '🎂',
+    };
+  }
+
+  // 11. Marksheet / Academic
+  if (
+    dLower.includes('marksheet') ||
+    dLower.includes('education') ||
+    dLower.includes('academic') ||
+    dLower.includes('शैक्षणिक') ||
+    dLower.includes('अंकतालिका') ||
+    dLower.includes('डिग्री') ||
+    dLower.includes('degree') ||
+    dLower.includes('transcript')
+  ) {
+    return {
+      key: 'academic_certificate',
+      displayName: 'शैक्षणिक योग्यता अंकतालिका (Academic Marksheet / Certificate)',
+      hindiName: 'शैक्षणिक योग्यता प्रमाण पत्र',
+      emoji: '🎓',
+    };
+  }
+
+  // 12. Job Card / MGNREGA
+  if (dLower.includes('job card') || dLower.includes('mgnrega') || dLower.includes('मनरेगा') || dLower.includes('जॉब कार्ड')) {
+    return {
+      key: 'job_card',
+      displayName: 'मनरेगा जॉब कार्ड (MGNREGA Job Card)',
+      hindiName: 'मनरेगा जॉब कार्ड',
+      emoji: '👷',
+    };
+  }
+
+  // 13. Kisan Credit Card
+  if (dLower.includes('kcc') || dLower.includes('kisan credit') || dLower.includes('क्रेडिट')) {
+    return {
+      key: 'kisan_credit_card',
+      displayName: 'किसान क्रेडिट कार्ड (KCC)',
+      hindiName: 'किसान क्रेडिट कार्ड',
+      emoji: '💳',
+    };
+  }
+
+  // 14. Voter ID
+  if (dLower.includes('voter') || dLower.includes('मतदाता') || dLower.includes('epic') || dLower.includes('election')) {
+    return {
+      key: 'voter_id',
+      displayName: 'मतदाता पहचान पत्र (Voter ID Card)',
+      hindiName: 'मतदाता पहचान पत्र',
+      emoji: '🗳️',
+    };
+  }
+
+  // Clean custom document slug
+  const rawClean = cleanText(docName);
+  const slug = rawClean
+    .replace(/[^a-zA-Z0-9\u0900-\u097F]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .toLowerCase() || 'custom_document';
+
+  return {
+    key: `custom_${slug}`,
+    displayName: `${rawClean}`,
+    hindiName: rawClean,
+    emoji: '📄',
+  };
+};
+
 export interface FormattedDocItem {
   name: string;
   purpose: string;
   required: boolean;
+  docTypeKey: string;
+  docDisplayName: string;
+  emoji: string;
 }
 
 const getDocumentList = (docs: any): FormattedDocItem[] => {
   if (!docs) {
     return [
-      { name: 'आधार कार्ड (Aadhaar Card)', purpose: 'नागरिक पहचान एवं निवास प्रमाण पत्र', required: true },
-      { name: 'बैंक खाता पासबुक (Bank Passbook)', purpose: 'सरकारी डीबीटी राशि सीधे खाते में प्राप्त करने हेतु', required: true },
+      {
+        name: 'आधार कार्ड (Aadhaar Card)',
+        purpose: 'नागरिक पहचान एवं निवास प्रमाण पत्र',
+        required: true,
+        docTypeKey: 'aadhaar_card',
+        docDisplayName: 'आधार कार्ड (Aadhaar Card)',
+        emoji: '🪪',
+      },
+      {
+        name: 'बैंक पासबुक (Bank Passbook)',
+        purpose: 'सरकारी डीबीटी राशि सीधे खाते में प्राप्त करने हेतु',
+        required: true,
+        docTypeKey: 'bank_passbook',
+        docDisplayName: 'बैंक पासबुक (Bank Passbook)',
+        emoji: '🏦',
+      },
     ];
   }
 
@@ -497,44 +712,65 @@ const getDocumentList = (docs: any): FormattedDocItem[] => {
       rawName = String(item);
     }
 
-    const dLower = rawName.toLowerCase();
-    let hindiName = cleanText(rawName);
-    if (dLower.includes('aadhaar')) {
-      hindiName = 'आधार कार्ड (Aadhaar Card)';
+    const info = getDocumentTypeInfo(rawName);
+
+    // Contextual purpose description based on detected document key
+    if (info.key === 'aadhaar_card') {
       purpose = 'पहचान एवं स्थायी पता प्रमाण';
-    } else if (dLower.includes('income')) {
-      hindiName = 'आय प्रमाण पत्र (Income Certificate)';
+    } else if (info.key === 'income_certificate') {
       purpose = 'सक्षम राजस्व अधिकारी द्वारा जारी वार्षिक आय प्रमाण';
-    } else if (dLower.includes('ration') || dLower.includes('bpl')) {
-      hindiName = 'राशन कार्ड (Ration Card)';
+    } else if (info.key === 'ration_card') {
       purpose = 'गरीबी रेखा (BPL/AAY) परिवार पात्रता प्रमाण';
-    } else if (dLower.includes('bank') || dLower.includes('passbook')) {
-      hindiName = 'बैंक पासबुक (Bank Passbook)';
+    } else if (info.key === 'bank_passbook') {
       purpose = 'डीबीटी (DBT) भुगतान हेतु बैंक खाता विवरण एवं IFSC कोड';
-    } else if (dLower.includes('disability') || dLower.includes('divyang')) {
-      hindiName = 'दिव्यांगता प्रमाण पत्र (Disability / UDID Card)';
+    } else if (info.key === 'disability_certificate') {
       purpose = 'मुख्य चिकित्सा अधिकारी (CMO) द्वारा 40%+ दिव्यांगता प्रमाण पत्र';
-    } else if (dLower.includes('khasra') || dLower.includes('khatauni') || dLower.includes('land')) {
-      hindiName = 'खसरा / खतौनी भू-अभिलेख (Land Record)';
-      purpose = 'कृषि भूमि स्वामित्व का राजस्व अभिलेख';
-    } else if (dLower.includes('caste')) {
-      hindiName = 'जाति प्रमाण पत्र (Caste Certificate)';
+    } else if (info.key === 'khasra_khatauni') {
+      purpose = 'कृषि भूमि स्वामित्व का राजस्व अभिलेख (रकबा विवरण)';
+    } else if (info.key === 'caste_certificate') {
       purpose = 'आरक्षित सामाजिक श्रेणी प्रमाण (SC / ST / OBC)';
-    } else if (dLower.includes('death')) {
-      hindiName = 'पति का मृत्यु प्रमाण पत्र (Death Certificate)';
-      purpose = 'निराश्रित महिला / विधवा पेंशन पात्रता हेतु';
-    } else if (dLower.includes('age') || dLower.includes('birth')) {
-      hindiName = 'आयु प्रमाण पत्र (Age / Birth Certificate)';
-      purpose = 'उम्र सत्यापन प्रमाण';
+    } else if (info.key === 'death_certificate') {
+      purpose = 'निराश्रित महिला / विधवा पेंशन पात्रता हेतु पति का मृत्यु प्रमाण';
+    } else if (info.key === 'birth_certificate') {
+      purpose = 'आयु एवं जन्म सत्यापन प्रमाण';
+    } else if (info.key === 'academic_certificate') {
+      purpose = 'शैक्षणिक पात्रता एवं न्यूनतम योग्यता प्रमाण';
+    } else if (info.key === 'job_card') {
+      purpose = 'मनरेगा पंजीकृत श्रमिक प्रमाण पत्र';
+    } else if (info.key === 'kisan_credit_card') {
+      purpose = 'संस्थागत कृषि ऋण खाता प्रमाण';
+    } else if (info.key === 'voter_id') {
+      purpose = 'निर्वाचन पहचान एवं निवास प्रमाण';
     }
 
-    result.push({ name: hindiName, purpose, required: req });
+    result.push({
+      name: info.displayName,
+      purpose,
+      required: req,
+      docTypeKey: info.key,
+      docDisplayName: info.displayName,
+      emoji: info.emoji,
+    });
   }
 
   if (result.length === 0) {
     result.push(
-      { name: 'आधार पहचान पत्र (Aadhaar Card)', purpose: 'पहचान एवं निवास प्रमाण', required: true },
-      { name: 'बैंक खाता पासबुक', purpose: 'बैंक खाता व IFSC कोड', required: true }
+      {
+        name: 'आधार कार्ड (Aadhaar Card)',
+        purpose: 'पहचान एवं निवास प्रमाण',
+        required: true,
+        docTypeKey: 'aadhaar_card',
+        docDisplayName: 'आधार कार्ड (Aadhaar Card)',
+        emoji: '🪪',
+      },
+      {
+        name: 'बैंक पासबुक (Bank Passbook)',
+        purpose: 'बैंक खाता व IFSC कोड',
+        required: true,
+        docTypeKey: 'bank_passbook',
+        docDisplayName: 'बैंक पासबुक (Bank Passbook)',
+        emoji: '🏦',
+      }
     );
   }
 
@@ -650,43 +886,55 @@ export const SchemeDetailScreen: React.FC<SchemeDetailScreenProps> = ({
     (verifiedDocuments || []).map((d) => (d.document_type || '').toLowerCase())
   );
 
-  const getDocTypeKey = (docName: string): string => {
-    const dLower = docName.toLowerCase();
-    if (dLower.includes('khasra') || dLower.includes('land') || dLower.includes('खसरा') || dLower.includes('खतौनी')) {
-      return 'khasra_khatauni';
-    }
-    if (dLower.includes('ration') || dLower.includes('राशन') || dLower.includes('bpl')) {
-      return 'ration_card';
-    }
-    if (dLower.includes('aadhaar') || dLower.includes('आधार') || dLower.includes('identity')) {
-      return 'aadhaar_card';
-    }
-    return 'income_certificate';
-  };
-
   const isDocAlreadyVerified = (docName: string): boolean => {
-    const key = getDocTypeKey(docName);
-    if (key === 'khasra_khatauni') {
-      return verifiedDocTypes.has('khasra_khatauni') || verifiedDocTypes.has('land_record');
-    }
-    return verifiedDocTypes.has(key);
+    const info = getDocumentTypeInfo(docName);
+    const targetKey = info.key.toLowerCase();
+
+    return (verifiedDocuments || []).some((d) => {
+      const dType = (d.document_type || '').toLowerCase();
+      const extType = ((d.extracted_fields as any)?.document_type || '').toLowerCase();
+      const extName = ((d.extracted_fields as any)?.document_name || '').toLowerCase();
+      const targetNameLower = info.displayName.toLowerCase();
+
+      if (dType === targetKey || extType === targetKey) return true;
+
+      // Special alias checks
+      if (targetKey === 'khasra_khatauni' && (dType === 'land_record' || dType.includes('khasra') || dType.includes('land'))) {
+        return true;
+      }
+      if (targetKey === 'aadhaar_card' && (dType.includes('aadhaar') || dType === 'identity_proof')) {
+        return true;
+      }
+      if (targetKey === 'ration_card' && (dType.includes('ration') || dType.includes('bpl'))) {
+        return true;
+      }
+      if (targetKey === 'income_certificate' && (dType.includes('income') || dType.includes('आय'))) {
+        return true;
+      }
+      if (targetKey === 'bank_passbook' && (dType.includes('bank') || dType.includes('passbook'))) {
+        return true;
+      }
+      if (targetKey === 'caste_certificate' && (dType.includes('caste') || dType.includes('जाति'))) {
+        return true;
+      }
+      if (targetKey === 'disability_certificate' && (dType.includes('disability') || dType.includes('divyang'))) {
+        return true;
+      }
+
+      if (extName && (extName.includes(targetNameLower) || targetNameLower.includes(extName))) {
+        return true;
+      }
+      return false;
+    });
   };
 
   // Find remaining documents from the scheme that need verification
   const pendingSchemeDocs = docList.filter((d) => !isDocAlreadyVerified(d.name));
 
   // Determine next target document to scan:
-  let targetDocType = 'income_certificate';
-  if (pendingSchemeDocs.length > 0) {
-    targetDocType = getDocTypeKey(pendingSchemeDocs[0].name);
-  } else {
-    for (const dt of ['income_certificate', 'ration_card', 'aadhaar_card', 'khasra_khatauni']) {
-      if (!verifiedDocTypes.has(dt)) {
-        targetDocType = dt;
-        break;
-      }
-    }
-  }
+  const nextTarget = pendingSchemeDocs[0];
+  const targetDocType = nextTarget ? nextTarget.docTypeKey : 'income_certificate';
+  const targetDocDisplayName = nextTarget ? nextTarget.name : 'आय प्रमाण पत्र (Income Certificate)';
 
   /**
    * Constructs the complete spoken script that reads:
@@ -1035,6 +1283,16 @@ export const SchemeDetailScreen: React.FC<SchemeDetailScreenProps> = ({
                     ) : null}
                   </View>
                   <Text style={styles.docBulletPurpose}>प्रयोजन: {doc.purpose}</Text>
+                  {!isVerified && (
+                    <TouchableOpacity
+                      style={styles.scanDirectButton}
+                      onPress={() => onNavigateToDocumentScan(doc.docTypeKey, doc.name)}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.scanDirectButtonText}>📸 यह दस्तावेज़ स्कैन करें</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             );
@@ -1074,12 +1332,12 @@ export const SchemeDetailScreen: React.FC<SchemeDetailScreenProps> = ({
             {pendingSchemeDocs.length > 0 ? (
               <TouchableOpacity
                 style={styles.scanPrimaryButton}
-                onPress={() => onNavigateToDocumentScan(targetDocType)}
+                onPress={() => onNavigateToDocumentScan(targetDocType, targetDocDisplayName)}
                 activeOpacity={0.8}
                 accessibilityRole="button"
               >
                 <Text style={styles.scanPrimaryButtonText}>
-                  {`📸 अगला आवश्यक दस्तावेज़ स्कैन करें: ${pendingSchemeDocs[0].name}`}
+                  {`📸 अगला आवश्यक दस्तावेज़ स्कैन करें: ${targetDocDisplayName}`}
                 </Text>
               </TouchableOpacity>
             ) : null}
@@ -1481,6 +1739,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#90A4AE',
     lineHeight: 18,
+  },
+  scanDirectButton: {
+    backgroundColor: '#0F766E',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#2DD4BF',
+  },
+  scanDirectButtonText: {
+    color: '#F0FDFA',
+    fontSize: 12,
+    fontWeight: '800',
   },
   scanCtaCard: {
     backgroundColor: '#162F4A',
