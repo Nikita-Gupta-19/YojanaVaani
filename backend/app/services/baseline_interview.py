@@ -64,7 +64,7 @@ BASELINE_QUESTIONS: List[BaselineQuestion] = [
         hindi_text="आप किस राज्य और ज़िले में रहते हैं?",
         transliteration="Aap kis rajya aur zile mein rehte hain?",
         prompt_explanation="Geographic location (State and District of permanent residence)",
-        sample_answers=["उत्तर प्रदेश, लखनऊ", "दिल्ली, साउथ दिल्ली", "उत्तर प्रदेश, बाराबंकी", "बिहार, पटना"]
+        sample_answers=["उत्तर प्रदेश, लखनऊ", "दिल्ली, शाहदरा", "उत्तर प्रदेश, बाराबंकी", "बिहार, पटना"]
     ),
     BaselineQuestion(
         index=4,

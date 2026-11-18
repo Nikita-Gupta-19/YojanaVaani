@@ -254,10 +254,10 @@ def generate_aadhaar_mock_cards():
             "filename": "aadhaar_card_01_priya_sharma.png",
             "title": "GOVERNMENT OF INDIA - MOCK IDENTITY CARD",
             "lines": [
-                ("Name", "Priya Sharma"),
+                ("Name", "सुनीता देवी"),
                 ("DOB", "12/05/1998"),
                 ("Gender", "Female"),
-                ("Card Number", "XXXX XXXX 8812"),
+                ("Aadhaar Number", "9842 5410 8812"),
                 ("State", "Delhi"),
                 ("District", "Shahdara")
             ]
@@ -269,7 +269,7 @@ def generate_aadhaar_mock_cards():
                 ("Name", "Rajesh Patel"),
                 ("DOB", "08/11/1982"),
                 ("Gender", "Male"),
-                ("Card Number", "XXXX XXXX 3341"),
+                ("Aadhaar Number", "6732 8901 3341"),
                 ("State", "Uttar Pradesh"),
                 ("District", "Barabanki")
             ]
@@ -281,7 +281,7 @@ def generate_aadhaar_mock_cards():
                 ("Name", "Deepak Kumar"),
                 ("DOB", "25/03/2004"),
                 ("Gender", "Male"),
-                ("Card Number", "XXXX XXXX 9904"),
+                ("Aadhaar Number", "5124 7689 9904"),
                 ("State", "Uttar Pradesh"),
                 ("District", "Kanpur")
             ]

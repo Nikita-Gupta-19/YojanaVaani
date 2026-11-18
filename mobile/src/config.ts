@@ -2,9 +2,13 @@ import { Platform } from 'react-native';
 
 /**
  * Backend service configuration for YojanaVaani.
- * Points to the 24/7 standalone cloud deployment on Render.
+ * Uses 127.0.0.1 with adb reverse for direct USB connection to the laptop.
  */
-export const BACKEND_BASE_URL = 'https://yojanavaani-backend.onrender.com';
+export const BACKEND_BASE_URL = Platform.select({
+  android: 'http://127.0.0.1:8000',
+  ios: 'http://localhost:8000',
+  default: 'http://127.0.0.1:8000',
+});
 
 export const API_ENDPOINTS = {
   health: `${BACKEND_BASE_URL}/health`,
@@ -14,6 +18,7 @@ export const API_ENDPOINTS = {
   conversationDocument: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/document`,
   conversationConfirm: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/confirm_document`,
   conversationState: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}`,
+  conversationHistory: `${BACKEND_BASE_URL}/conversation/history`,
   conversationReport: (id: string, schemeId?: number) =>
     schemeId !== undefined
       ? `${BACKEND_BASE_URL}/conversation/${id}/report?scheme_id=${schemeId}`

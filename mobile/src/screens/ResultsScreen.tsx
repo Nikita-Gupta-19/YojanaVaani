@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { API_ENDPOINTS } from '../config';
 import { playTTSAudio, stopTTSAudio } from '../services/audioService';
+import { saveUserSession } from '../services/userHistoryService';
 import { formatBenefitsHindi, translateSchemeName } from './SchemeDetailScreen';
 
 export interface SchemeItem {
@@ -40,6 +41,7 @@ interface ResultsScreenProps {
   onSelectScheme?: (scheme: SchemeItem) => void;
   onViewReport?: () => void;
   onStartNewConversation: () => void;
+  onBackToQuestionnaire?: () => void;
 }
 
 // -----------------------------------------------------------------------------
@@ -161,12 +163,15 @@ const formatDocumentsHindi = (docs: any): string[] => {
 };
 
 export const ResultsScreen: React.FC<ResultsScreenProps> = ({
+  conversationId,
   schemes,
   spokenText,
   audioBase64,
+  citizenProfile,
   onSelectScheme,
   onViewReport,
   onStartNewConversation,
+  onBackToQuestionnaire,
 }) => {
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [expandedSchemeId, setExpandedSchemeId] = useState<number | null>(
@@ -221,6 +226,18 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       stopTTSAudio();
     };
   }, [audioBase64, spokenText]);
+
+  // Auto-save session history of citizen data & recommended schemes
+  useEffect(() => {
+    if (conversationId) {
+      saveUserSession({
+        id: conversationId,
+        citizenProfile: citizenProfile || {},
+        recommendedSchemes: schemes || [],
+        statedNeed: spokenText || '',
+      });
+    }
+  }, [conversationId, citizenProfile, schemes, spokenText]);
 
   const toggleExpand = (id: number) => {
     setExpandedSchemeId(expandedSchemeId === id ? null : id);
@@ -332,7 +349,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       case 'DOES_NOT_QUALIFY':
       default:
         return {
-          label: '✕ अपात्र (यह योजना नहीं मिल सकती)',
+          label: '✕ यह योजना नहीं मिल सकती',
           badgeStyle: styles.badgeDisqualified,
           textStyle: styles.badgeTextDisqualified,
           cardStyle: styles.cardDisqualified,
@@ -355,6 +372,27 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Back Option to return to questionnaire and edit answers */}
+        {onBackToQuestionnaire && (
+          <TouchableOpacity
+            style={styles.backToQuestionnaireButton}
+            onPress={onBackToQuestionnaire}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="प्रश्नावली पर वापस जाएं और उत्तर बदलें"
+          >
+            <Text style={styles.backToQuestionnaireIcon}>←</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.backToQuestionnaireTitle}>
+                प्रश्नावली पर वापस जाएं (Edit Answers)
+              </Text>
+              <Text style={styles.backToQuestionnaireSub}>
+                अपने उत्तरों में सुधार करने हेतु साक्षात्कार स्क्रीन पर लौटें
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.titleHindi}>सरकारी योजनाएं (जाँच परिणाम)</Text>
@@ -459,6 +497,9 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
                 {/* Scheme Title */}
                 <Text style={styles.schemeName}>{translateSchemeName(scheme.name)}</Text>
+                {scheme.name ? (
+                  <Text style={styles.schemeOriginalName}>{scheme.name}</Text>
+                ) : null}
 
                 {/* Category & Government Tag */}
                 <View style={styles.metaRow}>
@@ -859,8 +900,41 @@ const styles = StyleSheet.create({
     fontSize: 19,
     fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 6,
+    marginBottom: 4,
     lineHeight: 25,
+  },
+  schemeOriginalName: {
+    fontSize: 13,
+    color: '#94A3B8',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  backToQuestionnaireButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    borderWidth: 1.5,
+    borderColor: '#FF9933',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    gap: 12,
+  },
+  backToQuestionnaireIcon: {
+    fontSize: 22,
+    color: '#FF9933',
+    fontWeight: '800',
+  },
+  backToQuestionnaireTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFD166',
+  },
+  backToQuestionnaireSub: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 2,
   },
   metaRow: {
     flexDirection: 'column',

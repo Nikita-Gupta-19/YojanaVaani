@@ -18,6 +18,7 @@ interface SchemeDetailScreenProps {
   conversationId: string;
   scheme: SchemeItem;
   citizenProfile?: Record<string, any>;
+  verifiedDocuments?: any[];
   onNavigateToDocumentScan: (documentType: string) => void;
   onNavigateToReport: () => void;
   onBack: () => void;
@@ -163,15 +164,10 @@ export const SCHEME_HINDI_NAMES: Record<string, string> = {
   'mukhyamantri pragatisheel pashupalak': 'मुख्यमंत्री प्रगतिशील पशुपालक प्रोत्साहन योजना (दूध उत्पादन)',
 };
 
+import { translateSchemeName as translateSchemeNameHelper } from '../services/schemeTranslationService';
+
 export const translateSchemeName = (name: string): string => {
-  if (!name) return 'सरकारी कल्याणकारी योजना';
-  const nameLower = name.toLowerCase();
-  for (const [key, hindi] of Object.entries(SCHEME_HINDI_NAMES)) {
-    if (nameLower.includes(key)) {
-      return hindi;
-    }
-  }
-  return name;
+  return translateSchemeNameHelper(name);
 };
 
 // -----------------------------------------------------------------------------
@@ -273,18 +269,18 @@ export const SCHEME_HINDI_BENEFITS: Record<string, string> = {
 };
 
 const translateDescriptionToHindi = (scheme: SchemeItem): string => {
+  // 1. If raw description is already provided in Devanagari Hindi, use it directly
+  if (scheme.description && /[\u0900-\u097F]/.test(scheme.description)) {
+    return cleanText(scheme.description);
+  }
+
   const nameLower = (scheme.name || '').toLowerCase();
 
-  // 1. Check curated mapping first
+  // 2. Check curated mapping
   for (const [key, desc] of Object.entries(SCHEME_HINDI_DESCRIPTIONS)) {
     if (nameLower.includes(key)) {
       return desc;
     }
-  }
-
-  // 2. If raw description contains Devanagari script, use it cleaned
-  if (scheme.description && /[\u0900-\u097F]/.test(scheme.description)) {
-    return cleanText(scheme.description);
   }
 
   // 3. Dynamic synthesis from scheme metadata in pure vernacular Hindi
@@ -627,6 +623,7 @@ const determineApplicationChannel = (scheme: SchemeItem): ApplicationChannelInfo
 export const SchemeDetailScreen: React.FC<SchemeDetailScreenProps> = ({
   scheme,
   citizenProfile,
+  verifiedDocuments = [],
   onNavigateToDocumentScan,
   onNavigateToReport,
   onBack,
@@ -648,12 +645,48 @@ export const SchemeDetailScreen: React.FC<SchemeDetailScreenProps> = ({
   const elaborateDescription = translateDescriptionToHindi(scheme);
   const hindiSchemeName = translateSchemeName(scheme.name);
 
-  // Determine Primary Document to scan
-  const primaryDocToScan = docList.length > 0 ? docList[0].name.toLowerCase() : 'income_certificate';
+  // Normalize verified document types
+  const verifiedDocTypes = new Set(
+    (verifiedDocuments || []).map((d) => (d.document_type || '').toLowerCase())
+  );
+
+  const getDocTypeKey = (docName: string): string => {
+    const dLower = docName.toLowerCase();
+    if (dLower.includes('khasra') || dLower.includes('land') || dLower.includes('खसरा') || dLower.includes('खतौनी')) {
+      return 'khasra_khatauni';
+    }
+    if (dLower.includes('ration') || dLower.includes('राशन') || dLower.includes('bpl')) {
+      return 'ration_card';
+    }
+    if (dLower.includes('aadhaar') || dLower.includes('आधार') || dLower.includes('identity')) {
+      return 'aadhaar_card';
+    }
+    return 'income_certificate';
+  };
+
+  const isDocAlreadyVerified = (docName: string): boolean => {
+    const key = getDocTypeKey(docName);
+    if (key === 'khasra_khatauni') {
+      return verifiedDocTypes.has('khasra_khatauni') || verifiedDocTypes.has('land_record');
+    }
+    return verifiedDocTypes.has(key);
+  };
+
+  // Find remaining documents from the scheme that need verification
+  const pendingSchemeDocs = docList.filter((d) => !isDocAlreadyVerified(d.name));
+
+  // Determine next target document to scan:
   let targetDocType = 'income_certificate';
-  if (primaryDocToScan.includes('aadhaar')) targetDocType = 'aadhaar_card';
-  else if (primaryDocToScan.includes('ration') || primaryDocToScan.includes('bpl')) targetDocType = 'ration_card';
-  else if (primaryDocToScan.includes('khasra') || primaryDocToScan.includes('land')) targetDocType = 'khasra_khatauni';
+  if (pendingSchemeDocs.length > 0) {
+    targetDocType = getDocTypeKey(pendingSchemeDocs[0].name);
+  } else {
+    for (const dt of ['income_certificate', 'ration_card', 'aadhaar_card', 'khasra_khatauni']) {
+      if (!verifiedDocTypes.has(dt)) {
+        targetDocType = dt;
+        break;
+      }
+    }
+  }
 
   /**
    * Constructs the complete spoken script that reads:
@@ -839,6 +872,9 @@ export const SchemeDetailScreen: React.FC<SchemeDetailScreenProps> = ({
             <Text style={styles.metaGovBadge}>{translateGov(scheme.government_name)}</Text>
           </View>
           <Text style={styles.schemeTitle}>{hindiSchemeName}</Text>
+          {scheme.name ? (
+            <Text style={styles.schemeSubTitleEng}>{scheme.name}</Text>
+          ) : null}
           {scheme.verdict === 'QUALIFIES' ? (
             <View style={styles.verdictPillQualifies}>
               <Text style={styles.verdictPillTextQualifies}>✓ आप इस योजना के लिए पूरी तरह पात्र हैं</Text>
@@ -976,24 +1012,33 @@ export const SchemeDetailScreen: React.FC<SchemeDetailScreenProps> = ({
             इस योजना में आवेदन करने हेतु निम्नलिखित दस्तावेज़ों की आवश्यकता होगी:
           </Text>
 
-          {docList.map((doc, idx) => (
-            <View key={idx} style={styles.docBulletItem}>
-              <View style={styles.docBulletIcon}>
-                <Text style={styles.bulletSymbol}>•</Text>
-              </View>
-              <View style={styles.docBulletContent}>
-                <View style={styles.docNameRow}>
-                  <Text style={styles.docBulletName}>{doc.name}</Text>
-                  {doc.required && (
-                    <View style={styles.mandatoryBadge}>
-                      <Text style={styles.mandatoryBadgeText}>अनिवार्य</Text>
-                    </View>
-                  )}
+          {docList.map((doc, idx) => {
+            const isVerified = isDocAlreadyVerified(doc.name);
+            return (
+              <View key={idx} style={styles.docBulletItem}>
+                <View style={styles.docBulletIcon}>
+                  <Text style={[styles.bulletSymbol, isVerified && { color: '#34D399' }]}>
+                    {isVerified ? '✓' : '•'}
+                  </Text>
                 </View>
-                <Text style={styles.docBulletPurpose}>प्रयोजन: {doc.purpose}</Text>
+                <View style={styles.docBulletContent}>
+                  <View style={styles.docNameRow}>
+                    <Text style={styles.docBulletName}>{doc.name}</Text>
+                    {isVerified ? (
+                      <View style={styles.verifiedBadgeRow}>
+                        <Text style={styles.verifiedBadgeText}>✓ सत्यापित (Verified)</Text>
+                      </View>
+                    ) : doc.required ? (
+                      <View style={styles.mandatoryBadge}>
+                        <Text style={styles.mandatoryBadgeText}>अनिवार्य (सत्यापन शेष)</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={styles.docBulletPurpose}>प्रयोजन: {doc.purpose}</Text>
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Section 5: Document Scanning CTA or Return to Eligible Schemes */}
@@ -1014,20 +1059,30 @@ export const SchemeDetailScreen: React.FC<SchemeDetailScreenProps> = ({
           </View>
         ) : (
           <View style={styles.scanCtaCard}>
-            <Text style={styles.scanCtaIcon}>📸</Text>
-            <Text style={styles.scanCtaHeading}>दस्तावेज़ स्कैन करें और अपनी प्रोफाइल रिपोर्ट बनाएं</Text>
+            <Text style={styles.scanCtaIcon}>{pendingSchemeDocs.length === 0 ? '🎉' : '📸'}</Text>
+            <Text style={styles.scanCtaHeading}>
+              {pendingSchemeDocs.length === 0
+                ? '✓ इस योजना के सभी आवश्यक दस्तावेज़ सत्यापित हैं!'
+                : 'दस्तावेज़ स्कैन करें और अपनी प्रोफाइल रिपोर्ट बनाएं'}
+            </Text>
             <Text style={styles.scanCtaSubtext}>
-              उपरोक्त आवश्यक दस्तावेज़ की फोटो खींचकर Tesseract OCR द्वारा तुरंत सत्यापन करवाएं। सत्यापन के बाद आपका संपूर्ण नागरिक व्यक्तिगत विवरण तैयार होकर आपको दिखाई देगा।
+              {pendingSchemeDocs.length === 0
+                ? 'इस योजना के सभी ज़रूरी कागज़ात Tesseract OCR द्वारा सफलतापूर्वक प्रमाणित कर लिए गए हैं।'
+                : 'उपरोक्त आवश्यक दस्तावेज़ की फोटो खींचकर Tesseract OCR द्वारा तुरंत सत्यापन करवाएं। सत्यापन के बाद आपका संपूर्ण नागरिक व्यक्तिगत विवरण तैयार होकर आपको दिखाई देगा।'}
             </Text>
 
-            <TouchableOpacity
-              style={styles.scanPrimaryButton}
-              onPress={() => onNavigateToDocumentScan(targetDocType)}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-            >
-              <Text style={styles.scanPrimaryButtonText}>📸 आवश्यक दस्तावेज़ स्कैन करें (Scan Now)</Text>
-            </TouchableOpacity>
+            {pendingSchemeDocs.length > 0 ? (
+              <TouchableOpacity
+                style={styles.scanPrimaryButton}
+                onPress={() => onNavigateToDocumentScan(targetDocType)}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+              >
+                <Text style={styles.scanPrimaryButtonText}>
+                  {`📸 अगला आवश्यक दस्तावेज़ स्कैन करें: ${pendingSchemeDocs[0].name}`}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
 
             <TouchableOpacity
               style={styles.viewReportSecondaryButton}
@@ -1139,6 +1194,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     lineHeight: 28,
+    marginBottom: 4,
+  },
+  schemeSubTitleEng: {
+    fontSize: 14,
+    color: '#94A3B8',
     marginBottom: 12,
   },
   verdictPillQualifies: {
@@ -1404,6 +1464,18 @@ const styles = StyleSheet.create({
     color: '#FFCDD2',
     fontSize: 11,
     fontWeight: '700',
+  },
+  verifiedBadgeRow: {
+    backgroundColor: '#065F46',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  verifiedBadgeText: {
+    color: '#6EE7B7',
+    fontSize: 11,
+    fontWeight: '800',
   },
   docBulletPurpose: {
     fontSize: 13,

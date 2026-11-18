@@ -9,9 +9,14 @@ Orchestrates Stage 1 (Fixed Baseline Interview):
 - Promotes conversation state to 'scheme_matching' once all baseline facts are gathered.
 """
 
+import json
+import logging
+import os
 import re
 import uuid
-from typing import Dict, Optional, Tuple, Any
+from typing import Dict, Optional, Tuple, Any, List
+
+logger = logging.getLogger(__name__)
 
 from app.models.conversation import (
     CitizenProfile,
@@ -151,9 +156,69 @@ class ConversationManager:
     Manages conversational sessions and drives Stage 1 fixed baseline interview.
     """
 
-    def __init__(self):
+    def __init__(self, persistence_path: Optional[str] = None):
         # In-memory store of active conversation sessions keyed by conversation_id
         self.sessions: Dict[str, ConversationState] = {}
+        self.persistence_path = persistence_path or os.path.join(
+            os.path.dirname(__file__), "..", "..", "data", "user_history.json"
+        )
+        self._load_from_disk()
+
+    def _save_to_disk(self) -> None:
+        """Persists completed citizen profile assessments to disk, excluding empty/abandoned sessions."""
+        try:
+            os.makedirs(os.path.dirname(self.persistence_path), exist_ok=True)
+            valid_sessions = {}
+            for cid, state in self.sessions.items():
+                name = (state.citizen_profile.name or "").strip()
+                if state.baseline_complete and name and name not in ["नागरिक", "नागरिक (सत्यापित)", "Unknown"]:
+                    valid_sessions[cid] = state.model_dump()
+            with open(self.persistence_path, "w", encoding="utf-8") as f:
+                json.dump(valid_sessions, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not persist user history to disk: {e}")
+
+    def _load_from_disk(self) -> None:
+        """Loads previously saved conversation history from disk."""
+        try:
+            if os.path.exists(self.persistence_path):
+                with open(self.persistence_path, "r", encoding="utf-8") as f:
+                    raw_data = json.load(f)
+                for cid, state_dict in raw_data.items():
+                    name = (state_dict.get("citizen_profile", {}).get("name") or "").strip()
+                    if state_dict.get("baseline_complete", False) and name and name not in ["नागरिक", "नागरिक (सत्यापित)", "Unknown"]:
+                        self.sessions[cid] = ConversationState.model_validate(state_dict)
+                logger.info(f"Loaded {len(self.sessions)} saved conversation sessions from history.")
+        except Exception as e:
+            logger.warning(f"Could not load user history from disk: {e}")
+
+    def get_all_conversations(self) -> List[ConversationState]:
+        """Returns completed, valid citizen conversation sessions in history, newest first."""
+        valid = []
+        for state in reversed(list(self.sessions.values())):
+            name = (state.citizen_profile.name or "").strip()
+            if state.baseline_complete and name and name not in ["नागरिक", "नागरिक (सत्यापित)", "Unknown"]:
+                valid.append(state)
+        return valid
+
+    def delete_conversation(self, conversation_id: str) -> bool:
+        """Deletes a specific session from memory and disk history."""
+        if conversation_id in self.sessions:
+            del self.sessions[conversation_id]
+            self._save_to_disk()
+            return True
+        return False
+
+    def clear_all_history(self) -> None:
+        """Clears all conversation sessions from memory and disk."""
+        self.sessions.clear()
+        try:
+            if os.path.exists(self.persistence_path):
+                with open(self.persistence_path, "w", encoding="utf-8") as f:
+                    f.write("{}")
+            logger.info("All user history cleared successfully.")
+        except Exception as e:
+            logger.warning(f"Could not clear user history file: {e}")
 
     def create_conversation(self, conversation_id: Optional[str] = None) -> ConversationState:
         """Initializes and registers a new conversation session."""
@@ -166,6 +231,7 @@ class ConversationManager:
             baseline_complete=False
         )
         self.sessions[cid] = state
+        self._save_to_disk()
         return state
 
     def get_conversation(self, conversation_id: str) -> Optional[ConversationState]:
@@ -237,6 +303,7 @@ class ConversationManager:
             conv.baseline_complete = True
             conv.status = ConversationStatus.scheme_matching
 
+        self._save_to_disk()
         return conv
 
     def go_back(self, conversation_id: str) -> Optional[ConversationState]:
@@ -285,6 +352,7 @@ class ConversationManager:
         while len(conv.conversation_history) > max_turns:
             conv.conversation_history.pop()
 
+        self._save_to_disk()
         return conv
 
     def run_agentic_followup(self, conversation_id: str) -> ConversationState:
@@ -302,7 +370,8 @@ class ConversationManager:
         agent = YojanaVaaniAgent()
         result = agent.run(
             citizen_profile=conv.citizen_profile.model_dump(),
-            stated_need=conv.stated_need or ""
+            stated_need=conv.stated_need or "",
+            collected_documents=conv.collected_documents
         )
 
         conv.candidate_schemes = result.candidate_schemes
@@ -322,6 +391,7 @@ class ConversationManager:
                 ConversationTurn(speaker="assistant", text=result.response_text)
             )
 
+        self._save_to_disk()
         return conv
 
     # -------------------------------------------------------------------------

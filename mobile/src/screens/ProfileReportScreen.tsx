@@ -276,7 +276,7 @@ export const ProfileReportScreen: React.FC<ProfileReportScreenProps> = ({
           <View style={styles.detailGrid}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>नागरिक का नाम (Name):</Text>
-              <Text style={styles.detailValue}>{p.name || 'रामवती (सत्यापित)'}</Text>
+              <Text style={styles.detailValue}>{p.name || 'नागरिक (सत्यापित)'}</Text>
             </View>
 
             <View style={styles.detailRow}>
@@ -376,6 +376,9 @@ export const ProfileReportScreen: React.FC<ProfileReportScreenProps> = ({
                       else if (key === 'family_members_count') labelHindi = 'पारिवारिक सदस्यों की संख्या';
                       else if (key === 'land_holding_area_hectares') labelHindi = 'भूमि क्षेत्रफल (हेक्टेयर)';
                       else if (key === 'khasra_number') labelHindi = 'खसरा नंबर';
+                      else if (key === 'aadhaar_number') labelHindi = 'आधार पहचान संख्या (Aadhaar No)';
+                      else if (key === 'dob') labelHindi = 'जन्म तिथि (DOB)';
+                      else if (key === 'gender') labelHindi = 'लिंग (Gender)';
 
                       return (
                         <View key={key} style={styles.fieldEntryRow}>
@@ -442,9 +445,30 @@ export const ProfileReportScreen: React.FC<ProfileReportScreenProps> = ({
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.scanMoreButton} onPress={onNavigateToScanMore}>
-            <Text style={styles.scanMoreButtonText}>📸 अन्य आवश्यक दस्तावेज़ स्कैन करें</Text>
-          </TouchableOpacity>
+          {(() => {
+            const allCoreDocs = [
+              { type: 'income_certificate', name: 'आय प्रमाण पत्र' },
+              { type: 'ration_card', name: 'राशन कार्ड' },
+              { type: 'khasra_khatauni', name: 'खसरा / खतौनी' },
+              { type: 'aadhaar_card', name: 'आधार कार्ड' },
+            ];
+            const verifiedDocTypes = new Set(docs.map((d) => (d.document_type || '').toLowerCase()));
+            const pendingDocs = allCoreDocs.filter((d) => !verifiedDocTypes.has(d.type));
+            const nextPending = pendingDocs.length > 0 ? pendingDocs[0] : null;
+
+            return (
+              <TouchableOpacity
+                style={[styles.scanMoreButton, !nextPending && { backgroundColor: '#065F46' }]}
+                onPress={onNavigateToScanMore}
+              >
+                <Text style={styles.scanMoreButtonText}>
+                  {nextPending
+                    ? `📸 अगला आवश्यक दस्तावेज़ स्कैन करें (${nextPending.name})`
+                    : '✓ सभी मुख्य दस्तावेज़ सत्यापित हैं (All Verified)'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })()}
 
           <TouchableOpacity style={styles.backSchemesButton} onPress={onBackToSchemes}>
             <Text style={styles.backSchemesButtonText}>← योजनाओं की सूची पर वापस जाएं</Text>
@@ -736,16 +760,22 @@ const styles = StyleSheet.create({
   fieldEntryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 3,
+    alignItems: 'flex-start',
+    paddingVertical: 4,
   },
   fieldKey: {
     fontSize: 13,
     color: '#B0BEC5',
+    flex: 1,
+    marginRight: 8,
   },
   fieldVal: {
     fontSize: 13,
     color: '#FFFFFF',
     fontWeight: '700',
+    flex: 1.2,
+    textAlign: 'right',
+    flexWrap: 'wrap',
   },
   selectedSchemeName: {
     fontSize: 17,

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { View } from 'react-native';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { ConversationScreen } from './src/screens/ConversationScreen';
 import { DocumentCaptureScreen } from './src/screens/DocumentCaptureScreen';
@@ -6,6 +7,7 @@ import { ResultsScreen, SchemeItem } from './src/screens/ResultsScreen';
 import { SchemeDetailScreen } from './src/screens/SchemeDetailScreen';
 import { ProfileReportScreen, VerifiedDocument } from './src/screens/ProfileReportScreen';
 import { EscalationScreen, CSCInfo } from './src/screens/EscalationScreen';
+import { stopTTSAudio } from './src/services/audioService';
 
 export type ScreenName =
   | 'Onboarding'
@@ -18,6 +20,8 @@ export type ScreenName =
 
 export default function App(): React.JSX.Element {
   const [currentScreen, setCurrentScreen] = useState<ScreenName>('Onboarding');
+  const [sessionKey, setSessionKey] = useState<number>(0);
+  const [hasStartedConversation, setHasStartedConversation] = useState<boolean>(false);
 
   // Shared session parameters
   const [activeConversationId, setActiveConversationId] = useState<string>('');
@@ -33,6 +37,8 @@ export default function App(): React.JSX.Element {
   const [escalationSpokenText, setEscalationSpokenText] = useState<string>('');
 
   const navigateToConversation = () => {
+    stopTTSAudio().catch(() => {});
+    setHasStartedConversation(true);
     setCurrentScreen('Conversation');
   };
 
@@ -120,6 +126,7 @@ export default function App(): React.JSX.Element {
   };
 
   const handleRestart = () => {
+    stopTTSAudio().catch(() => {});
     setActiveConversationId('');
     setResultsSchemes([]);
     setResultsSpokenText('');
@@ -127,104 +134,199 @@ export default function App(): React.JSX.Element {
     setSelectedScheme(null);
     setCitizenProfile({});
     setVerifiedDocuments([]);
+    setSessionKey((prev) => prev + 1);
+    setHasStartedConversation(true);
     setCurrentScreen('Conversation');
   };
 
-  switch (currentScreen) {
-    case 'Onboarding':
-      return <OnboardingScreen onStartConversation={navigateToConversation} />;
+  const getNextNeededDocumentType = (
+    verifiedList: VerifiedDocument[],
+    scheme: SchemeItem | null
+  ): string => {
+    const verifiedSet = new Set((verifiedList || []).map((d) => d.document_type.toLowerCase()));
 
-    case 'Conversation':
-      return (
-        <ConversationScreen
-          onNavigateToDocument={(cid, dt) => navigateToDocument(cid, dt, 'conversation')}
-          onNavigateToResults={navigateToResults}
-          onNavigateToEscalation={navigateToEscalation}
-          onBackToOnboarding={() => setCurrentScreen('Onboarding')}
-        />
-      );
+    if (scheme) {
+      const schemeText = `${scheme.name || ''} ${scheme.category || ''} ${(scheme as any).brief_description || ''}`.toLowerCase();
+      const schemeDocPriorities: string[] = [];
+      if (
+        schemeText.includes('किसान') ||
+        schemeText.includes('kisan') ||
+        schemeText.includes('कृषि') ||
+        schemeText.includes('bhoomi')
+      ) {
+        schemeDocPriorities.push('khasra_khatauni');
+      }
+      if (
+        schemeText.includes('राशन') ||
+        schemeText.includes('ration') ||
+        schemeText.includes('अन्न') ||
+        schemeText.includes('खाद्य')
+      ) {
+        schemeDocPriorities.push('ration_card');
+      }
+      schemeDocPriorities.push('income_certificate', 'aadhaar_card', 'ration_card', 'khasra_khatauni');
 
-    case 'DocumentCapture':
-      return (
-        <DocumentCaptureScreen
-          conversationId={activeConversationId}
-          documentType={targetDocumentType}
-          onConfirmationComplete={handleDocumentConfirmationComplete}
-          onCancel={() => {
-            if (documentScanOrigin === 'schemeDetail') {
-              setCurrentScreen('SchemeDetail');
-            } else {
+      for (const doc of schemeDocPriorities) {
+        if (!verifiedSet.has(doc)) {
+          return doc;
+        }
+      }
+    }
+
+    const allOrder = ['income_certificate', 'ration_card', 'khasra_khatauni', 'aadhaar_card'];
+    for (const doc of allOrder) {
+      if (!verifiedSet.has(doc)) {
+        return doc;
+      }
+    }
+    return 'income_certificate';
+  };
+
+  const renderActiveScreen = () => {
+    switch (currentScreen) {
+      case 'Onboarding':
+        return (
+          <OnboardingScreen
+            onStartConversation={navigateToConversation}
+            onSelectHistorySession={(convId, schemes, profile, text) => {
+              stopTTSAudio().catch(() => {});
+              navigateToResults(convId, schemes, text, undefined, profile);
+            }}
+          />
+        );
+
+      case 'DocumentCapture':
+        return (
+          <DocumentCaptureScreen
+            conversationId={activeConversationId}
+            documentType={targetDocumentType}
+            alreadyVerifiedDocTypes={verifiedDocuments.map((d) => d.document_type)}
+            onConfirmationComplete={handleDocumentConfirmationComplete}
+            onCancel={() => {
+              if (documentScanOrigin === 'schemeDetail') {
+                setCurrentScreen('SchemeDetail');
+              } else {
+                setCurrentScreen('Conversation');
+              }
+            }}
+          />
+        );
+
+      case 'Results':
+        return (
+          <ResultsScreen
+            conversationId={activeConversationId}
+            schemes={resultsSchemes}
+            spokenText={resultsSpokenText}
+            audioBase64={resultsAudioBase64}
+            citizenProfile={citizenProfile}
+            onSelectScheme={navigateToSchemeDetail}
+            onViewReport={navigateToReport}
+            onStartNewConversation={handleRestart}
+            onBackToQuestionnaire={() => {
+              setHasStartedConversation(true);
               setCurrentScreen('Conversation');
+            }}
+          />
+        );
+
+      case 'SchemeDetail':
+        return selectedScheme ? (
+          <SchemeDetailScreen
+            conversationId={activeConversationId}
+            scheme={selectedScheme}
+            citizenProfile={citizenProfile}
+            verifiedDocuments={verifiedDocuments}
+            onNavigateToDocumentScan={(docType) =>
+              navigateToDocument(activeConversationId, docType, 'schemeDetail')
             }
-          }}
-        />
-      );
+            onNavigateToReport={navigateToReport}
+            onBack={() => setCurrentScreen('Results')}
+          />
+        ) : (
+          <ResultsScreen
+            conversationId={activeConversationId}
+            schemes={resultsSchemes}
+            spokenText={resultsSpokenText}
+            audioBase64={resultsAudioBase64}
+            citizenProfile={citizenProfile}
+            onSelectScheme={navigateToSchemeDetail}
+            onViewReport={navigateToReport}
+            onStartNewConversation={handleRestart}
+            onBackToQuestionnaire={() => setCurrentScreen('Conversation')}
+          />
+        );
 
-    case 'Results':
-      return (
-        <ResultsScreen
-          conversationId={activeConversationId}
-          schemes={resultsSchemes}
-          spokenText={resultsSpokenText}
-          audioBase64={resultsAudioBase64}
-          citizenProfile={citizenProfile}
-          onSelectScheme={navigateToSchemeDetail}
-          onViewReport={navigateToReport}
-          onStartNewConversation={handleRestart}
-        />
-      );
+      case 'ProfileReport':
+        return (
+          <ProfileReportScreen
+            conversationId={activeConversationId}
+            citizenProfile={citizenProfile}
+            selectedScheme={selectedScheme}
+            verifiedDocuments={verifiedDocuments}
+            onNavigateToScanMore={() => {
+              const nextDoc = getNextNeededDocumentType(verifiedDocuments, selectedScheme);
+              navigateToDocument(activeConversationId, nextDoc, 'schemeDetail');
+            }}
+            onBackToSchemes={() => setCurrentScreen('Results')}
+            onStartNewConversation={handleRestart}
+          />
+        );
 
-    case 'SchemeDetail':
-      return selectedScheme ? (
-        <SchemeDetailScreen
-          conversationId={activeConversationId}
-          scheme={selectedScheme}
-          citizenProfile={citizenProfile}
-          onNavigateToDocumentScan={(docType) =>
-            navigateToDocument(activeConversationId, docType, 'schemeDetail')
-          }
-          onNavigateToReport={navigateToReport}
-          onBack={() => setCurrentScreen('Results')}
-        />
-      ) : (
-        <ResultsScreen
-          conversationId={activeConversationId}
-          schemes={resultsSchemes}
-          spokenText={resultsSpokenText}
-          audioBase64={resultsAudioBase64}
-          citizenProfile={citizenProfile}
-          onSelectScheme={navigateToSchemeDetail}
-          onViewReport={navigateToReport}
-          onStartNewConversation={handleRestart}
-        />
-      );
+      case 'Escalation':
+        return (
+          <EscalationScreen
+            conversationId={activeConversationId}
+            cscInfo={escalationCscInfo}
+            spokenText={escalationSpokenText}
+            onBackToConversation={() => setCurrentScreen('Conversation')}
+          />
+        );
 
-    case 'ProfileReport':
-      return (
-        <ProfileReportScreen
-          conversationId={activeConversationId}
-          citizenProfile={citizenProfile}
-          selectedScheme={selectedScheme}
-          verifiedDocuments={verifiedDocuments}
-          onNavigateToScanMore={() =>
-            navigateToDocument(activeConversationId, 'income_certificate', 'schemeDetail')
-          }
-          onBackToSchemes={() => setCurrentScreen('Results')}
-          onStartNewConversation={handleRestart}
-        />
-      );
+      case 'Conversation':
+      default:
+        return null;
+    }
+  };
 
-    case 'Escalation':
-      return (
-        <EscalationScreen
-          conversationId={activeConversationId}
-          cscInfo={escalationCscInfo}
-          spokenText={escalationSpokenText}
-          onBackToConversation={() => setCurrentScreen('Conversation')}
-        />
-      );
-
-    default:
-      return <OnboardingScreen onStartConversation={navigateToConversation} />;
+  if (currentScreen === 'Onboarding') {
+    return (
+      <OnboardingScreen
+        onStartConversation={navigateToConversation}
+        onSelectHistorySession={(convId, schemes, profile, text) => {
+          stopTTSAudio().catch(() => {});
+          navigateToResults(convId, schemes, text, undefined, profile);
+        }}
+      />
+    );
   }
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Questionnaire Screen - only mounted when conversation has actually been started */}
+      {hasStartedConversation && (
+        <View
+          style={{
+            flex: 1,
+            display: currentScreen === 'Conversation' ? 'flex' : 'none',
+          }}
+        >
+          <ConversationScreen
+            key={`conv_session_${sessionKey}`}
+            isActive={currentScreen === 'Conversation'}
+            onNavigateToDocument={(cid, dt) => navigateToDocument(cid, dt, 'conversation')}
+            onNavigateToResults={navigateToResults}
+            onNavigateToEscalation={navigateToEscalation}
+            onBackToOnboarding={() => {
+              stopTTSAudio().catch(() => {});
+              setCurrentScreen('Onboarding');
+            }}
+          />
+        </View>
+      )}
+
+      {/* Other active screens rendered when active */}
+      {currentScreen !== 'Conversation' && renderActiveScreen()}
+    </View>
+  );
 }

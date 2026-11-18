@@ -331,7 +331,11 @@ describe('Phase 7 React Native Mobile App Tests', () => {
     expect(root.findByProps({ children: 'बैंक पासबुक (Bank Passbook)' })).toBeTruthy();
 
     // Check document scanning button triggers callback
-    const scanBtnLabel = root.findByProps({ children: '📸 आवश्यक दस्तावेज़ स्कैन करें (Scan Now)' });
+    const scanBtnLabel = root.find(
+      node =>
+        typeof node.props.children === 'string' &&
+        node.props.children.includes('आवश्यक दस्तावेज़ स्कैन करें')
+    );
     const scanTouchable = findParentWithProp(scanBtnLabel, 'onPress');
     expect(scanTouchable).toBeTruthy();
 
@@ -423,5 +427,77 @@ describe('Phase 7 React Native Mobile App Tests', () => {
     await ReactTestRenderer.act(async () => {
       renderer.unmount();
     });
+  });
+
+  test('ResultsScreen provides back button to return to questionnaire and edit answers', async () => {
+    const mockBackToQuestionnaire = jest.fn();
+    const mockSchemes: SchemeItem[] = [
+      {
+        id: 101,
+        name: 'PM-KISAN Samman Nidhi',
+        verdict: 'QUALIFIES',
+        benefits: '₹6,000 प्रति वर्ष',
+      },
+    ];
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <ResultsScreen
+          conversationId="test_uuid_edit_123"
+          schemes={mockSchemes}
+          spokenText="योजनाएं प्रस्तुत हैं"
+          citizenProfile={{ name: 'सुनीता देवी', age: 35 }}
+          onStartNewConversation={jest.fn()}
+          onBackToQuestionnaire={mockBackToQuestionnaire}
+        />
+      );
+    });
+
+    const root = renderer!.root;
+    const backBtn = root.findByProps({ children: 'प्रश्नावली पर वापस जाएं (Edit Answers)' });
+    expect(backBtn).toBeTruthy();
+
+    const touchable = findParentWithProp(backBtn, 'onPress');
+    expect(touchable).toBeTruthy();
+    await ReactTestRenderer.act(async () => {
+      touchable.props.onPress();
+    });
+
+    expect(mockBackToQuestionnaire).toHaveBeenCalledTimes(1);
+
+    await ReactTestRenderer.act(async () => {
+      renderer.unmount();
+    });
+  });
+
+  test('userHistoryService correctly saves and retrieves citizen assessment history', () => {
+    const {
+      saveUserSession,
+      getUserSessions,
+      getUserSessionById,
+      clearAllUserSessions,
+    } = require('../src/services/userHistoryService');
+
+    clearAllUserSessions();
+    expect(getUserSessions().length).toBe(0);
+
+    const saved = saveUserSession({
+      id: 'session_hist_001',
+      citizenProfile: { name: 'राजेश कुमार', age: 40, occupation: 'किसान' },
+      recommendedSchemes: [{ id: 1, name: 'पीएम-किसान', verdict: 'QUALIFIES' }],
+      statedNeed: 'खेती के लिए सहायता',
+    });
+
+    expect(saved.id).toBe('session_hist_001');
+    expect(getUserSessions().length).toBe(1);
+
+    const retrieved = getUserSessionById('session_hist_001');
+    expect(retrieved).toBeTruthy();
+    expect(retrieved?.citizenProfile?.name).toBe('राजेश कुमार');
+    expect(retrieved?.recommendedSchemes.length).toBe(1);
+
+    clearAllUserSessions();
+    expect(getUserSessions().length).toBe(0);
   });
 });

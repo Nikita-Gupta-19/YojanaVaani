@@ -7,6 +7,7 @@ Provides standalone speech endpoints:
 - GET  /tts: Convenient endpoint for quick browser playback and testing.
 """
 
+import asyncio
 import base64
 import logging
 from typing import Optional
@@ -44,26 +45,38 @@ class TTSBase64Response(BaseModel):
     "/stt",
     response_model=TranscriptionResult,
     summary="Transcribe spoken vernacular audio to Hindi text",
-    description="Accepts an uploaded audio file (WAV, MP3, OGG, FLAC) and transcribes it via Whisper."
+    description="Accepts an uploaded audio file (WAV, MP3, OGG, FLAC) or JSON payload with audio_base64 and transcribes it via Whisper."
 )
-async def speech_to_text(
-    file: UploadFile = File(..., description="Audio file payload"),
-    language_code: str = Form(default="hi", description="Language code (default 'hi')")
-) -> TranscriptionResult:
+async def speech_to_text(request: Request) -> TranscriptionResult:
     """
     Transcribes uploaded audio into Hindi text.
     Returns text, confidence score, and low_confidence flag (True if confidence < 0.60).
+    Supports multipart audio files as well as JSON payloads with base64 audio.
     """
-    if not file:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No audio file uploaded.")
+    content_type = request.headers.get("content-type", "").lower()
+    audio_bytes: bytes = b""
+    language_code: str = "hi"
 
     try:
-        audio_bytes = await file.read()
+        if "application/json" in content_type:
+            body = await request.json()
+            if body.get("audio_base64"):
+                audio_bytes = base64.b64decode(body["audio_base64"])
+            if body.get("language_code"):
+                language_code = body["language_code"]
+        elif "form" in content_type or "multipart" in content_type:
+            form = await request.form()
+            file = form.get("file")
+            if file and hasattr(file, "read"):
+                audio_bytes = await file.read()
+            if form.get("language_code"):
+                language_code = str(form.get("language_code"))
+
         if not audio_bytes or len(audio_bytes) == 0:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded audio file is empty.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No audio bytes or audio_base64 provided.")
 
         asr = get_asr_provider()
-        result = asr.transcribe(audio_bytes=audio_bytes, language_code=language_code)
+        result = await asyncio.to_thread(asr.transcribe, audio_bytes, language_code)
         return result
 
     except HTTPException:

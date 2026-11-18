@@ -43,6 +43,35 @@ logger = logging.getLogger(__name__)
 MAX_TOOL_ITERATIONS = 6
 DEFAULT_OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 
+HINDI_SCHEME_NAME_MAP = {
+    "divyang": "दिव्यांगजन पेंशन योजना",
+    "old age": "वृद्धावस्था पेंशन योजना",
+    "widow": "निराश्रित विधवा पेंशन योजना",
+    "surgical grant": "दिव्यांगता रोकथाम शल्य चिकित्सा अनुदान",
+    "pm-kisan": "प्रधानमंत्री किसान सम्मान निधि",
+    "pm kisan": "प्रधानमंत्री किसान सम्मान निधि",
+    "pm svanidhi": "पीएम स्वनिधि योजना",
+    "awaas": "प्रधानमंत्री आवास योजना",
+    "ayushman": "आयुष्मान भारत योजना",
+    "scholarship": "छात्रवृत्ति योजना",
+    "tricycle": "मोटराइज्ड ट्राइसाइकिल सहायता योजना",
+    "motorized": "मोटराइज्ड ट्राइसाइकिल सहायता योजना",
+    "artificial limb": "कृत्रिम अंग सहायता योजना",
+    "family benefit": "राष्ट्रीय पारिवारिक लाभ योजना",
+}
+
+def to_hindi_scheme_name(name: str) -> str:
+    if not name:
+        return "सरकारी कल्याणकारी योजना"
+    n_lower = name.lower()
+    for k, v in HINDI_SCHEME_NAME_MAP.items():
+        if k in n_lower:
+            return v
+    if any("\u0900" <= c <= "\u097F" for c in name):
+        return name
+    clean = name.replace("Yojana", "योजना").replace("Scheme", "योजना").replace("Pension", "पेंशन").replace("Grant", "अनुदान")
+    return clean
+
 
 # -----------------------------------------------------------------------------
 # LANGCHAIN WRAPPERS FOR MCP TOOLS
@@ -108,6 +137,7 @@ class AgentGraphState(TypedDict):
     final_response_text: str
     csc_info: Optional[Dict[str, Any]]
     tools_called: List[str]
+    collected_documents: List[Dict[str, Any]]
 
 
 class AgentRunResult(BaseModel):
@@ -225,13 +255,15 @@ class YojanaVaaniAgent:
             verdicts = state.get("verdicts", [])
             qual_names = [v["scheme_name"] for v in verdicts if v.get("verdict") == "QUALIFIES"]
             if qual_names:
+                h_name = to_hindi_scheme_name(qual_names[0])
                 if len(qual_names) == 1:
-                    hindi_resp = f"बधाई हो! आप {qual_names[0]} के लिए पात्र हैं। नीचे योजना की पूरी जानकारी दी गई है।"
+                    hindi_resp = f"बधाई हो! आप {h_name} के लिए पात्र हैं। नीचे योजना की पूरी जानकारी दी गई है।"
                 else:
-                    hindi_resp = f"बधाई हो! आप {len(qual_names)} सरकारी योजनाओं के लिए पात्र हैं, जिसमें {qual_names[0]} शामिल है।"
+                    hindi_resp = f"बधाई हो! आप {len(qual_names)} सरकारी योजनाओं के लिए पात्र हैं, जिसमें {h_name} शामिल है।"
                 final_type = "results_ready"
             elif verdicts:
-                hindi_resp = f"जाँच पूरी हो गई है। {verdicts[0].get('scheme_name')}: {verdicts[0].get('reason', 'नियमों के अनुसार पात्रता सत्यापित नहीं हुई।')}"
+                h_first = to_hindi_scheme_name(verdicts[0].get("scheme_name", ""))
+                hindi_resp = f"जाँच पूरी हो गई है। {h_first}: {verdicts[0].get('reason', 'नियमों के अनुसार पात्रता सत्यापित नहीं हुई।')}"
                 final_type = "results_ready"
             else:
                 hindi_resp = "आपकी आवश्यकता के लिए नियमों की जटिलता अधिक है। हमने आपके निकटतम कॉमन सर्विस सेंटर (CSC) का विवरण तैयार किया है जहाँ निःशुल्क मानवीय सहायता उपलब्ध है।"
@@ -271,10 +303,28 @@ class YojanaVaaniAgent:
                     first_scheme = candidates[0]
                     req_docs = str(first_scheme.get("required_documents", "")).lower()
                     criteria = str(first_scheme.get("eligibility_criteria", {})).lower()
-                    if ("khasra" in req_docs or "land" in req_docs or "khasra" in criteria) and "request_document" not in tools_called:
+
+                    collected_docs = state.get("collected_documents") or []
+                    collected_types = set()
+                    for doc in collected_docs:
+                        if isinstance(doc, dict) and doc.get("document_type"):
+                            collected_types.add(str(doc["document_type"]).lower())
+
+                    # Check for needed documents that citizen has NOT yet uploaded
+                    needed_doc = None
+                    if ("khasra" in req_docs or "land" in req_docs or "khasra" in criteria) and ("khasra_khatauni" not in collected_types and "land_record" not in collected_types):
+                        needed_doc = "khasra_khatauni"
+                    elif ("income" in req_docs or "वार्षिक आय" in req_docs or "आय प्रमाण" in req_docs) and "income_certificate" not in collected_types:
+                        needed_doc = "income_certificate"
+                    elif ("ration" in req_docs or "राशन" in req_docs or "bpl" in req_docs) and "ration_card" not in collected_types:
+                        needed_doc = "ration_card"
+                    elif ("aadhaar" in req_docs or "आधार" in req_docs or "identity" in req_docs) and "aadhaar_card" not in collected_types:
+                        needed_doc = "aadhaar_card"
+
+                    if needed_doc and "request_document" not in tools_called:
                         tool_call = {
                             "name": "request_document",
-                            "args": {"document_type": "khasra_khatauni"},
+                            "args": {"document_type": needed_doc},
                             "id": f"call_doc_{iter_count+1}",
                             "type": "tool_call"
                         }
@@ -302,13 +352,15 @@ class YojanaVaaniAgent:
                 verdicts = state.get("verdicts", [])
                 qual_names = [v["scheme_name"] for v in verdicts if v.get("verdict") == "QUALIFIES"]
                 if qual_names:
+                    h_name = to_hindi_scheme_name(qual_names[0])
                     if len(qual_names) == 1:
-                        hindi_resp = f"बधाई हो! आप {qual_names[0]} के लिए पात्र हैं। नीचे योजना की पूरी जानकारी दी गई है।"
+                        hindi_resp = f"बधाई हो! आप {h_name} के लिए पात्र हैं। नीचे योजना की पूरी जानकारी दी गई है।"
                     else:
-                        hindi_resp = f"बधाई हो! आप {len(qual_names)} सरकारी योजनाओं के लिए पात्र हैं, जिसमें {qual_names[0]} शामिल है।"
+                        hindi_resp = f"बधाई हो! आप {len(qual_names)} सरकारी योजनाओं के लिए पात्र हैं, जिसमें {h_name} शामिल है।"
                     final_type = "results_ready"
                 elif verdicts:
-                    hindi_resp = f"जाँच पूरी हो गई है। {verdicts[0].get('scheme_name')}: {verdicts[0].get('reason', 'नियमों के अनुसार पात्रता सत्यापित नहीं हुई।')}"
+                    h_first = to_hindi_scheme_name(verdicts[0].get("scheme_name", ""))
+                    hindi_resp = f"जाँच पूरी हो गई है। {h_first}: {verdicts[0].get('reason', 'नियमों के अनुसार पात्रता सत्यापित नहीं हुई।')}"
                     final_type = "results_ready"
                 elif state.get("csc_info"):
                     hindi_resp = "आपकी आवश्यकता के लिए नियमों की जटिलता अधिक है। हमने आपके निकटतम कॉमन सर्विस सेंटर (CSC) का विवरण तैयार किया है जहाँ निःशुल्क मानवीय सहायता उपलब्ध है।"
@@ -350,16 +402,30 @@ class YojanaVaaniAgent:
 
         # 2. Step 2: Analyze retrieved schemes for missing facts or documents
         if candidates and "check_eligibility" not in tools_called:
-            # Check if any scheme requires land records or specific certificates
             first_scheme = candidates[0]
             req_docs = str(first_scheme.get("required_documents", "")).lower()
             criteria = first_scheme.get("eligibility_criteria", {})
 
-            # If agriculture/solar scheme and document not requested yet
-            if ("khasra" in req_docs or "land" in req_docs or "khasra" in str(criteria).lower()) and "request_document" not in tools_called:
+            collected_docs = state.get("collected_documents") or []
+            collected_types = set()
+            for doc in collected_docs:
+                if isinstance(doc, dict) and doc.get("document_type"):
+                    collected_types.add(str(doc["document_type"]).lower())
+
+            needed_doc = None
+            if ("khasra" in req_docs or "land" in req_docs or "khasra" in str(criteria).lower()) and ("khasra_khatauni" not in collected_types and "land_record" not in collected_types):
+                needed_doc = "khasra_khatauni"
+            elif ("income" in req_docs or "वार्षिक आय" in req_docs or "आय प्रमाण" in req_docs) and "income_certificate" not in collected_types:
+                needed_doc = "income_certificate"
+            elif ("ration" in req_docs or "राशन" in req_docs or "bpl" in req_docs) and "ration_card" not in collected_types:
+                needed_doc = "ration_card"
+            elif ("aadhaar" in req_docs or "आधार" in req_docs or "identity" in req_docs) and "aadhaar_card" not in collected_types:
+                needed_doc = "aadhaar_card"
+
+            if needed_doc and "request_document" not in tools_called:
                 tool_call = {
                     "name": "request_document",
-                    "args": {"document_type": "khasra_khatauni"},
+                    "args": {"document_type": needed_doc},
                     "id": "call_doc_1",
                     "type": "tool_call"
                 }
@@ -388,10 +454,11 @@ class YojanaVaaniAgent:
         verdicts = state.get("verdicts", [])
         qual_names = [v["scheme_name"] for v in verdicts if v.get("verdict") == "QUALIFIES"]
         if qual_names:
+            h_name = to_hindi_scheme_name(qual_names[0])
             if len(qual_names) == 1:
-                hindi_resp = f"बधाई हो! आप {qual_names[0]} के लिए पात्र हैं। नीचे योजना की पूरी जानकारी दी गई है।"
+                hindi_resp = f"बधाई हो! आप {h_name} के लिए पात्र हैं। नीचे योजना की पूरी जानकारी दी गई है।"
             else:
-                hindi_resp = f"बधाई हो! आप {len(qual_names)} सरकारी योजनाओं के लिए पात्र हैं, जिसमें {qual_names[0]} शामिल है।"
+                hindi_resp = f"बधाई हो! आप {len(qual_names)} सरकारी योजनाओं के लिए पात्र हैं, जिसमें {h_name} शामिल है।"
         else:
             hindi_resp = "आपकी जानकारी के आधार पर योजना नियमों की जाँच पूरी कर ली गई है।"
 
@@ -509,7 +576,12 @@ class YojanaVaaniAgent:
 
         return "end"
 
-    def run(self, citizen_profile: Dict[str, Any], stated_need: str) -> AgentRunResult:
+    def run(
+        self,
+        citizen_profile: Dict[str, Any],
+        stated_need: str,
+        collected_documents: Optional[List[Dict[str, Any]]] = None
+    ) -> AgentRunResult:
         """
         Executes the agentic loop on a citizen profile and stated need.
         Returns the structured AgentRunResult with full trajectory details.
@@ -536,7 +608,8 @@ class YojanaVaaniAgent:
             "final_response_type": "",
             "final_response_text": "",
             "csc_info": None,
-            "tools_called": []
+            "tools_called": [],
+            "collected_documents": collected_documents or []
         }
 
         final_state = self._graph.invoke(init_state)

@@ -10,6 +10,7 @@ Provides a unified "send audio/action, receive next action" loop for the mobile 
 - GET  /conversation/{id}: Inspects complete conversational state.
 """
 
+import asyncio
 import base64
 import concurrent.futures
 from datetime import datetime, timezone
@@ -206,7 +207,7 @@ async def respond_to_conversation(
             audio_bytes = await file.read()
             if audio_bytes and len(audio_bytes) > 0:
                 asr = get_asr_provider()
-                trans_result = asr.transcribe(audio_bytes=audio_bytes, language_code="hi")
+                trans_result = await asyncio.to_thread(asr.transcribe, audio_bytes, "hi")
                 if trans_result and not trans_result.low_confidence and trans_result.text.strip():
                     spoken_text = trans_result.text.strip()
                 else:
@@ -236,7 +237,7 @@ async def respond_to_conversation(
                     audio_bytes = base64.b64decode(audio_b64)
                     if audio_bytes and len(audio_bytes) > 0:
                         asr = get_asr_provider()
-                        trans_result = asr.transcribe(audio_bytes=audio_bytes, language_code="hi")
+                        trans_result = await asyncio.to_thread(asr.transcribe, audio_bytes, "hi")
                         if trans_result and not trans_result.low_confidence and trans_result.text.strip():
                             spoken_text = trans_result.text.strip()
                         else:
@@ -421,14 +422,12 @@ async def upload_document_photo(
 ) -> DocumentOCRResponse:
     conv = conversation_manager.get_conversation(id)
     if not conv:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Conversation ID '{id}' not found."
-        )
+        conv = conversation_manager.create_conversation(id)
 
     content_type = request.headers.get("content-type", "")
     req_doc_type = document_type
     req_sample_key = sample_key
+    req_is_sample = None
     image_bytes: Optional[bytes] = None
 
     # Handle application/json requests
@@ -439,6 +438,8 @@ async def upload_document_photo(
                 req_doc_type = body["document_type"]
             if not req_sample_key and "sample_key" in body:
                 req_sample_key = body["sample_key"]
+            if "is_sample" in body:
+                req_is_sample = bool(body["is_sample"])
             if "image_base64" in body and body["image_base64"]:
                 import base64
                 raw_b64 = body["image_base64"]
@@ -456,7 +457,14 @@ async def upload_document_photo(
             logger.warning(f"Error reading uploaded file: {e}")
 
     # Fallback to synthetic mock documents if on emulator or sample requested
-    doc_type_canonical = (req_doc_type or "income_certificate").lower()
+    if req_sample_key:
+        doc_type_canonical = req_sample_key.lower()
+    else:
+        doc_type_canonical = (req_doc_type or "income_certificate").lower()
+
+    # Determine whether user selected a predefined sample document or captured a real photo
+    is_predefined_sample = bool(req_sample_key or (req_is_sample is True) or (not image_bytes))
+
     if not image_bytes or len(image_bytes) == 0:
         mock_map = {
             "income_certificate": "income_cert_01_ramesh_kumar.png",
@@ -485,7 +493,9 @@ async def upload_document_photo(
                 detail="No image provided and mock document not found."
             )
 
-    citizen_name = conv.citizen_profile.name if conv.citizen_profile else None
+    # For predefined sample documents: pass citizen profile name so sample details match user
+    # For real photo captures: pass citizen_name=None so details are fetched genuinely from the scanned doc
+    citizen_name = conv.citizen_profile.name if (is_predefined_sample and conv.citizen_profile) else None
     result = OCRService.process_document(
         image_bytes=image_bytes,
         document_type=doc_type_canonical,
@@ -496,11 +506,11 @@ async def upload_document_photo(
     confidence_scores = dict(result.confidence_scores)
     p = conv.citizen_profile
 
-    # Enrich extracted fields with citizen profile facts if not already present
-    if p:
-        if "name" not in extracted_fields and p.name:
+    # Enrich extracted fields with citizen profile facts ONLY if user selected predefined sample docs:
+    if is_predefined_sample and p:
+        if p.name and p.name not in ["नागरिक", "Unknown"]:
             extracted_fields["name"] = p.name
-            confidence_scores["name"] = 0.90
+            confidence_scores["name"] = 0.95
         if "gender" not in extracted_fields and p.gender:
             extracted_fields["gender"] = p.gender
             confidence_scores["gender"] = 0.90
@@ -508,11 +518,12 @@ async def upload_document_photo(
             inc_val = getattr(p, "annual_income", None) or 48000
             extracted_fields["annual_income"] = float(inc_val)
             confidence_scores["annual_income"] = 0.88
+        if ("aadhaar" in doc_type_canonical or "identity" in doc_type_canonical) and "aadhaar_number" not in extracted_fields:
+            extracted_fields["aadhaar_number"] = "XXXX-XXXX-8812"
+            confidence_scores["aadhaar_number"] = 0.94
 
-    # If OCR extracted 0 fields (e.g. completely blurry or dark camera photo),
-    # supply candidate verification fields based on the citizen's confirmed baseline interview profile
-    # so the citizen can audit, review, and confirm on screen without an empty error.
-    if len(extracted_fields) == 0:
+    # If OCR extracted 0 fields from a predefined sample, supply baseline profile verification fields
+    if len(extracted_fields) == 0 and is_predefined_sample:
         logger.info(f"OCR returned 0 fields from uploaded photo for conversation {id}. Supplying baseline profile verification fields.")
         if "income" in doc_type_canonical:
             inc_val = getattr(p, "annual_income", None) or 48000
@@ -588,10 +599,7 @@ async def confirm_document_fields(
 ) -> ConversationTurnResponse:
     conv = conversation_manager.get_conversation(id)
     if not conv:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Conversation ID '{id}' not found."
-        )
+        conv = conversation_manager.create_conversation(id)
 
     confirmed_fields: Dict[str, Any] = {}
     if fields:
@@ -626,9 +634,12 @@ async def confirm_document_fields(
             except (ValueError, TypeError):
                 pass
 
-        # Update Name if not already set or more formal
+        # Update Name only if citizen profile name was not already established
         if "name" in confirmed_fields and isinstance(confirmed_fields["name"], str):
-            profile.name = confirmed_fields["name"].strip()
+            clean_name = confirmed_fields["name"].strip()
+            # Protect interview name: NEVER overwrite if interview profile established the citizen's real name
+            if clean_name and (not profile.name or profile.name in ["नागरिक", "नागरिक (सत्यापित)", "Unknown"]):
+                profile.name = clean_name
 
         # Update Location / State
         if "state" in confirmed_fields and isinstance(confirmed_fields["state"], str):
@@ -641,9 +652,13 @@ async def confirm_document_fields(
             profile.gender = confirmed_fields["gender"].strip()
 
         # Record verified document record
+        doc_fields = dict(confirmed_fields)
+        if "name" not in doc_fields and profile.name and profile.name not in ["नागरिक", "नागरिक (सत्यापित)", "Unknown"]:
+            doc_fields["name"] = profile.name
+
         doc_entry = {
             "document_type": confirmed_fields.get("document_type") or "verified_document",
-            "extracted_fields": confirmed_fields,
+            "extracted_fields": doc_fields,
             "verification_status": "verified" if confirmed else "unverified",
             "confidence_score": confirmed_fields.get("confidence", 0.94),
             "confirmed_at": datetime.now(timezone.utc).isoformat()
@@ -674,6 +689,8 @@ async def confirm_document_fields(
     speech_text = "दस्तावेज़ सत्यापन पूर्ण हुआ। आपकी पात्रता का नवीनीकरण कर दिया गया है।"
     audio_b64 = _synthesize_audio_base64(speech_text)
 
+    conversation_manager._save_to_disk()
+
     action = ActionPayload(
         type="present_results",
         text=speech_text,
@@ -689,6 +706,59 @@ async def confirm_document_fields(
         citizen_profile=conv.citizen_profile.model_dump(),
         action=action
     )
+
+
+# -----------------------------------------------------------------------------
+# ENDPOINT 4B: GET /conversation/history
+# -----------------------------------------------------------------------------
+
+@router.get(
+    "/history",
+    response_model=List[Dict[str, Any]],
+    summary="Get history of all citizen conversations and saved assessments",
+    description="Returns all previously stored sessions, citizen profiles, and recommended schemes."
+)
+async def get_all_conversation_history() -> List[Dict[str, Any]]:
+    conversations = conversation_manager.get_all_conversations()
+    results = []
+    for conv in conversations:
+        results.append({
+            "conversation_id": conv.conversation_id,
+            "status": conv.status.value if hasattr(conv.status, "value") else str(conv.status),
+            "citizen_profile": conv.citizen_profile.model_dump(),
+            "stated_need": conv.stated_need,
+            "recommended_schemes_count": len(conv.candidate_schemes),
+            "recommended_schemes": conv.candidate_schemes,
+            "collected_documents_count": len(conv.collected_documents),
+            "collected_documents": conv.collected_documents,
+            "turns_count": len(conv.conversation_history),
+        })
+    return results
+
+
+@router.delete(
+    "/history",
+    summary="Clear all conversation and assessment history",
+    description="Wipes all saved citizen assessments and conversational sessions completely."
+)
+async def delete_all_conversation_history() -> Dict[str, Any]:
+    conversation_manager.clear_all_history()
+    return {"status": "success", "message": "All user conversation history has been permanently cleared."}
+
+
+@router.delete(
+    "/{id}",
+    summary="Delete a single conversation session from history",
+    description="Removes a specific citizen assessment record from saved history."
+)
+async def delete_single_conversation(id: str) -> Dict[str, Any]:
+    success = conversation_manager.delete_conversation(id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Conversation session with id '{id}' not found."
+        )
+    return {"status": "success", "message": f"Conversation session '{id}' deleted successfully."}
 
 
 # -----------------------------------------------------------------------------
@@ -727,10 +797,7 @@ async def get_conversation_report(
 ) -> CitizenReportResponse:
     conv = conversation_manager.get_conversation(id)
     if not conv:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Conversation ID '{id}' not found."
-        )
+        conv = conversation_manager.create_conversation(id)
 
     p = conv.citizen_profile
     name_str = p.name or "नागरिक"

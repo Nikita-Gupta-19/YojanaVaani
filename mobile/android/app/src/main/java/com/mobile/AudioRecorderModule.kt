@@ -110,7 +110,6 @@ class AudioRecorderModule(private val reactContext: ReactApplicationContext) :
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE, targetLang)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, targetLang)
-                    putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, targetLang)
                     putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, reactContext.packageName)
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
@@ -278,6 +277,13 @@ class AudioRecorderModule(private val reactContext: ReactApplicationContext) :
             return
         }
 
+        // Cleanly terminate any active SpeechRecognizer to prevent AudioFlinger lockup
+        try {
+            speechRecognizer?.cancel()
+            speechRecognizer?.destroy()
+        } catch (_: Exception) {}
+        speechRecognizer = null
+
         try {
             val sampleRate = 16000
             val channelConfig = AudioFormat.CHANNEL_IN_MONO
@@ -426,6 +432,11 @@ class AudioRecorderModule(private val reactContext: ReactApplicationContext) :
             mediaPlayer?.release()
         } catch (_: Exception) {}
         mediaPlayer = null
+        try {
+            reactApplicationContext.cacheDir?.listFiles { _, name -> name.startsWith("tts_playback_") }?.forEach {
+                it.delete()
+            }
+        } catch (_: Exception) {}
     }
 
     private fun writeAudioDataToWav(file: File, bufferSize: Int, sampleRate: Int) {

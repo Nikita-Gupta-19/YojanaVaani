@@ -194,6 +194,9 @@ class GoogleHindiTTSProvider(TTSProvider):
             return _resample_and_normalize_audio(raw_audio, target_format="mp3")
         except Exception as e:
             logger.warning(f"GoogleHindiTTSProvider synthesis failed or timed out: {e}")
+            macos = MacOSHindiTTSProvider()
+            if macos.available:
+                return macos.synthesize(clean_text, language_code)
             return b""
 
 

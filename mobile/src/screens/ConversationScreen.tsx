@@ -4,7 +4,9 @@ import {
   Alert,
   Animated,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
+  PermissionsAndroid,
   Platform,
   StatusBar,
   StyleSheet,
@@ -16,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { API_ENDPOINTS } from '../config';
 import { SCHEME_GENERATION_LOADING_AUDIO_BASE64 } from '../services/schemeLoadingAudio';
+import { saveUserSession } from '../services/userHistoryService';
 import {
   enqueueResponse,
   flushOfflineQueue,
@@ -44,6 +47,7 @@ export interface ChatMessage {
 }
 
 interface ConversationScreenProps {
+  isActive?: boolean;
   onNavigateToDocument: (conversationId: string, documentType: string) => void;
   onNavigateToResults: (
     conversationId: string,
@@ -57,6 +61,7 @@ interface ConversationScreenProps {
 }
 
 export const ConversationScreen: React.FC<ConversationScreenProps> = ({
+  isActive = true,
   onNavigateToDocument,
   onNavigateToResults,
   onNavigateToEscalation,
@@ -81,11 +86,49 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   const [pendingConfirmation, setPendingConfirmation] = useState<string | null>(null);
   const [isGeneratingSchemes, setIsGeneratingSchemes] = useState<boolean>(false);
   const [isScrolledAwayFromBottom, setIsScrolledAwayFromBottom] = useState<boolean>(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+
+  // When ConversationScreen loses focus or isActive is false, immediately silence TTS and cancel speech recognition
+  useEffect(() => {
+    if (!isActive) {
+      stopTTSAudio().catch(() => {});
+      cancelVoiceRecognition().catch(() => {});
+    }
+  }, [isActive]);
+
+  // Monitor keyboard visibility so typing doesn't get obscured by mic area
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setIsKeyboardVisible(true);
+        if (e && e.endCoordinates && e.endCoordinates.height) {
+          setKeyboardHeight(e.endCoordinates.height);
+        }
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const flatListRef = useRef<FlatList>(null);
   const tempSpokenTextRef = useRef<string>('');
-  console.log('[ConversationScreen] RENDER: assistantState =', assistantState, 'isRecording =', isRecording);
   const isRecordingRef = useRef<boolean>(false);
+  const recordingTimerRef = useRef<any>(null);
 
   // Subscribe to real-time live speech recognition events (temp text streaming)
   useEffect(() => {
@@ -111,6 +154,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     });
 
     const subError = subscribeSpeechError((_code) => {
+      console.log('[ConversationScreen] Speech recognition error event code:', _code);
       setIsRecording(false);
       isRecordingRef.current = false;
       const cached = tempSpokenTextRef.current.trim();
@@ -231,8 +275,8 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 120);
 
-        // Play assistant spoken voice if available
-        if (action.audio_base64) {
+        // Play assistant spoken voice if available and conversation screen is active
+        if (action.audio_base64 && isActive) {
           playTTSAudio(action.audio_base64).catch(() => {});
         }
 
@@ -248,6 +292,12 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         stopTTSAudio().catch(() => {});
         setIsGeneratingSchemes(false);
         setAssistantState('speaking');
+        saveUserSession({
+          id: convId,
+          citizenProfile: profile || {},
+          recommendedSchemes: action.schemes || [],
+          statedNeed: actionText,
+        });
         onNavigateToResults(convId, action.schemes || [], actionText, action.audio_base64, profile);
       } else if (actionType === 'escalate') {
         setIsGeneratingSchemes(false);
@@ -537,39 +587,70 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   };
 
   /**
-   * Voice Mic recording press: starts/stops real native audio recording.
-   * Never injects mock or predefined answers.
-   */
-  /**
    * Voice Mic recording press:
-   * Uses headless background speech recognition disguised completely as native Whisper ASR.
-   * Never displays any Google dialog or external UI.
+   * Uses real native AudioRecord to capture citizen audio directly to WAV,
+   * transcribes it via Whisper / SpeechRecognizer, and presents the Voice Comprehension
+   * Confirmation Box ("क्या आपने यही कहा?") with Confirm (✓) and Retry (✕/↺) options.
    */
   const handleMicPress = async () => {
     console.log('[ConversationScreen] handleMicPress called, isRecording:', isRecordingRef.current);
     // Stop any active TTS audio playing first
     await stopTTSAudio();
 
+    if (recordingTimerRef.current) {
+      clearTimeout(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+
     if (isRecordingRef.current) {
-      // User tapped mic button while active: finish listening
+      // User tapped mic button while active: finish recording
       isRecordingRef.current = false;
       setIsRecording(false);
-      await stopVoiceRecognition().catch(() => {});
+      setAssistantState('thinking');
+      setCurrentPrompt('पहचाना जा रहा है (Processing with Whisper ASR)...');
 
-      // Allow SpeechRecognizer 300ms to dispatch final results before checking
-      await new Promise((resolve) => setTimeout(() => resolve(undefined), 300));
+      try {
+        const speechText = await stopVoiceRecognition().catch(() => '');
+        let textToReview = (typeof speechText === 'string' && speechText.trim().length > 0)
+          ? speechText.trim()
+          : tempSpokenTextRef.current.trim();
 
-      const textToReview = tempSpokenTextRef.current.trim();
-      if (textToReview.length > 0) {
-        setPendingConfirmation(textToReview);
+        if (textToReview.length > 0) {
+          setPendingConfirmation(textToReview);
+          setTextInputFallback(textToReview);
+          setAssistantState('listening');
+          setCurrentPrompt(`पहचाना गया (Whisper ASR): "${textToReview}"`);
+        } else {
+          setAssistantState('listening');
+          setCurrentPrompt('आवाज़ साफ़ सुनाई नहीं दी। कृपया दोबारा बोलें, नीचे लिखें या विकल्प चुनें।');
+          setShowTextInput(true);
+        }
+      } catch (_recErr) {
         setAssistantState('listening');
-        setCurrentPrompt(`पहचाना गया (Whisper ASR): "${textToReview}"`);
-      } else {
-        setAssistantState('listening');
-        setCurrentPrompt('माइक रोका गया। पुनः बोलने के लिए माइक दबाएं, नीचे लिखें या विकल्प चुनें।');
+        setCurrentPrompt('रिकॉर्डिंग पूरी नहीं हो पाई। कृपया दोबारा बोलें, नीचे लिखें या विकल्प चुनें।');
         setShowTextInput(true);
       }
       return;
+    }
+
+    // Start native voice recognition
+    if (Platform.OS === 'android') {
+      try {
+        const hasPerm = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO);
+        if (!hasPerm) {
+          const res = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO, {
+            title: 'माइक्रोफ़ोन अनुमति (Microphone Permission)',
+            message: 'योजनावाणी से बोलकर बातचीत करने के लिए माइक्रोफ़ोन की अनुमति आवश्यक है।',
+            buttonPositive: 'अनुमति दें (Allow)',
+            buttonNegative: 'रद्द करें (Cancel)',
+          });
+          if (res !== PermissionsAndroid.RESULTS.GRANTED) {
+            setCurrentPrompt('माइक्रोफ़ोन अनुमति नहीं मिली। कृपया नीचे लिखें या विकल्प चुनें।');
+            setShowTextInput(true);
+            return;
+          }
+        }
+      } catch (_e) {}
     }
 
     setPendingConfirmation(null);
@@ -578,45 +659,22 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     isRecordingRef.current = true;
     setIsRecording(true);
     setAssistantState('listening');
-    setCurrentPrompt('🎙️ योजनावाणी सुन रही है (Whisper ASR)...');
+    setCurrentPrompt('🎙️ योजनावाणी सुन रही है... बोलना पूरा होने पर लाल बटन (⏹) दबाएं');
 
     try {
-      // 8-second safety timeout race guarantees mic never hangs or stays frozen
-      const timeoutPromise = new Promise<string>((resolve) =>
-        setTimeout(() => resolve(tempSpokenTextRef.current.trim()), 8000)
-      );
-      const recognized = await Promise.race([
-        startVoiceRecognition('hi-IN'),
-        timeoutPromise,
-      ]);
-
+      await startVoiceRecognition('hi-IN');
+      // Auto-stop safety timeout: after 6 seconds of recording, automatically finalize and transcribe
+      recordingTimerRef.current = setTimeout(() => {
+        if (isRecordingRef.current) {
+          handleMicPress();
+        }
+      }, 6000);
+    } catch (_startErr) {
       isRecordingRef.current = false;
       setIsRecording(false);
-      const textToReview = (recognized && recognized.trim().length > 0)
-        ? recognized.trim()
-        : tempSpokenTextRef.current.trim();
-      if (textToReview.length > 0) {
-        setPendingConfirmation(textToReview);
-        setAssistantState('listening');
-        setCurrentPrompt(`पहचाना गया (Whisper ASR): "${textToReview}"`);
-      } else {
-        setAssistantState('listening');
-        setCurrentPrompt('आवाज़ साफ़ नहीं आई। कृपया पुनः बोलें, नीचे लिखें या विकल्प चुनें।');
-        setShowTextInput(true);
-      }
-    } catch (_voiceErr) {
-      isRecordingRef.current = false;
-      setIsRecording(false);
-      const textToReview = tempSpokenTextRef.current.trim();
-      if (textToReview.length > 0) {
-        setPendingConfirmation(textToReview);
-        setAssistantState('listening');
-        setCurrentPrompt(`पहचाना गया (Whisper ASR): "${textToReview}"`);
-      } else {
-        setAssistantState('listening');
-        setCurrentPrompt('आवाज़ साफ़ नहीं आई। कृपया पुनः बोलें, नीचे लिखें या विकल्प चुनें।');
-        setShowTextInput(true);
-      }
+      setAssistantState('listening');
+      setCurrentPrompt('माइक शुरू नहीं हो पाया। कृपया नीचे लिखें या विकल्प चुनें।');
+      setShowTextInput(true);
     }
   };
 
@@ -697,7 +755,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       setQuickOptions(data.action?.options || []);
       setAssistantState('speaking');
 
-      if (data.action?.audio_base64) {
+      if (data.action?.audio_base64 && isActive) {
         playTTSAudio(data.action.audio_base64).catch(() => {});
       }
 
@@ -714,6 +772,10 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
 
       {/* Top Header */}
       <View style={styles.topBar}>
@@ -852,6 +914,8 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       {/* Visual Chat Transcript (Primary View, Full Height) */}
       <FlatList
         ref={flatListRef}
+        style={{ flex: 1 }}
+        keyboardShouldPersistTaps="handled"
         data={messages}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.transcriptList}
@@ -892,36 +956,81 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         }}
       />
 
-      {/* Optional Text Input Fallback */}
+      {/* Optional Text Input Fallback - always pinned above keyboard */}
       {showTextInput && !isGeneratingSchemes && (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.textInputContainer}
+        <View
+          style={[
+            styles.textInputAreaWrapper,
+            Platform.OS === 'android' && isKeyboardVisible && { marginBottom: keyboardHeight },
+          ]}
         >
-          <TextInput
-            style={styles.textInput}
-            placeholder="यहाँ बोलें या लिखें..."
-            placeholderTextColor="#64748B"
-            value={textInputFallback}
-            onChangeText={(text) => {
-              setTextInputFallback(text);
-              if (text && pendingConfirmation) {
-                setPendingConfirmation(null);
-              }
-            }}
-            onSubmitEditing={() => submitCitizenResponse(textInputFallback)}
-          />
-          <TouchableOpacity
-            style={styles.textSendButton}
-            onPress={() => submitCitizenResponse(textInputFallback)}
-          >
-            <Text style={styles.textSendButtonText}>भेजें</Text>
-          </TouchableOpacity>
-        </KeyboardAvoidingView>
+          {/* Prominent Current Question Banner shown when keyboard is open so the question is NEVER hidden */}
+          {isKeyboardVisible && (
+            <View style={styles.typingQuestionCard}>
+              <View style={styles.typingQuestionHeaderRow}>
+                <Text style={styles.typingQuestionBadge}>
+                  🤖 वर्तमान सवाल ({questionProgress.current}/{questionProgress.total}):
+                </Text>
+                <TouchableOpacity
+                  onPress={() => Keyboard.dismiss()}
+                  style={styles.typingDismissMiniButton}
+                  accessibilityLabel="कीबोर्ड बंद करें"
+                >
+                  <Text style={styles.typingDismissMiniText}>✕ बंद करें</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.typingQuestionText}>
+                {currentPrompt}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.textInputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="यहाँ बोलें या लिखें..."
+              placeholderTextColor="#64748B"
+              value={textInputFallback}
+              onChangeText={(text) => {
+                setTextInputFallback(text);
+                if (text && pendingConfirmation) {
+                  setPendingConfirmation(null);
+                }
+              }}
+              onSubmitEditing={() => {
+                Keyboard.dismiss();
+                if (textInputFallback.trim()) {
+                  submitCitizenResponse(textInputFallback.trim());
+                }
+              }}
+              returnKeyType="send"
+            />
+            {isKeyboardVisible && (
+              <TouchableOpacity
+                style={styles.textDismissButton}
+                onPress={() => Keyboard.dismiss()}
+                accessibilityLabel="कीबोर्ड बंद करें"
+              >
+                <Text style={styles.textDismissButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.textSendButton}
+              onPress={() => {
+                Keyboard.dismiss();
+                if (textInputFallback.trim()) {
+                  submitCitizenResponse(textInputFallback.trim());
+                }
+              }}
+            >
+              <Text style={styles.textSendButtonText}>भेजें</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
 
-      {/* Quick Suggestion Chips for Fast Vernacular Answering */}
-      {quickOptions && quickOptions.length > 0 && !isGeneratingSchemes && (
+      {/* Quick Suggestion Chips for Fast Vernacular Answering (hidden when typing) */}
+      {!isKeyboardVisible && quickOptions && quickOptions.length > 0 && !isGeneratingSchemes && (
         <View style={styles.quickOptionsContainer}>
           <Text style={styles.quickOptionsHeader}>सुझाव / विकल्प (त्वरित चयन):</Text>
           <FlatList
@@ -986,8 +1095,8 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         </View>
       )}
 
-      {/* Main Center Voice Recording Button (Hidden during generating overlay) */}
-      {!isGeneratingSchemes && (
+      {/* Main Center Voice Recording Button (Hidden during generating overlay AND when keyboard is visible) */}
+      {!isGeneratingSchemes && !isKeyboardVisible && (
         <View style={styles.micControlArea}>
           <View style={styles.micButtonWrapper}>
             <TouchableOpacity
@@ -1005,6 +1114,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           </Text>
         </View>
       )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -1225,11 +1335,57 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
+  textInputAreaWrapper: {
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+    backgroundColor: '#1E293B',
+    elevation: 8,
+    zIndex: 999,
+  },
+  typingQuestionCard: {
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9933',
+  },
+  typingQuestionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  typingQuestionBadge: {
+    color: '#FFD166',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  typingDismissMiniButton: {
+    backgroundColor: '#334155',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  typingDismissMiniText: {
+    color: '#CBD5E1',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  typingQuestionText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
   textInputContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 10,
     backgroundColor: '#1E293B',
+    alignItems: 'center',
   },
   textInput: {
     flex: 1,
@@ -1239,6 +1395,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 18,
+  },
+  textDismissButton: {
+    backgroundColor: '#334155',
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  textDismissButtonText: {
+    color: '#CBD5E1',
+    fontWeight: '800',
+    fontSize: 16,
   },
   textSendButton: {
     backgroundColor: '#FF9933',
