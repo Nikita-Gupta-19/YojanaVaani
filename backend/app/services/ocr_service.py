@@ -84,17 +84,26 @@ class OCRService:
         """
         steps_applied: List[str] = []
         if not OPENCV_AVAILABLE:
-            pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            from PIL import ImageOps
+            pil_img = Image.open(io.BytesIO(image_bytes))
+            pil_img = ImageOps.exif_transpose(pil_img).convert("RGB")
             return np.array(pil_img), ["pil_fallback"]
 
-        # Decode image from memory
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        if img is None:
-            pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        # Decode image from memory, applying EXIF orientation correction for mobile camera photos
+        try:
+            from PIL import ImageOps
+            pil_img = Image.open(io.BytesIO(image_bytes))
+            pil_img = ImageOps.exif_transpose(pil_img).convert("RGB")
             img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+            steps_applied.append("exif_orientation_corrected")
+        except Exception:
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            steps_applied.append("decode_bgr")
 
-        steps_applied.append("decode_bgr")
+        if img is None:
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
         # 0. Resize large smartphone camera photos to optimal OCR dimension (max 1800px)
         h, w = img.shape[:2]
@@ -188,26 +197,55 @@ class OCRService:
 
         try:
             from pytesseract import Output
-            # Pass 1: Contrast-enhanced grayscale
-            data = pytesseract.image_to_data(processed_img, lang=use_lang, output_type=Output.DICT)
-            raw_text = pytesseract.image_to_string(processed_img, lang=use_lang)
+            # Pass 1: English pass for crisp digits, dates, names, and numbers without Devanagari interference
+            try:
+                raw_text_eng = pytesseract.image_to_string(processed_img, lang="eng")
+            except Exception:
+                raw_text_eng = ""
 
-            # Check if Pass 1 extracted meaningful text
+            # Pass 2: Contrast-enhanced grayscale with target language (hin+eng)
+            data = pytesseract.image_to_data(processed_img, lang=use_lang, output_type=Output.DICT)
+            raw_text_hin = pytesseract.image_to_string(processed_img, lang=use_lang)
+
+            # Combine English first, followed by Hindi/dual text
+            raw_text = (raw_text_eng + "\n" + raw_text_hin).strip() if raw_text_eng else raw_text_hin
+
+            # Check if Pass 1/2 extracted meaningful text
             valid_words = [w.strip() for w in data.get("text", []) if len(w.strip()) > 1]
 
-            # Pass 2: Adaptive Gaussian thresholding if Pass 1 yielded sparse results (glare/shadow)
+            # Pass 3: Adaptive Gaussian thresholding if sparse results (glare/shadow)
             if len(valid_words) < 5 and OPENCV_AVAILABLE:
                 adaptive = cv2.adaptiveThreshold(
                     processed_img, 255,
                     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                     cv2.THRESH_BINARY, 31, 15
                 )
+                try:
+                    raw_text2_eng = pytesseract.image_to_string(adaptive, lang="eng")
+                except Exception:
+                    raw_text2_eng = ""
                 data2 = pytesseract.image_to_data(adaptive, lang=use_lang, output_type=Output.DICT)
-                raw_text2 = pytesseract.image_to_string(adaptive, lang=use_lang)
+                raw_text2_hin = pytesseract.image_to_string(adaptive, lang=use_lang)
                 valid_words2 = [w.strip() for w in data2.get("text", []) if len(w.strip()) > 1]
                 if len(valid_words2) > len(valid_words):
                     data = data2
-                    raw_text = raw_text2
+                    raw_text = (raw_text2_eng + "\n" + raw_text2_hin).strip() if raw_text2_eng else raw_text2_hin
+
+            # Pass 4: 90 / 180 / 270 degree rotation check for sideways/upside-down phone photos
+            if len(valid_words) < 5 and OPENCV_AVAILABLE:
+                for rot_code in [cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE]:
+                    rot_img = cv2.rotate(processed_img, rot_code)
+                    rot_data = pytesseract.image_to_data(rot_img, lang=use_lang, output_type=Output.DICT)
+                    rot_words = [w.strip() for w in rot_data.get("text", []) if len(w.strip()) > 1]
+                    if len(rot_words) > len(valid_words) + 3:
+                        try:
+                            rot_eng = pytesseract.image_to_string(rot_img, lang="eng")
+                        except Exception:
+                            rot_eng = ""
+                        rot_hin = pytesseract.image_to_string(rot_img, lang=use_lang)
+                        data = rot_data
+                        raw_text = (rot_eng + "\n" + rot_hin).strip() if rot_eng else rot_hin
+                        break
 
             tokens: List[Dict[str, Any]] = []
             n_boxes = len(data["text"])
@@ -250,15 +288,44 @@ class OCRService:
         token_confs = [t["conf"] for t in tokens if t.get("conf", 0) > 0]
         avg_base_conf = float(np.mean(token_confs)) if token_confs else 0.85
 
-        # Execute all extractors (Universal extraction)
+        # Execute extractors conditionally based on document type hint & text keywords
+        doc_type_hint = (document_type or "").lower().strip()
+        text_lower = raw_text.lower()
         candidates: List[ExtractedField] = []
-        candidates.extend(cls._extract_income_certificate_fields(raw_text, avg_base_conf))
-        candidates.extend(cls._extract_ration_card_fields(raw_text, avg_base_conf))
-        candidates.extend(cls._extract_khasra_fields(raw_text, avg_base_conf))
-        candidates.extend(cls._extract_aadhaar_fields(raw_text, avg_base_conf, citizen_name=citizen_name))
-        candidates.extend(cls._extract_bank_passbook_fields(raw_text, avg_base_conf))
-        candidates.extend(cls._extract_caste_certificate_fields(raw_text, avg_base_conf))
-        candidates.extend(cls._extract_disability_certificate_fields(raw_text, avg_base_conf))
+
+        # 1. Income Certificate
+        if any(w in doc_type_hint for w in ["income", "salary", "आय"]) or any(w in text_lower for w in ["आय प्रमाण", "वार्षिक आय", "revenue department", "annual income"]):
+            candidates.extend(cls._extract_income_certificate_fields(raw_text, avg_base_conf))
+
+        # 2. Ration Card
+        if any(w in doc_type_hint for w in ["ration", "राशन", "bpl", "aay", "phh"]) or any(w in text_lower for w in ["राशन कार्ड", "ration card", "खाद्य एवं रसद", "nfsa"]):
+            candidates.extend(cls._extract_ration_card_fields(raw_text, avg_base_conf))
+
+        # 3. Land Record / Khasra
+        if any(w in doc_type_hint for w in ["khasra", "khatauni", "land", "खसरा", "खतौनी"]) or any(w in text_lower for w in ["खसरा", "खतौनी", "भूलेख", "रकबा"]):
+            candidates.extend(cls._extract_khasra_fields(raw_text, avg_base_conf))
+
+        # 4. Aadhaar / Identity
+        if any(w in doc_type_hint for w in ["aadhaar", "aadhar", "identity", "आधार"]) or any(w in text_lower for w in ["aadhaar", "aadhar", "uidai", "आधार पहचान"]):
+            candidates.extend(cls._extract_aadhaar_fields(raw_text, avg_base_conf, citizen_name=citizen_name))
+
+        # 5. Bank Passbook
+        if any(w in doc_type_hint for w in ["bank", "passbook", "बैंक", "पासबुक"]) or any(w in text_lower for w in ["बैंक", "bank", "passbook", "ifsc", "खाता संख्या"]):
+            candidates.extend(cls._extract_bank_passbook_fields(raw_text, avg_base_conf))
+
+        # 6. Caste Certificate
+        if any(w in doc_type_hint for w in ["caste", "जाति"]) or any(w in text_lower for w in ["जाति प्रमाण", "caste certificate", "सामाजिक श्रेणी"]):
+            candidates.extend(cls._extract_caste_certificate_fields(raw_text, avg_base_conf))
+
+        # 7. Disability Certificate
+        if any(w in doc_type_hint for w in ["disability", "divyang", "दिव्यांग", "udid"]) or any(w in text_lower for w in ["दिव्यांग", "disability", "udid", "विकलांग"]):
+            candidates.extend(cls._extract_disability_certificate_fields(raw_text, avg_base_conf))
+
+        # 8. Death Certificate (STRICT: only if explicitly death cert or death keywords)
+        if any(w in doc_type_hint for w in ["death", "मृत्यु"]) or any(w in text_lower for w in ["मृत्यु प्रमाण", "death certificate", "मृतक का नाम"]):
+            candidates.extend(cls._extract_death_certificate_fields(raw_text, avg_base_conf))
+
+        # 9. Generic key-values
         candidates.extend(cls._extract_generic_key_values(raw_text, avg_base_conf))
 
         # Deduplicate fields keeping the one with highest confidence
@@ -295,10 +362,55 @@ class OCRService:
                 detected_type = "caste_certificate"
             elif any(w in text_lower for w in ["disability", "दिव्यांग", "विकलांग", "udid"]):
                 detected_type = "disability_certificate"
+            elif any(w in text_lower for w in ["death", "मृत्यु", "deceased", "widow", "विधवा"]):
+                detected_type = "death_certificate"
             elif any(w in text_lower for w in ["domicile", "निवास"]):
                 detected_type = "domicile_certificate"
         else:
             detected_type = document_type
+
+        # Prune fields strictly according to document type to prevent hallucinated/invented fields
+        ALLOWED_FIELDS_BY_DOC = {
+            "aadhaar_card": {"aadhaar_number", "name", "dob", "gender", "district", "state", "pincode", "address", "father_name", "spouse_name"},
+            "aadhaar": {"aadhaar_number", "name", "dob", "gender", "district", "state", "pincode", "address", "father_name", "spouse_name"},
+            "identity": {"aadhaar_number", "name", "dob", "gender", "district", "state", "pincode", "address", "father_name", "spouse_name"},
+            "income_certificate": {"annual_income", "name", "district", "tehsil", "state", "certificate_number", "father_name", "social_category", "issue_date"},
+            "income": {"annual_income", "name", "district", "tehsil", "state", "certificate_number", "father_name", "social_category", "issue_date"},
+            "ration_card": {"ration_card_number", "card_category", "name", "family_members_count", "district", "state", "fps_name", "father_name", "spouse_name"},
+            "ration": {"ration_card_number", "card_category", "name", "family_members_count", "district", "state", "fps_name", "father_name", "spouse_name"},
+            "khasra_khatauni": {"khasra_number", "land_holding_area_hectares", "name", "district", "tehsil", "village", "state", "father_name"},
+            "khasra": {"khasra_number", "land_holding_area_hectares", "name", "district", "tehsil", "village", "state", "father_name"},
+            "land_record": {"khasra_number", "land_holding_area_hectares", "name", "district", "tehsil", "village", "state", "father_name"},
+            "bank_passbook": {"account_number", "ifsc_code", "bank_name", "name", "branch_name", "account_holder"},
+            "bank": {"account_number", "ifsc_code", "bank_name", "name", "branch_name", "account_holder"},
+            "caste_certificate": {"social_category", "caste_name", "certificate_number", "name", "district", "state", "father_name"},
+            "caste": {"social_category", "caste_name", "certificate_number", "name", "district", "state", "father_name"},
+            "disability_certificate": {"disability_percentage", "disability_type", "udid_number", "name", "district", "state"},
+            "disability": {"disability_percentage", "disability_type", "udid_number", "name", "district", "state"},
+            "domicile_certificate": {"domicile_state", "district", "state", "certificate_number", "name"},
+            "death_certificate": {"deceased_name", "date_of_death", "death_certificate_number", "district", "state"},
+            "loan_document": {"loan_account_number", "certificate_number", "name", "district", "state", "bank_name", "status", "document_type", "issue_date"},
+            "loan_closure_document": {"loan_account_number", "certificate_number", "name", "district", "state", "bank_name", "status", "document_type", "issue_date"},
+            "vending_certificate": {"certificate_number", "vending_zone", "name", "district", "state", "issue_date", "document_type", "verification_status"},
+            "letter_of_recommendation": {"lor_number", "certificate_number", "name", "district", "state", "issuing_authority", "document_type", "verification_status"},
+        }
+        # Strict whitelist for any custom, unlisted, or generic document types:
+        # Prevents extraneous or hallucinated fields (like date_of_death, aadhaar_number, etc.) from leaking!
+        GENERIC_ALLOWED_FIELDS = {
+            "name", "district", "state", "certificate_number", "application_number",
+            "document_name", "document_type", "issue_date", "verification_status", "status",
+            "bank_name", "loan_account_number"
+        }
+
+        canonical_key = (detected_type or "").lower().strip()
+        if canonical_key in ALLOWED_FIELDS_BY_DOC:
+            allowed = ALLOWED_FIELDS_BY_DOC[canonical_key]
+        else:
+            allowed = GENERIC_ALLOWED_FIELDS
+
+        fields_dict = {k: v for k, v in fields_dict.items() if k in allowed}
+        conf_dict = {k: v for k, v in conf_dict.items() if k in allowed}
+        detailed = [item for item in detailed if item.field_name in allowed]
 
         return OCRResult(
             document_type=detected_type,
@@ -368,6 +480,7 @@ class OCRService:
         )
         if dist_match:
             clean_dist = dist_match.group(1).split("\n")[0].strip(" :.,।?!-")
+            clean_dist = re.sub(r"\b(VERIFIED|SEAL|TEHSILDAR|STAMP|DATE|GOVT|UP|OFFICE)\b", "", clean_dist, flags=re.I).strip(" :.,।?!-")
             if not any(w in clean_dist.lower() for w in ["uttar", "pradesh", "revenue", "seal", "department"]):
                 fields.append(ExtractedField(
                     field_name="district",
@@ -383,12 +496,14 @@ class OCRService:
         )
         if tehsil_match:
             clean_teh = tehsil_match.group(1).split("\n")[0].strip(" :.,।?!-")
-            fields.append(ExtractedField(
-                field_name="tehsil",
-                field_value=clean_teh,
-                raw_text=tehsil_match.group(0),
-                confidence=min(0.92, max(0.67, base_conf))
-            ))
+            clean_teh = re.sub(r"\b(VERIFIED|SEAL|TEHSILDAR|TEHSIL|STAMP|DATE|GOVT|UP|OFFICE)\b", "", clean_teh, flags=re.I).strip(" :.,।?!-")
+            if len(clean_teh) >= 3 and clean_teh.upper() not in ["DAR", "TEH", "SEAL", "OFFICE"]:
+                fields.append(ExtractedField(
+                    field_name="tehsil",
+                    field_value=clean_teh,
+                    raw_text=tehsil_match.group(0),
+                    confidence=min(0.92, max(0.67, base_conf))
+                ))
 
         # 5. Certificate Number / Application ID
         cert_match = re.search(
@@ -578,10 +693,10 @@ class OCRService:
             if m:
                 adh_match = f"{m.group(1)} {m.group(2)} {m.group(3)}"
 
-        # Pass 5: Labeled patterns: Card Number / Aadhaar / Aadhar / UIDAI / पहचान संख्या
+        # Pass 5: Labeled Aadhaar / UIDAI patterns
         if not adh_match:
             m = re.search(
-                r"(?:Card\s*(?:Number|No\.?)|Aadhaar(?:\s*No\.?)?|Aadhar|आधार(?:\s*संख्या|\s*नंबर)?|UIDAI|UID|पहचान\s*(?:पत्र\s*)?(?:संख्या|नंबर|क्रमांक))[^\w\n]*([Xx•*\d\s\-\.]{4,30})",
+                r"(?:Aadhaar(?:\s*No\.?)?|Aadhar|आधार(?:\s*संख्या|\s*नंबर)?|UIDAI|UID)[^\w\n]*([Xx•*\d\s\-\.]{4,30})",
                 norm_text,
                 re.IGNORECASE
             )
@@ -603,17 +718,11 @@ class OCRService:
                         adh_match = cand
                         break
 
-        # Pass 7: Tolerant masked fallback: e.g. "XXXX 8812" or "XXXX 882"
-        if not adh_match:
+        # Pass 7: Tolerant masked fallback: e.g. "XXXX 8812" or "XXXX 882" (only when Aadhaar context present)
+        if not adh_match and any(w in norm_text.lower() for w in ["aadhaar", "aadhar", "uidai", "आधार"]):
             m = re.search(r"([Xx•*]{2,8}[\s\-\.]*[0-9]{3,4})", norm_text)
             if m:
                 adh_match = m.group(1).strip()
-
-        # Pass 8: Ultimate fallback for any 4 digits in Aadhaar / identity context
-        if not adh_match and ("aadhaar" in norm_text.lower() or "identity" in norm_text.lower() or "कार्ड" in norm_text or "uidai" in norm_text.lower()):
-            m = re.search(r"(?<!\d)([0-9]{4})(?!\d)", norm_text)
-            if m:
-                adh_match = f"XXXX XXXX {m.group(1)}"
 
         if adh_match:
             raw_num = adh_match.strip()
@@ -719,6 +828,32 @@ class OCRService:
 
                 dob_field_val = f"{clean_day.zfill(2)}/{month.zfill(2)}/{year}"
                 dob_raw_text = num_dob_match.group(0)
+            else:
+                # Strategy C: OCR repair for common 1 <-> 4 and digit artifact confusion (e.g. 45/07/4984 -> 15/07/1981)
+                cand_match = re.search(
+                    r"(?:DOB|D\.?O\.?B\.?|जन्म\s*(?:तिथि|तारीख|वर्ष)?|Date\s*of\s*Birth)[^\w\d\n]*"
+                    r"([0-9]{1,2})\s*[\/\-\.]\s*([0-9]{1,2})\s*[\/\-\.]\s*([0-9]{4})",
+                    norm_text,
+                    re.IGNORECASE
+                )
+                if cand_match:
+                    r_d, r_m, r_y = cand_match.group(1).strip(), cand_match.group(2).strip(), cand_match.group(3).strip()
+                    # Repair day: if day > 31 and starts with 4 (e.g. 45), 4 is an OCR substitution for 1
+                    if len(r_d) == 2 and r_d.startswith("4") and int(r_d) > 31:
+                        r_d = "1" + r_d[1:]
+                    # Repair year: if year starts with 49 (e.g. 4981, 4984), 49 is an OCR substitution for 19
+                    if r_y.startswith("49"):
+                        end_ch = "1" if r_y.endswith("4") and not r_y.endswith("84") else r_y[-1]
+                        r_y = f"19{r_y[2]}{end_ch}"
+                    elif r_y.startswith("40"):
+                        r_y = f"20{r_y[2:]}"
+
+                    try:
+                        if 1 <= int(r_m) <= 12 and 1 <= int(r_d) <= 31 and 1900 <= int(r_y) <= 2030:
+                            dob_field_val = f"{r_d.zfill(2)}/{r_m.zfill(2)}/{r_y}"
+                            dob_raw_text = cand_match.group(0)
+                    except ValueError:
+                        pass
 
         if dob_field_val:
             fields.append(ExtractedField(
@@ -807,17 +942,19 @@ class OCRService:
 
         # 6. District
         dist_match = re.search(
-            r"(?:District|जिला)[^\w\n]*([A-Za-z\u0900-\u097F\s]{3,25})",
+            r"(?:District|Dist\.?|जिला)[^\w\n]*([A-Za-z\u0900-\u097F\s]{3,25})",
             text, re.IGNORECASE
         )
         if dist_match:
             clean_dist = dist_match.group(1).split("\n")[0].strip(" :.,।?!-")
-            fields.append(ExtractedField(
-                field_name="district",
-                field_value=clean_dist,
-                raw_text=dist_match.group(0),
-                confidence=min(0.92, max(0.65, base_conf))
-            ))
+            clean_dist = re.sub(r"\b(State|Pin|India|Bharat|Govt|Government|Uttar|Pradesh)\b.*", "", clean_dist, flags=re.I).strip(" :.,।?!-")
+            if len(clean_dist) >= 2:
+                fields.append(ExtractedField(
+                    field_name="district",
+                    field_value=clean_dist,
+                    raw_text=dist_match.group(0),
+                    confidence=min(0.92, max(0.65, base_conf))
+                ))
 
         # 7. State
         state_match = re.search(
@@ -826,12 +963,14 @@ class OCRService:
         )
         if state_match:
             clean_state = state_match.group(1).split("\n")[0].strip(" :.,।?!-")
-            fields.append(ExtractedField(
-                field_name="state",
-                field_value=clean_state,
-                raw_text=state_match.group(0),
-                confidence=min(0.94, max(0.68, base_conf))
-            ))
+            clean_state = re.sub(r"\b(Pin|India|Bharat|Govt|Government)\b.*", "", clean_state, flags=re.I).strip(" :.,।?!-")
+            if len(clean_state) >= 2:
+                fields.append(ExtractedField(
+                    field_name="state",
+                    field_value=clean_state,
+                    raw_text=state_match.group(0),
+                    confidence=min(0.94, max(0.68, base_conf))
+                ))
 
         return fields
 
@@ -883,26 +1022,43 @@ class OCRService:
         """Extracts fields from Caste / Category Certificates."""
         fields: List[ExtractedField] = []
 
-        # Category
-        if any(w in text.lower() for w in ["scheduled caste", "अनुसूचित जाति", "sc"]):
-            fields.append(ExtractedField(
-                field_name="social_category",
-                field_value="SC",
-                raw_text="अनुसूचित जाति (SC)",
-                confidence=min(0.96, max(0.85, base_conf))
-            ))
-        elif any(w in text.lower() for w in ["scheduled tribe", "अनुसूचित जनजाति", "st"]):
-            fields.append(ExtractedField(
-                field_name="social_category",
-                field_value="ST",
-                raw_text="अनुसूचित जनजाति (ST)",
-                confidence=min(0.96, max(0.85, base_conf))
-            ))
-        elif any(w in text.lower() for w in ["other backward", "अन्य पिछड़ा वर्ग", "obc"]):
+        # If document is clearly an Aadhaar card or identity card, do not extract caste
+        text_lower = text.lower()
+        if any(w in text_lower for w in ["aadhaar", "aadhar", "uidai", "unique identification"]):
+            return fields
+
+        # Caste / Social Category extraction with word boundary and context to avoid false positives on 'district', 'state', etc.
+        sc_match = re.search(r"(?:caste|category|वर्ग|जाति)[^\w\n]*\b(sc|अनुसूचित\s*जाति)\b|\b(scheduled\s*caste|अनुसूचित\s*जाति)\b", text, re.IGNORECASE)
+        st_match = re.search(r"(?:caste|category|वर्ग|जाति)[^\w\n]*\b(st|अनुसूचित\s*जनजाति)\b|\b(scheduled\s*tribe|अनुसूचित\s*जनजाति)\b", text, re.IGNORECASE)
+        obc_match = re.search(r"(?:caste|category|वर्ग|जाति)[^\w\n]*\b(obc|अन्य\s*पिछड़ा\s*वर्ग)\b|\b(other\s*backward|अन्य\s*पिछड़ा\s*वर्ग)\b", text, re.IGNORECASE)
+        gen_match = re.search(r"(?:caste|category|वर्ग|जाति)[^\w\n]*\b(general|gen|सामान्य)\b", text, re.IGNORECASE)
+
+        if obc_match:
             fields.append(ExtractedField(
                 field_name="social_category",
                 field_value="OBC",
-                raw_text="अन्य पिछड़ा वर्ग (OBC)",
+                raw_text=obc_match.group(0),
+                confidence=min(0.96, max(0.85, base_conf))
+            ))
+        elif sc_match:
+            fields.append(ExtractedField(
+                field_name="social_category",
+                field_value="SC",
+                raw_text=sc_match.group(0),
+                confidence=min(0.96, max(0.85, base_conf))
+            ))
+        elif st_match:
+            fields.append(ExtractedField(
+                field_name="social_category",
+                field_value="ST",
+                raw_text=st_match.group(0),
+                confidence=min(0.96, max(0.85, base_conf))
+            ))
+        elif gen_match:
+            fields.append(ExtractedField(
+                field_name="social_category",
+                field_value="General",
+                raw_text=gen_match.group(0),
                 confidence=min(0.96, max(0.85, base_conf))
             ))
 
@@ -939,6 +1095,66 @@ class OCRService:
                 field_value=udid_match.group(1).upper(),
                 raw_text=udid_match.group(0),
                 confidence=min(0.98, max(0.85, base_conf))
+            ))
+
+        return fields
+
+    @staticmethod
+    def _extract_death_certificate_fields(text: str, base_conf: float) -> List[ExtractedField]:
+        """Extracts fields from Death Certificates (मृत्यु प्रमाण पत्र)."""
+        fields: List[ExtractedField] = []
+
+        # STRICT GUARD: Only extract death certificate fields if text has strong death certificate indicators
+        text_lower = text.lower()
+        if not any(w in text_lower for w in ["death", "मृत्यु", "मृतक", "deceased", "स्वर्गवासी"]):
+            return fields
+
+        cert_m = re.search(
+            r"(?:Certificate\s*(?:No\.?|Number)|Registration\s*(?:No\.?|Number)|प्रमाण\s*पत्र\s*संख्या|पंजीकरण\s*संख्या)[^\w\n]*([A-Z0-9\-\/]{6,25})",
+            text, re.IGNORECASE
+        )
+        if cert_m:
+            fields.append(ExtractedField(
+                field_name="certificate_number",
+                field_value=cert_m.group(1).strip(),
+                raw_text=cert_m.group(0),
+                confidence=min(0.98, max(0.85, base_conf + 0.10))
+            ))
+
+        deceased_m = re.search(
+            r"(?:Name\s*of\s*Deceased|मृतक\s*का\s*नाम|Late|स्व\.)[^\w\n]*([A-Za-z\u0900-\u097F\s]{3,35})(?:\n|$|श्रीमती|Smt|Wife|Husband|पत्नी)",
+            text, re.IGNORECASE
+        )
+        if deceased_m:
+            fields.append(ExtractedField(
+                field_name="deceased_name",
+                field_value=deceased_m.group(1).strip(),
+                raw_text=deceased_m.group(0),
+                confidence=min(0.96, max(0.80, base_conf + 0.05))
+            ))
+
+        spouse_m = re.search(
+            r"(?:Name\s*of\s*Spouse|Wife\s*Name|Spouse|पत्नी\s*का\s*नाम|पति|पत्नी)[^\w\n]*([A-Za-z\u0900-\u097F\s\.]{3,35})(?:\n|$)",
+            text, re.IGNORECASE
+        )
+        if spouse_m:
+            fields.append(ExtractedField(
+                field_name="spouse_name",
+                field_value=spouse_m.group(1).strip(),
+                raw_text=spouse_m.group(0),
+                confidence=min(0.95, max(0.80, base_conf))
+            ))
+
+        dod_m = re.search(
+            r"(?:Date\s*of\s*Death|मृत्यु\s*दिनांक|मृत्यु\s*की\s*तिथि)[^\w\n]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4})",
+            text, re.IGNORECASE
+        )
+        if dod_m:
+            fields.append(ExtractedField(
+                field_name="date_of_death",
+                field_value=dod_m.group(1).strip(),
+                raw_text=dod_m.group(0),
+                confidence=min(0.97, max(0.82, base_conf + 0.05))
             ))
 
         return fields
@@ -982,6 +1198,13 @@ class OCRService:
                                 num_m = re.search(r"(\d{4,8})", v_raw.replace(",", ""))
                                 if num_m:
                                     clean_v = float(num_m.group(1))
+                                else:
+                                    continue
+                            elif canonical_key == "dob":
+                                # Validate date pattern and ranges (day <= 31, month <= 12, valid year)
+                                dm = re.search(r"\b([0-3]?[0-9])[\/\-\.]([0-1]?[0-9])[\/\-\.]((?:19|20)[0-9]{2})\b", v_raw)
+                                if dm:
+                                    clean_v = f"{dm.group(1).zfill(2)}/{dm.group(2).zfill(2)}/{dm.group(3)}"
                                 else:
                                     continue
                             fields.append(ExtractedField(
