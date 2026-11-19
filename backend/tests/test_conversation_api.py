@@ -197,3 +197,32 @@ def test_document_upload_json_and_sample():
     assert "annual_income" in data["extracted_fields"]
     assert data["extracted_fields"]["annual_income"] in [48000, 60000, "48000", "60000"]
     assert data["mean_confidence"] > 0.80
+
+
+def test_edit_conversation_answer():
+    """Verify POST /conversation/{id}/edit_answer updates a specific field without wiping out other fields."""
+    start_res = client.post("/conversation/start")
+    cid = start_res.json()["conversation_id"]
+
+    # Initial answer for name
+    client.post(f"/conversation/{cid}/respond", json={"text": "रामवती देवी"})
+
+    # Initial answer for age
+    client.post(f"/conversation/{cid}/respond", json={"text": "35 साल"})
+
+    # Verify initial profile
+    get_res = client.get(f"/conversation/{cid}")
+    prof = get_res.json()["citizen_profile"]
+    assert prof["name"] == "रामवती देवी"
+    assert prof["age"] == 35
+
+    # Edit age to 45 years without affecting name
+    edit_res = client.post(
+        f"/conversation/{cid}/edit_answer",
+        json={"field_name": "age", "text": "45 साल"}
+    )
+    assert edit_res.status_code == 200
+    edit_data = edit_res.json()
+    assert edit_data["citizen_profile"]["age"] == 45
+    assert edit_data["citizen_profile"]["name"] == "रामवती देवी"
+

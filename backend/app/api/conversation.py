@@ -77,6 +77,12 @@ class ConversationTurnResponse(BaseModel):
     total_questions: Optional[int] = 9
 
 
+class EditAnswerRequest(BaseModel):
+    """Payload to edit or correct an existing baseline answer."""
+    field_name: str = Field(..., description="Target citizen profile field")
+    text: str = Field(..., description="Corrected or updated answer text in Hindi/English")
+
+
 class DocumentOCRResponse(BaseModel):
     """Response returned after running OpenCV + Tesseract OCR on an uploaded document."""
     conversation_id: str
@@ -404,6 +410,51 @@ async def go_back_conversation(id: str) -> ConversationTurnResponse:
 
 
 # -----------------------------------------------------------------------------
+# ENDPOINT 2C: POST /conversation/{id}/edit_answer
+# -----------------------------------------------------------------------------
+
+@router.post(
+    "/{id}/edit_answer",
+    response_model=ConversationTurnResponse,
+    summary="Update or correct a specific baseline interview answer",
+    description="Updates a single citizen profile field, re-evaluates eligibility rules, and returns updated results."
+)
+async def edit_conversation_answer(
+    id: str,
+    payload: EditAnswerRequest
+) -> ConversationTurnResponse:
+    conv = conversation_manager.get_conversation(id)
+    if not conv:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Conversation ID '{id}' not found."
+        )
+
+    conv = conversation_manager.edit_answer(id, payload.field_name, payload.text)
+
+    speech_text = "आपका उत्तर अद्यतन कर दिया गया है। योजनाओं की पात्रता पुनः जाँची गई है।"
+    audio_b64 = _synthesize_audio_base64(speech_text)
+
+    action = ActionPayload(
+        type="present_results",
+        text=speech_text,
+        schemes=conv.candidate_schemes,
+        audio_url=f"/tts?text={quote(speech_text)}&language_code=hi",
+        audio_base64=audio_b64
+    )
+
+    return ConversationTurnResponse(
+        conversation_id=conv.conversation_id,
+        status=conv.status.value,
+        transcribed_text=payload.text,
+        citizen_profile=conv.citizen_profile.model_dump(),
+        action=action,
+        question_index=conv.current_question_index,
+        total_questions=9
+    )
+
+
+# -----------------------------------------------------------------------------
 # ENDPOINT 3: POST /conversation/{id}/document
 # -----------------------------------------------------------------------------
 
@@ -478,7 +529,47 @@ async def upload_document_photo(
             "aadhaar": "aadhaar_card_01_priya_sharma.png",
             "identity": "aadhaar_card_01_priya_sharma.png",
         }
-        chosen_sample = mock_map.get(req_sample_key or doc_type_canonical, "income_cert_01_ramesh_kumar.png")
+        chosen_sample = mock_map.get(req_sample_key or doc_type_canonical)
+
+        # For custom/loan documents without a dedicated PNG mock, generate a clean synthetic verification response
+        if not chosen_sample:
+            p = conv.citizen_profile
+            clean_type_title = doc_type_canonical.replace("custom_", "").replace("_", " ").title()
+            name_val = (getattr(p, "name", None) if (p and p.name not in ["नागरिक", "Unknown"]) else None) or "रमेश कुमार"
+            dist_val = (getattr(p, "district", None) if p else None) or "Lucknow"
+            state_val = (getattr(p, "state", None) if p else None) or "Uttar Pradesh"
+
+            clean_fields: Dict[str, Any] = {
+                "name": name_val,
+                "district": dist_val,
+                "state": state_val,
+                "certificate_number": f"DOC-{doc_type_canonical[:6].upper()}-2026-8841",
+                "verification_status": "प्रमाणित (Verified)",
+            }
+            if "loan" in doc_type_canonical:
+                clean_fields["document_type"] = "ऋण संबंधित दस्तावेज़ (Loan Document)"
+                clean_fields["loan_account_number"] = "LN-UP-2026-44120"
+                clean_fields["status"] = "सक्रिय (Active)"
+            elif "vending" in doc_type_canonical or "vendor" in doc_type_canonical:
+                clean_fields["document_type"] = "स्ट्रीट वेंडर पहचान पत्र (Certificate of Vending)"
+                clean_fields["vending_zone"] = f"नगर निगम क्षेत्र, {dist_val}"
+            elif "recommendation" in doc_type_canonical or "lor" in doc_type_canonical:
+                clean_fields["document_type"] = "संस्तुति पत्र (Letter of Recommendation / LoR)"
+                clean_fields["issuing_authority"] = f"टाउन वेंडिंग कमेटी, {dist_val}"
+            else:
+                clean_fields["document_type"] = clean_type_title
+
+            clean_scores = {k: 0.94 for k in clean_fields}
+            return DocumentOCRResponse(
+                conversation_id=id,
+                document_type=doc_type_canonical,
+                extracted_fields=clean_fields,
+                confidence_scores=clean_scores,
+                mean_confidence=0.94,
+                is_valid=True,
+                raw_text=f"सक्षम प्राधिकारी द्वारा जारी प्रमाण पत्र ({clean_type_title}) - नाम: {name_val}, जिला: {dist_val}"
+            )
+
         sample_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "mock_documents", chosen_sample)
         if not os.path.exists(sample_path):
             sample_path = os.path.join(os.getcwd(), "backend", "data", "mock_documents", chosen_sample)
@@ -511,16 +602,36 @@ async def upload_document_photo(
         if p.name and p.name not in ["नागरिक", "Unknown"]:
             extracted_fields["name"] = p.name
             confidence_scores["name"] = 0.95
-        if "gender" not in extracted_fields and p.gender:
+        if getattr(p, "district", None):
+            extracted_fields["district"] = p.district
+            confidence_scores["district"] = 0.95
+        if getattr(p, "state", None):
+            extracted_fields["state"] = p.state
+            confidence_scores["state"] = 0.95
+        if getattr(p, "gender", None):
             extracted_fields["gender"] = p.gender
-            confidence_scores["gender"] = 0.90
-        if "income" in doc_type_canonical and "annual_income" not in extracted_fields:
-            inc_val = getattr(p, "annual_income", None) or 48000
+            confidence_scores["gender"] = 0.95
+        if "aadhaar" in doc_type_canonical or "identity" in doc_type_canonical:
+            # Identity document must NEVER have social_category or annual_income
+            extracted_fields.pop("social_category", None)
+            confidence_scores.pop("social_category", None)
+            extracted_fields.pop("annual_income", None)
+            confidence_scores.pop("annual_income", None)
+            if "aadhaar_number" not in extracted_fields:
+                extracted_fields["aadhaar_number"] = "XXXX-XXXX-8812"
+                confidence_scores["aadhaar_number"] = 0.94
+        if "income" in doc_type_canonical:
+            inc_val = getattr(p, "annual_income", None)
+            if not inc_val and getattr(p, "approx_income_bracket", None):
+                b = p.approx_income_bracket
+                inc_val = 600000.0 if b == "above_5_lakh" else (240000.0 if b == "2_to_5_lakh" else 48000.0)
+            elif not inc_val:
+                inc_val = 48000.0
             extracted_fields["annual_income"] = float(inc_val)
-            confidence_scores["annual_income"] = 0.88
-        if ("aadhaar" in doc_type_canonical or "identity" in doc_type_canonical) and "aadhaar_number" not in extracted_fields:
-            extracted_fields["aadhaar_number"] = "XXXX-XXXX-8812"
-            confidence_scores["aadhaar_number"] = 0.94
+            confidence_scores["annual_income"] = 0.95
+            if getattr(p, "social_category", None):
+                extracted_fields["social_category"] = p.social_category
+                confidence_scores["social_category"] = 0.95
         if ("bank" in doc_type_canonical or "passbook" in doc_type_canonical) and "account_number" not in extracted_fields:
             extracted_fields["bank_name"] = "State Bank of India (भारतीय स्टेट बैंक)"
             extracted_fields["account_number"] = "XXXX-XXXX-4589"
@@ -528,11 +639,28 @@ async def upload_document_photo(
             confidence_scores["bank_name"] = 0.95
             confidence_scores["account_number"] = 0.94
             confidence_scores["ifsc_code"] = 0.96
-        if ("caste" in doc_type_canonical) and "social_category" not in extracted_fields:
-            extracted_fields["social_category"] = p.social_category or "OBC"
+        if "caste" in doc_type_canonical:
+            extracted_fields["social_category"] = getattr(p, "social_category", None) or "OBC"
             extracted_fields["certificate_number"] = "UP-CST-2026-88741"
             confidence_scores["social_category"] = 0.95
             confidence_scores["certificate_number"] = 0.92
+        if "ration" in doc_type_canonical:
+            if "ration_card_number" not in extracted_fields:
+                extracted_fields["ration_card_number"] = "215487963214"
+                confidence_scores["ration_card_number"] = 0.92
+            if "card_category" not in extracted_fields:
+                extracted_fields["card_category"] = "AAY"
+                confidence_scores["card_category"] = 0.92
+            if "family_members_count" not in extracted_fields:
+                extracted_fields["family_members_count"] = 4
+                confidence_scores["family_members_count"] = 0.90
+        if "khasra" in doc_type_canonical or "land" in doc_type_canonical:
+            land_val = getattr(p, "land_holding_hectares", None) or 0.84
+            extracted_fields["land_holding_area_hectares"] = float(land_val)
+            confidence_scores["land_holding_area_hectares"] = 0.92
+            if "khasra_number" not in extracted_fields:
+                extracted_fields["khasra_number"] = "42/2"
+                confidence_scores["khasra_number"] = 0.92
         if ("disability" in doc_type_canonical or "divyang" in doc_type_canonical) and "disability_percentage" not in extracted_fields:
             extracted_fields["disability_percentage"] = "80%"
             extracted_fields["udid_number"] = "UP7894561230"
@@ -542,16 +670,31 @@ async def upload_document_photo(
     # If OCR extracted 0 fields from a predefined sample, supply baseline profile verification fields
     if len(extracted_fields) == 0 and is_predefined_sample:
         logger.info(f"OCR returned 0 fields from uploaded photo for conversation {id}. Supplying baseline profile verification fields.")
+        dist_val = getattr(p, "district", None) or "लखनऊ"
+        state_val = getattr(p, "state", None) or "Uttar Pradesh"
+        extracted_fields["district"] = dist_val
+        extracted_fields["state"] = state_val
+        confidence_scores["district"] = 0.92
+        confidence_scores["state"] = 0.92
+        if p and p.name:
+            extracted_fields["name"] = p.name
+            confidence_scores["name"] = 0.92
+        if p and p.gender:
+            extracted_fields["gender"] = p.gender
+            confidence_scores["gender"] = 0.90
+
         if "income" in doc_type_canonical:
-            inc_val = getattr(p, "annual_income", None) or 48000
+            inc_val = getattr(p, "annual_income", None)
+            if not inc_val and getattr(p, "approx_income_bracket", None):
+                b = p.approx_income_bracket
+                inc_val = 600000.0 if b == "above_5_lakh" else (240000.0 if b == "2_to_5_lakh" else 48000.0)
+            elif not inc_val:
+                inc_val = 48000.0
             extracted_fields["annual_income"] = float(inc_val)
-            confidence_scores["annual_income"] = 0.88
-            if p and p.name:
-                extracted_fields["name"] = p.name
-                confidence_scores["name"] = 0.85
-            if p and p.district:
-                extracted_fields["district"] = p.district
-                confidence_scores["district"] = 0.85
+            confidence_scores["annual_income"] = 0.92
+            if getattr(p, "social_category", None):
+                extracted_fields["social_category"] = p.social_category
+                confidence_scores["social_category"] = 0.92
         elif "ration" in doc_type_canonical:
             extracted_fields["ration_card_number"] = "215487963214"
             extracted_fields["card_category"] = "AAY"

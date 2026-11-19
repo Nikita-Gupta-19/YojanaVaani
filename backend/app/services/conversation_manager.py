@@ -306,6 +306,53 @@ class ConversationManager:
         self._save_to_disk()
         return conv
 
+    def edit_answer(
+        self,
+        conversation_id: str,
+        field_name: str,
+        answer_text: str
+    ) -> ConversationState:
+        """
+        Updates an existing answer for a baseline interview field in citizen_profile
+        without wiping out other baseline answers.
+        Re-evaluates candidate schemes deterministically if candidate schemes exist.
+        """
+        conv = self.get_conversation(conversation_id)
+        if not conv:
+            raise KeyError(f"Conversation ID '{conversation_id}' not found.")
+
+        clean_text = answer_text.strip()
+        self._parse_and_store(conv, field_name, clean_text)
+
+        # Append update turn to conversation history
+        conv.conversation_history.append(
+            ConversationTurn(speaker="citizen", text=f"संशोधित उत्तर ({field_name}): {clean_text}")
+        )
+
+        # Re-evaluate candidate schemes deterministically if present
+        if conv.candidate_schemes:
+            from app.services.eligibility_engine import EligibilityEngine
+            ranked_verdicts = EligibilityEngine.evaluate_and_rank_candidates(
+                profile=conv.citizen_profile.model_dump(),
+                candidate_schemes=conv.candidate_schemes
+            )
+            updated_schemes = []
+            for v in ranked_verdicts:
+                for s in conv.candidate_schemes:
+                    if s.get("id") == v.scheme_id:
+                        s_copy = dict(s)
+                        s_copy["verdict"] = v.verdict.value
+                        s_copy["reason"] = v.overall_reason
+                        s_copy["disqualification_reasons"] = v.disqualification_reasons
+                        s_copy["missing_fields"] = v.missing_fields
+                        s_copy["manual_review_flags"] = v.manual_review_flags
+                        updated_schemes.append(s_copy)
+                        break
+            conv.candidate_schemes = updated_schemes
+
+        self._save_to_disk()
+        return conv
+
     def go_back(self, conversation_id: str) -> Optional[ConversationState]:
         """
         Rolls back the baseline interview to the previous question, allowing

@@ -1,25 +1,25 @@
 {
-  "52f071b9-d6ee-4ef5-9bb4-ba3c844c98fe": {
-    "conversation_id": "52f071b9-d6ee-4ef5-9bb4-ba3c844c98fe",
+  "e079a257-a49c-4fd2-88bf-50757fa024c4": {
+    "conversation_id": "e079a257-a49c-4fd2-88bf-50757fa024c4",
     "citizen_profile": {
       "name": "शांति देवी",
       "age": 67,
       "gender": "Female",
       "state": "Dethi",
-      "district": "Shahdara",
+      "district": "Hospital",
       "approx_income_bracket": "below_2_lakh",
       "social_category": "SC",
       "occupation": "Unemployed",
       "disability_status": true
     },
-    "stated_need": "मुझे पति की मृत्यु के बाद आर्थिक सहायता बुढ़ापे की पेंशन और चलने फिरने के लिए मोटर वाली ट्राई साइकिल चाहिए",
+    "stated_need": "मुझे पति की मृत्यु के बाद आर्थिक सहायता बुढ़ापे की पेंशन और चलने फिरने के लिए मोटर वाली ट्राईसाईकिल चाहिए",
     "baseline_complete": true,
     "collected_documents": [
       {
-        "document_type": "income_certificate",
+        "document_type": "document_income_certificate",
         "extracted_fields": {
           "aadhaar_number": "XXXX-XXXX-2026",
-          "dob": "4/06/2026",
+          "dob": "04/06/2026",
           "certificate_number": "UP-INC-2026-98744",
           "annual_income": 48000,
           "name": "शांति देवी",
@@ -27,45 +27,13 @@
           "tehsil": "DAR SEAL",
           "social_category": "OBC",
           "gender": "Female",
-          "document_type": "income_certificate",
+          "document_type": "document_income_certificate",
+          "document_name": "आय प्रमाण पत्र (Income Certificate)",
           "confidence": 0.944
         },
         "verification_status": "verified",
         "confidence_score": 0.944,
-        "confirmed_at": "2026-11-18T06:41:42.798892+00:00"
-      },
-      {
-        "document_type": "ration_card",
-        "extracted_fields": {
-          "aadhaar_number": "XXXX-XXXX-3204",
-          "ration_card_number": "2458963204",
-          "district": "Gorakhpur",
-          "name": "शांति देवी",
-          "family_members_count": 5,
-          "gender": "Female",
-          "document_type": "ration_card",
-          "confidence": 0.927
-        },
-        "verification_status": "verified",
-        "confidence_score": 0.927,
-        "confirmed_at": "2026-11-18T06:41:49.326745+00:00"
-      },
-      {
-        "document_type": "khasra_khatauni",
-        "extracted_fields": {
-          "aadhaar_number": "XXXX-XXXX-8400",
-          "land_holding_area_hectares": 0.84,
-          "khasra_number": "42/2",
-          "name": "शांति देवी",
-          "district": "Lucknow",
-          "tehsil": "Mohanlalganj CERTIFIED CO",
-          "gender": "Female",
-          "document_type": "khasra_khatauni",
-          "confidence": 0.932
-        },
-        "verification_status": "verified",
-        "confidence_score": 0.932,
-        "confirmed_at": "2026-11-18T06:41:54.147549+00:00"
+        "confirmed_at": "2026-11-19T19:25:18.506438+00:00"
       },
       {
         "document_type": "aadhaar_card",
@@ -75,70 +43,173 @@
           "district": "Shahdara",
           "name": "शांति देवी",
           "state": "Dethi",
+          "social_category": "ST",
           "dob": "2/05/998",
           "document_type": "aadhaar_card",
-          "confidence": 0.93
+          "document_name": "आधार कार्ड (Aadhaar Card)",
+          "confidence": 0.926
         },
         "verification_status": "verified",
-        "confidence_score": 0.93,
-        "confirmed_at": "2026-11-18T10:03:59.517402+00:00"
+        "confidence_score": 0.926,
+        "confirmed_at": "2026-11-19T19:25:59.939687+00:00"
+      },
+      {
+        "document_type": "disability_certificate",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "04/06/2026",
+          "certificate_number": "UP-INC-2026-98744",
+          "annual_income": 48000,
+          "name": "शांति देवी",
+          "district": "Barabanki",
+          "tehsil": "DAR SEAL",
+          "social_category": "OBC",
+          "gender": "Female",
+          "disability_percentage": "80%",
+          "udid_number": "UP7894561230",
+          "document_type": "disability_certificate",
+          "document_name": "दिव्यांगता प्रमाण पत्र (Disability / UDID Card)",
+          "confidence": 0.945
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.945,
+        "confirmed_at": "2026-11-19T19:26:22.256912+00:00"
+      },
+      {
+        "document_type": "domicile_certificate",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "04/06/2026",
+          "certificate_number": "UP-INC-2026-98744",
+          "annual_income": 48000,
+          "name": "शांति देवी",
+          "district": "Barabanki",
+          "tehsil": "DAR SEAL",
+          "social_category": "OBC",
+          "gender": "Female",
+          "document_type": "domicile_certificate",
+          "document_name": "मूल निवास प्रमाण पत्र (Domicile Certificate)",
+          "confidence": 0.944
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.944,
+        "confirmed_at": "2026-11-19T19:27:17.441992+00:00"
+      },
+      {
+        "document_type": "caste_certificate",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "04/06/2026",
+          "certificate_number": "UP-INC-2026-98744",
+          "annual_income": 48000,
+          "name": "शांति देवी",
+          "district": "Barabanki",
+          "tehsil": "DAR SEAL",
+          "social_category": "OBC",
+          "gender": "Female",
+          "document_type": "caste_certificate",
+          "document_name": "जाति प्रमाण पत्र (Caste Certificate)",
+          "confidence": 0.944
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.944,
+        "confirmed_at": "2026-11-19T19:27:32.921067+00:00"
+      },
+      {
+        "document_type": "academic_certificate",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "04/06/2026",
+          "certificate_number": "UP-INC-2026-98744",
+          "annual_income": 48000,
+          "name": "शांति देवी",
+          "district": "Barabanki",
+          "tehsil": "DAR SEAL",
+          "social_category": "OBC",
+          "gender": "Female",
+          "document_type": "academic_certificate",
+          "document_name": "शैक्षणिक योग्यता अंकतालिका (Academic Marksheet / Certificate)",
+          "confidence": 0.944
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.944,
+        "confirmed_at": "2026-11-19T19:27:44.084738+00:00"
+      },
+      {
+        "document_type": "death_certificate",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2025",
+          "dob": "12/03/2025",
+          "certificate_number": "UP-DTH-2025-08941",
+          "deceased_name": "Late Ram Charan",
+          "date_of_death": "12/03/2025",
+          "district": "Hospital",
+          "spouse_name": "Smt. Shanti Devi\nVERIFIED",
+          "name": "Late Ram Charan",
+          "document_type": "death_certificate",
+          "document_name": "पति का मृत्यु प्रमाण पत्र (Death Certificate)",
+          "confidence": 0.924
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.924,
+        "confirmed_at": "2026-11-19T19:45:38.674433+00:00"
       }
     ],
     "conversation_history": [
       {
         "speaker": "citizen",
         "text": "शांति देवी",
-        "timestamp": "2026-11-18T06:35:43.450728+00:00"
+        "timestamp": "2026-11-19T19:23:26.191916+00:00"
       },
       {
         "speaker": "citizen",
         "text": "67 साल",
-        "timestamp": "2026-11-18T06:35:50.108614+00:00"
+        "timestamp": "2026-11-19T19:23:31.693134+00:00"
       },
       {
         "speaker": "citizen",
         "text": "महिला",
-        "timestamp": "2026-11-18T06:35:52.775380+00:00"
+        "timestamp": "2026-11-19T19:23:37.469814+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "उत्तर प्रदेश, लखनऊ",
-        "timestamp": "2026-11-18T06:35:55.357168+00:00"
+        "text": "उत्तर प्रदेश लखनऊ",
+        "timestamp": "2026-11-19T19:23:44.609703+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "शून्य से 50000",
-        "timestamp": "2026-11-18T06:36:10.164649+00:00"
-      },
-      {
-        "speaker": "citizen",
-        "text": "अनुसूचित जाति (SC)",
-        "timestamp": "2026-11-18T06:36:12.381685+00:00"
+        "text": "50000",
+        "timestamp": "2026-11-19T19:23:57.722922+00:00"
       },
       {
         "speaker": "citizen",
         "text": "अनुसूचित जाति (SC)",
-        "timestamp": "2026-11-18T06:36:19.191088+00:00"
+        "timestamp": "2026-11-19T19:23:59.127379+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "अनुसूचित जाति (SC)",
+        "timestamp": "2026-11-19T19:24:07.562476+00:00"
       },
       {
         "speaker": "citizen",
         "text": "मैं बेरोजगार हूं",
-        "timestamp": "2026-11-18T06:36:25.139690+00:00"
+        "timestamp": "2026-11-19T19:24:15.239005+00:00"
       },
       {
         "speaker": "citizen",
         "text": "हां 85%",
-        "timestamp": "2026-11-18T06:36:32.508760+00:00"
+        "timestamp": "2026-11-19T19:24:27.860661+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "मुझे पति की मृत्यु के बाद आर्थिक सहायता बुढ़ापे की पेंशन और चलने फिरने के लिए मोटर वाली ट्राई साइकिल चाहिए",
-        "timestamp": "2026-11-18T06:36:53.715978+00:00"
+        "text": "मुझे पति की मृत्यु के बाद आर्थिक सहायता बुढ़ापे की पेंशन और चलने फिरने के लिए मोटर वाली ट्राईसाईकिल चाहिए",
+        "timestamp": "2026-11-19T19:24:43.289456+00:00"
       },
       {
         "speaker": "assistant",
         "text": "क्या आपके पास आय से संबंधित कोई दस्तावेज़ है जिसे हम आपके लिए सत्यापित कर सकते हैं?",
-        "timestamp": "2026-11-18T06:37:04.709857+00:00"
+        "timestamp": "2026-11-19T19:24:55.214254+00:00"
       }
     ],
     "candidate_schemes": [
@@ -665,108 +736,145 @@
     "status": "results_ready",
     "current_question_index": 9
   },
-  "975834b8-a5a0-468c-ab28-e99aec4eec00": {
-    "conversation_id": "975834b8-a5a0-468c-ab28-e99aec4eec00",
+  "63f3fd00-af73-42ba-95a8-af04515fd69c": {
+    "conversation_id": "63f3fd00-af73-42ba-95a8-af04515fd69c",
     "citizen_profile": {
-      "name": "रमेश कुमार",
-      "age": 45,
+      "name": "अनन्या शर्मा",
+      "age": 22,
       "gender": "Female",
-      "state": "Dethi",
-      "district": "Shahdara",
+      "state": "Delhi",
+      "district": "Barabanki",
       "approx_income_bracket": "below_2_lakh",
-      "social_category": "SC",
-      "occupation": "Daily Wage Laborer",
+      "social_category": "OBC",
+      "occupation": "Student",
       "disability_status": true
     },
-    "stated_need": "बेटी की पढ़ाई और शादी के लिए सरकारी योजना",
+    "stated_need": "मैं एक दिव्यांग छात्र हूं मेरे परिवार की आर्थिक स्थिति कमजोर है मुझे कॉलेज की फीस भरने पढ़ाई के लिए छात्रवृत्ति और प्रतियोगी परीक्षाओं की कोचिंग के लिए आर्थिक सहायता चाहिए",
     "baseline_complete": true,
     "collected_documents": [
       {
-        "document_type": "aadhaar_card",
+        "document_type": "document_income_certificate",
         "extracted_fields": {
-          "aadhaar_number": "XXXX-XXXX-9842",
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "04/06/2026",
+          "certificate_number": "UP-INC-2026-98744",
+          "annual_income": 48000,
+          "name": "अनन्या शर्मा",
+          "district": "Barabanki",
+          "tehsil": "DAR SEAL",
+          "social_category": "OBC",
           "gender": "Female",
-          "district": "Shahdara",
-          "name": "रमेश कुमार",
-          "state": "Dethi",
-          "dob": "2/05/998",
-          "document_type": "aadhaar_card",
-          "confidence": 0.93
+          "document_type": "document_income_certificate",
+          "document_name": "आय प्रमाण पत्र (Income Certificate)",
+          "confidence": 0.944
         },
         "verification_status": "verified",
-        "confidence_score": 0.93,
-        "confirmed_at": "2026-11-18T08:14:16.560695+00:00"
+        "confidence_score": 0.944,
+        "confirmed_at": "2026-11-19T19:30:47.784407+00:00"
+      },
+      {
+        "document_type": "bank_passbook",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "04/06/2026",
+          "certificate_number": "UP-INC-2026-98744",
+          "annual_income": 48000,
+          "name": "अनन्या शर्मा",
+          "district": "Barabanki",
+          "tehsil": "DAR SEAL",
+          "social_category": "OBC",
+          "gender": "Female",
+          "bank_name": "State Bank of India (भारतीय स्टेट बैंक)",
+          "account_number": "XXXX-XXXX-4589",
+          "ifsc_code": "SBIN0001234",
+          "document_type": "bank_passbook",
+          "document_name": "बैंक पासबुक (Bank Passbook)",
+          "confidence": 0.946
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.946,
+        "confirmed_at": "2026-11-19T19:31:55.121099+00:00"
       }
     ],
     "conversation_history": [
       {
         "speaker": "citizen",
-        "text": "रमेश कुमार",
-        "timestamp": "2026-11-18T08:11:13.603616+00:00"
+        "text": "अनन्या शर्मा",
+        "timestamp": "2026-11-19T19:29:00.848490+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "45 साल",
-        "timestamp": "2026-11-18T08:11:17.878116+00:00"
+        "text": "22 साल",
+        "timestamp": "2026-11-19T19:29:06.467260+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "पुरुष",
-        "timestamp": "2026-11-18T08:11:25.187787+00:00"
+        "text": "महिला",
+        "timestamp": "2026-11-19T19:29:07.876775+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "बिहार, पटना",
-        "timestamp": "2026-11-18T08:11:34.005975+00:00"
+        "text": "साउथ दिल्ली",
+        "timestamp": "2026-11-19T19:29:14.353108+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "डेढ़ लाख सालाना",
-        "timestamp": "2026-11-18T08:12:25.550832+00:00"
+        "text": "1 से 2 लाख",
+        "timestamp": "2026-11-19T19:29:58.084553+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "अनुसूचित जाति (SC)",
-        "timestamp": "2026-11-18T08:12:35.180428+00:00"
+        "text": "ओबीसी",
+        "timestamp": "2026-11-19T19:30:00.034159+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "दिहाड़ी मजदूरी",
-        "timestamp": "2026-11-18T08:12:41.469546+00:00"
+        "text": "पढ़ाई / छात्र",
+        "timestamp": "2026-11-19T19:30:02.072713+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "हाँ, 40 प्रतिशत दिव्यांगता",
-        "timestamp": "2026-11-18T08:12:46.259203+00:00"
+        "text": "हां 65%",
+        "timestamp": "2026-11-19T19:30:08.953360+00:00"
       },
       {
         "speaker": "citizen",
-        "text": "बेटी की पढ़ाई और शादी के लिए सरकारी योजना",
-        "timestamp": "2026-11-18T08:12:54.179807+00:00"
+        "text": "मैं एक दिव्यांग छात्र हूं मेरे परिवार की आर्थिक स्थिति कमजोर है मुझे कॉलेज की फीस भरने पढ़ाई के लिए छात्रवृत्ति और प्रतियोगी परीक्षाओं की कोचिंग के लिए आर्थिक सहायता चाहिए",
+        "timestamp": "2026-11-19T19:30:28.625059+00:00"
       },
       {
         "speaker": "assistant",
-        "text": "कृपया अपना आधार कार्ड फोटो लें और इसे स्कैन करें। आपका आधार कार्ड क्या है?",
-        "timestamp": "2026-11-18T08:13:14.065705+00:00"
+        "text": "क्या आपके पास आय से संबंधित कोई दस्तावेज़ है जिसे हम आपके लिए सत्यापित कर सकते हैं?",
+        "timestamp": "2026-11-19T19:30:40.642979+00:00"
       }
     ],
     "candidate_schemes": [
       {
-        "id": 634,
-        "name": "Post Graduate Indira Gandhi Scholarship For Single Girl Child",
+        "id": 547,
+        "name": "PM-YASASVI: Post-Matric Scholarship for OBC, EBC and DNT Students",
         "category": "Education & Learning",
         "government_name": "Central Government",
         "similarity_score": 1.0,
         "eligibility_criteria": {
-          "min_age": 30,
+          "min_age": null,
           "max_age": null,
           "age_notes": null,
-          "income_ceiling": null,
+          "income_ceiling": 250000.0,
           "bpl_required": false,
-          "income_tiers": [],
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 250000.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
           "gender": "All",
           "social_categories": [
-            "All"
+            "OBC",
+            "General"
           ],
           "occupations": [
             "Student"
@@ -775,35 +883,36 @@
           "min_disability_percentage": null,
           "state_restriction": null,
           "residence_requirement": null,
-          "other_conditions_text": "- The applicant must be a citizen of India.\n- The applicant must be the only girl child in the family.\n- Girl students without having any brothers or the girl student who are twin daughters/ fraternal daughters may also apply\n- The age of the applicant should not be more than 30 years at the time of admission in the first year of PG\n- course.\n- The applicant must have taken admission to regular, full-time first-year master's degree courses in any designated university or a postgraduate college. \n- The candidate should be pursuing a non-professional course and be taking regular classes from a recognized institution.\n- The applicant must not be pursuing education through distance education mode.\n- This scholarship is available to PG-I year students only.",
-          "extraction_method": "regex_unverified",
-          "confidence_score": 0.955,
+          "other_conditions_text": "- The scholarships will be open to Indian nationals belonging to OBCs, EBCs, and DNTs, as notified by the Central Govt./State Govt./ UT Admin. \n - These scholarships will be given for the study of all recognized post-matriculation or post-secondary courses pursued in recognized institutions as specified in para 3 of the [Guidelines](https://socialjustice.gov.in/public/ckeditor/upload/65661651839791.pdf). 1. Only those candidates who belong to OBCs/EBCs/DNTs so specified in relation to the State/UT to which the applicant actually belongs, i.e. permanently settled and who have passed the Matriculation or higher secondary or any higher examination of a recognized University or Board of Secondary Education will be eligible.\n - Students studying in the XI Class of the Higher Secondary School courses or the XII class of the Multipurpose High School will not be eligible for it being a continuous school course. However, in cases, where the 10th Class examination of such courses is treated as equivalent to Matriculation and students who after passing the 10th Class join other courses, such students will be treated as post-matric students and will be eligible for the award of scholarships.\n - Students pursuing Post-graduate courses in medicine will be eligible only if they are not allowed to practice during the period of their course.\n - Students who after failing or passing the Under Graduate/Post-Graduate examinations in Arts/Science/Commerce join any recognized professional or Technical certificate/diploma/degree courses will be awarded scholarships if otherwise eligible. No subsequent failure will be condoned except for courses in Group '1' and no further change in the course will be allowed thereafter.\n - Students, who pursue their studies through correspondence/online courses, are also eligible. The term correspondence includes distance and continuous education for courses in Central/State Universities only.\n - Only two boys of the same parents/guardians will be entitled to receive scholarships. This restriction will, however, not apply to girls. Accordingly, scholarships availed by girls of the same parents/guardian will not adversely affect the admissibility of availing scholarships upto two boys of the same parents/guardian.\n - A scholarship holder under this Scheme will not hold any other scholarship/stipend. If awarded any other scholarship/stipend, the student can exercise his/her option for either of the two Scholarships/stipends, whichever is more beneficial to him/her, and should inform the awarding authority through the Head of the Institution about the option made. No scholarship will be paid to the students under this Scheme from the date he/she accepts any other scholarships/ stipend. The student can, however, accept free lodging or a grant or ad-hoc monetary help from the State Government or any other source for the purchase of books, and equipment or for meeting the expenses on board and lodging, in addition to the scholarship amount paid under the Scheme.\n - Scholarship holders who are receiving coaching in any of the pre-examination training centers with financial assistance from the Central Government/ State Government will not be eligible for a stipend under the coaching schemes for the duration of the coaching programme.\n - The ceiling on the age limit for admission as regular students in different classes should be decided by concerned Institutions.\n - Employed students whose income combined with the income of their parents/guardians does not exceed ₹2.50 lakhs per annum shall be eligible for post-matric scholarship.\n - Unemployed students whose parents/guardians' income from all sources does not exceed ₹2.50 lakhs per annum will be entitled to the scholarship under the scheme.\n\n**Note:** Income Certificate is required to be taken once only; i.e. at the time of admission of courses, which are continuing for more than one year.\n> **Other Conditions for the Award:**\n\n - The scholarship is provided on the basis of satisfactory progress and conduct of the scholars. If it is reported by the Head of the Institution at any time that a scholar has, by reasons of his/her own act or default, failed to make satisfactory progress or has been guilty of misconduct such as resorting to or participating in strikes, irregularity in attendance without the permission of the authorities concerned, etc., the authority sanctioning the scholarships may either cancel the scholarship or stop or withhold further payment of scholarship for such period as it may think fit.\n - If a student is found to have obtained a scholarship by false statement his/her scholarship will be cancelled forthwith and the amount of the scholarship paid will be recovered, at the discretion of the concerned State Government. The student concerned will be blacklisted and debarred for scholarship under any scheme forever.\n - A scholarship awarded may be cancelled if the scholar changes the subject of the course of study for which the scholarship was originally awarded or changes the institution of study, without prior approval of the State Government. The Head of the Institution shall inform such cases to the scholar and stop payment of the scholarship money. The amount already paid may also be recovered at the discretion of the State Government.\n - A scholar is liable to refund the scholarship amount at the discretion of the State Government, if during the course of the year, the studies for which the scholarship has been awarded, are discontinued by him/her\n\n> **Duration and Renewal of Awards:**\n\n - The award once made will be payable up to the completion of the course subject to satisfactory academic performance and attendance of 75% in every academic year. The attendance will be verified through an Aadhaar-based attendance System.\n - If a scholar is unable to appear in the annual examination owing to illness, the award may be renewed subject to the production of a medical certificate from a prescribed authority and acceptance of the same by the institution /college.\n - If, according to the Regulations of a University/Institution, a student is promoted to the next higher class even though he/she may not have actually passed in the lower class and is required to take an examination of the junior class again after some time, he/she will be entitled to scholarship for the class to which he/she is promoted if the student is otherwise eligible for scholarship. Further, in case a student fails in any class and then again joins the same class as a regular student, he/she will be eligible for a scholarship for one additional year or the actual period, whichever is lower.\n - If a scholar pursuing a Group I course fails in the examination for the first time, the award may be renewed. For second and subsequent failures in any class, the student shall bear his/her own expenses until he/she secures promotion to the next higher class.\n - The authentication through Aadhaar would be compulsory at the time of renewals, if not provided earlier at the time of admission.\n\n> **Eligibility of Educational Institutions:**\n\nScholarships will be given for the study of all recognized post-matriculation or postsecondary courses (Intermediate/Senior Secondary, Diploma, long-term Vocational Training Certificate, Graduate, Post Graduate courses, etc.) pursued in recognized Institutions/Universities/Colleges falling in any of the following 9 categories:\n\n - Institutions of National Importance;\n - Central University/State University/Autonomous colleges recognized by UGC and Universities/Colleges recognized under section 2(f) of the UGC Act;\n - Deemed Universities;\n - All Private Universities recognized by State/Centre;\n - Private Professional Institutions affiliated with a recognized Central/State University and covered by a Fee Fixation Committee as mandated by the Supreme Court;\n - Recognized schools/colleges for Classes XI and class XII;\n - Diploma granting Institutions as recognized by State/UT Governments;\n - Vocational Training Institutes affiliated to the National Council of Vocational Training (NCVT);\n - Institutions affiliated/ approved by the appropriate bodies like NMC/AICTE etc. or any regulatory body established by State/UT/Centre.",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
           "confidence_components": {
-            "c_age": 0.85,
+            "c_age": 1.0,
             "c_income": 1.0,
             "c_gender": 1.0,
             "c_category": 1.0
           }
         },
         "benefits": {
-          "benefit_min": 36200.0,
-          "benefit_max": 36200.0,
-          "benefit_type": "fixed",
+          "benefit_min": null,
+          "benefit_max": null,
+          "benefit_type": "tiered",
           "unit": "INR",
           "frequency": null,
           "benefit_condition": null,
-          "income_tiers": [],
-          "raw_text": "> **Nature of Assistance Available Under the Scheme**\n\nAmount of fellowship: ₹36,200/- per annum for a period of two years only i.e. full duration of a PG course.\n3,000 fresh scholarships will be awarded every year and will be paid on DBT mode on annual basis.\n\n> ***Note***\n\nNo other additional grant will be payable in lieu of hostel charges and medical charges, etc."
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 250000.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "raw_text": "The scholarship includes the following components for the complete duration of the course:\n**Sl. No. | Category of Courses | Yearly Academic Allowance (in ₹) | Yearly Tuition Fee (in ₹) | Total (in ₹)**1Group 1: Degree and Post Graduate level professional courses10,000/-10,000/-20,000/-2Group 2: Other Professional Courses leading to Degree, Diploma, Certificate8,000/-5,000/-13,000/-3Group 3: Graduate and Post Graduate courses not covered under Group I & Group II6,000/-2,000/-8,000/-4Group 4: All post-matriculation (Post Class X level) non-degree courses5,000/-05,000/-**Note 01:** Students pursuing CA./I.C.W.A./C.S./I.C.F.A. shall be treated as day scholars for the purpose of academic allowance. Students studying through correspondence/online courses shall not be eligible for academic allowance.\n**Note 02:** Tuition fees shall be paid to online/correspondence students.\n**Note 03:** The State Governments may, if they so decide, top up the academic allowance from their own resources.\n**Note 04:** The entire scholarship amount, both from the State and Central Government, including the tuition fees, academic allowance and any other admissible allowance will be paid directly into the account of the students ONLY through DBT preferably through an Aadhaar Based Payment System (Aadhaar Payment Bridge).\n**Note 05:** Scholarship will not be paid for the period of internship/housemanship in the M.B.B.S course or for practical training in other courses if the student is in receipt of some remuneration during the internship period or some allowance/stipend during the practical training in other courses."
         },
         "required_documents": [
-          {
-            "purpose": "general_verification",
-            "accepts": [
-              "To be submitted by the Student"
-            ],
-            "required": true,
-            "notes": "To be submitted by the Student"
-          },
           {
             "purpose": "identity_proof",
             "accepts": [
@@ -816,92 +925,13 @@
             "notes": "Aadhaar Card"
           },
           {
-            "purpose": "bank_account_proof",
+            "purpose": "general_verification",
             "accepts": [
-              "Bank Passbook copy with IFSC",
-              "Cancelled Cheque"
+              "Educational qualification marksheets/certificates"
             ],
             "required": true,
-            "notes": "Copy of the Bank Passbook"
-          }
-        ],
-        "application_process": "Mode: Online\nURL: \nSteps: Procedure for Applying\nNew Registration\n:\nStep 1: \nVisit the \nNew Registration\n page of the National Scholarships Portal.\nStep 2:\n Guidelines for Registration will appear. Scroll to the bottom. Read the undertaking carefully and Accept the Terms. Click “Next”.\nStep 3:\n In the next window, enter your mobile number and OTP. Then click “Verify”.\nStep 4: \nAfter successful verification, continue with e-KYC process (as applicable).\nStep 5:\n Once completed, your reference number will be generated and the same will be sent to your registered phone number.\nProcess for OTR ID Number Generation\n:\nStep 1:\n Download and install \nAadhaarFaceRD\n services in the android device.\nStep 2:\n Download and install the \nNSP OTR\n App from the Google Play Store.\nStep 3:\n After opening the mobile app Select the option “eKYC with FaceAuth” highlighted in red.\nStep 4:\n Enter the allotted reference number and click on “Send OTP” to receive OTP on your mobile no.\nStep 5:\n Enter the received OTP and captcha in the screen and click Next.\nStep 6:\n Click on “Proceed for Face Authentication” button highlighted in red.\nStep 7:\n UIDAI AadhaarFaceRD services will be invoked for face authentication. Ensure AadhaarFaceRD services are preinstalled on your device.\nStep 8:\n On Successful completion of face-authentication OTR no. will be generated and will also be sent on your registered mobile no.\nFresh Application\n:\nStep 1:\n Visit the applicant \nLogin\npage of the National Scholarships Portal Enter your One Time Registration (OTR) number and password.\nStep 2: \nType the Captcha and click “Login”.\nStep 3: \nOn the next screen, provide the OTP received on your registered mobile number. You will be directed to the Password Reset screen. Create a new password and confirm.\nStep 4:\n Click “Submit”. You will be directed to the “Applicant’s Dashboard”.\nStep 5:\n On the left pane, click “Application Form”. The fields marked as * are compulsory. Fill in the details and upload the documents.\nStep 6: \nYou can either click on “Save as Draft” to complete the application later. Else, click “Final Submit” to submit the application.\nTrack Payment Status\n:\nThe student can track their payment status from the template “Know Your Payment” in the \nPublic Financial Management System (PFMS) Portal\n either by indicating their Aadhaar Number, Bank Account number or NSP Application ID.\n\nNotes\nApplications will be invited once a year on the National e-Scholarship Portal of the Government of India. 2. Short notifications will also be uploaded on the UGC website.\nIncomplete applications will be summarily rejected. Only verified online applications will be considered for the award of scholarship.\nAn affidavit regarding the single girl child status may be uploaded as per the format given in Annexure-II.\nThe joining report as per Annexure-I has to be uploaded.",
-        "application_url": null,
-        "description": "A scholarship scheme by the University Grants Commission for Girl students who are admitted in the first year of PG courses in any designated university or a postgraduate college, and happen to be the only girl child in the family. The amount of fellowship is ₹ 36,200/- p.a. for the full duration of a PG course. The scheme has been introduced with an aim to compensate direct costs of girl education at all levels, especially for such girls who happen to be the only girl child in their families. \n\nThe objectives of the proposed scheme are:\na) To support the postgraduate education of single girl children in postgraduate courses only.\nb) To recognize the value of observance of the small family norms. \n\nThe candidates are required to apply online on National Scholarship Portal after initiation of the application process and notice to be published on the UGC website. 3,000 fresh scholarships will be awarded every year and will be paid on DBT mode on annual basis.",
-        "source_url": "https://www.myscheme.gov.in/schemes/pg-igssgc",
-        "verdict": "DOES_NOT_QUALIFY",
-        "reason": "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।",
-        "disqualification_reasons": [
-          "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।"
-        ],
-        "missing_fields": [],
-        "manual_review_flags": [
-          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The applicant must be a citizen of India.\n- The applicant must be the only girl child in the family.\n- Girl students without having any brothers or ..."
-        ]
-      },
-      {
-        "id": 648,
-        "name": "Top Class Education For Scheduled Caste Students",
-        "category": "Education & Learning",
-        "government_name": "Central Government",
-        "similarity_score": 0.981,
-        "eligibility_criteria": {
-          "min_age": null,
-          "max_age": null,
-          "age_notes": null,
-          "income_ceiling": 800000.0,
-          "bpl_required": false,
-          "income_tiers": [
-            {
-              "tier_name": "Standard Eligibility",
-              "min_income": 0.0,
-              "max_income": 800000.0,
-              "benefit_value": "Standard Scheme Entitlement",
-              "benefit_type": "standard",
-              "notes": null
-            }
-          ],
-          "gender": "All",
-          "social_categories": [
-            "SC"
-          ],
-          "occupations": [
-            "Student"
-          ],
-          "disability_required": null,
-          "min_disability_percentage": null,
-          "state_restriction": null,
-          "residence_requirement": null,
-          "other_conditions_text": "- The applicant should belong to the Scheduled Caste (SC) category.\n- The applicant should have secured admission to a notified institution identified under the scheme.\n- The applicant should be pursuing a course beyond Class 12 in a notified institution.\n- The applicant's total annual family income from all sources should not exceed ₹8,00,000.\n- The applicant should be admitted through the prescribed admission process and satisfy the merit requirements applicable to the institution/course.\n- The applicant should be a first-year student of the approved course for consideration under the fresh scholarship category.\n\n> **Reservation:**\n\n- 30% of the scholarship slots are reserved for eligible Scheduled Caste girl students.\n- Unutilized slots reserved for girls may be transferred to eligible male students.",
-          "extraction_method": "audited_and_repaired",
-          "confidence_score": 1.0,
-          "confidence_components": {
-            "c_age": 1.0,
-            "c_income": 1.0,
-            "c_gender": 1.0,
-            "c_category": 1.0
-          }
-        },
-        "benefits": {
-          "benefit_min": 200000.0,
-          "benefit_max": 200000.0,
-          "benefit_type": "tiered",
-          "unit": "INR",
-          "frequency": null,
-          "benefit_condition": null,
-          "income_tiers": [
-            {
-              "tier_name": "Standard Eligibility",
-              "min_income": 0.0,
-              "max_income": 800000.0,
-              "benefit_value": "Standard Scheme Entitlement",
-              "benefit_type": "standard",
-              "notes": null
-            }
-          ],
-          "raw_text": "- Full tuition fee and non-refundable charges shall be paid.\n- For private sector institutions, the fee support is subject to a ceiling of ₹2,00,000 per annum per student.\n- Academic Allowance:\n\n - ₹86,000 in the first year.\n - ₹41,000 in each subsequent year.\n\n- Allowance covers living expenses, books and stationery, computer/laptop, UPS, printer, and any other academic requirements necessary for successful completion of the course."
-        },
-        "required_documents": [
+            "notes": "Educational qualification marksheets/certificates"
+          },
           {
             "purpose": "income_proof",
             "accepts": [
@@ -909,7 +939,7 @@
               "BPL / Ration Card"
             ],
             "required": true,
-            "notes": "Income Certificate."
+            "notes": "Valid Income certificate issued by the competent Authority"
           },
           {
             "purpose": "residence_proof",
@@ -920,15 +950,24 @@
               "Ration Card"
             ],
             "required": true,
-            "notes": "Domicile Certificate."
+            "notes": "Domicile Certificate"
           },
           {
-            "purpose": "general_verification",
+            "purpose": "category_proof",
             "accepts": [
-              "Self-attested Degree/Mark Sheet of the last qualifying exam."
+              "Caste Certificate issued by competent Tehsildar / SDM"
             ],
             "required": true,
-            "notes": "Self-attested Degree/Mark Sheet of the last qualifying exam."
+            "notes": "Caste/Community Certificate issued by the competent authority"
+          },
+          {
+            "purpose": "disability_proof",
+            "accepts": [
+              "UDID Card",
+              "Disability Certificate issued by Chief Medical Officer (CMO)"
+            ],
+            "required": true,
+            "notes": "Disability certificate, if applicable"
           },
           {
             "purpose": "bank_account_proof",
@@ -937,68 +976,46 @@
               "Cancelled Cheque"
             ],
             "required": true,
-            "notes": "Bank Details of the applicant or of the Parent/Guardian."
-          },
-          {
-            "purpose": "identity_proof",
-            "accepts": [
-              "Aadhaar Card",
-              "Voter ID Card",
-              "Passport",
-              "Driving License"
-            ],
-            "required": true,
-            "notes": "Aadhaar Number."
-          },
-          {
-            "purpose": "category_proof",
-            "accepts": [
-              "Caste Certificate issued by competent Tehsildar / SDM"
-            ],
-            "required": true,
-            "notes": "Caste certificate (issued by SDM or Tehsildar or any competent authority)."
+            "notes": "Bank Account details"
           }
         ],
-        "application_process": "Mode: Online\nURL: http://www.scholarships.gov.in/\nSteps: Step 1: \nKeep ready the soft copies of the required documents.\nGo to \nhttp://www.scholarships.gov.in/\n. And click “New Registration”.\nGuidelines for Registration will appear. Scroll to the bottom.\nRead the undertaking carefully. Accept the Terms. Click “Continue”.\nStep 2: \nA Registration Form will appear. (The fields marked as * are compulsory)\nFill the details and click “Register”.\nYour Application ID and password will be displayed.\nThe same will also be sent as an SMS on your registered mobile number.\nStep 3: \nGo to \nhttps://scholarships.gov.in/fresh/newstdRegfrmInstruction\nClick on “Login to Apply”. Enter your Application ID and password.\nType the Captcha and click “Login”.\nOn the next screen, provide the OTP received on your registered mobile number. You will be directed to the Password Reset screen.\nCreate a new password and confirm.\nClick “Submit”. You will be directed to the “Applicant’s Dashboard”.\nStep 4: \nOn the left pane, click “Application Form”. The fields marked as * are compulsory. Fill in the details and upload the documents.\nYou can either click on “Save as Draft” to complete the application later.\nElse, click “Final Submit” to submit the application.",
-        "application_url": "http://www.scholarships.gov.in/",
-        "description": "The scheme \"Top Class Education for Scheduled Caste Students\" by the Department of Social Justice and Empowerment, Government of India aims to recognize and promote quality education among Scheduled Caste students by providing financial support for pursuing studies beyond Class 12. Through this scheme, scholarship assistance covering tuition fees, non-refundable charges, and academic allowance is provided to eligible Scheduled Caste students studying in notified institutions of excellence across the country. The scheme is implemented by the Ministry of Social Justice and Empowerment through the National Scholarship Portal. A total of 1,900 fresh scholarships are awarded annually on the basis of merit. Thirty percent of the scholarship slots are reserved for eligible Scheduled Caste girl students. The scholarship is available for the full duration of the approved course, subject to satisfactory academic progress and fulfillment of the scheme conditions. The scheme seeks to reduce financial barriers and enable students from Scheduled Caste communities to access high-quality higher education opportunities.",
-        "source_url": "https://www.myscheme.gov.in/schemes/tce-sc",
-        "verdict": "DOES_NOT_QUALIFY",
-        "reason": "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।",
-        "disqualification_reasons": [
-          "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।"
-        ],
+        "application_process": "Mode: Online\nURL: \nSteps: All the State Governments/UT Administrations will announce starting from April, the details of the Scheme and invite applications by issuing an advertisement in the leading newspapers of the State and through their respective websites/Scholarship portals and other modes of media.\nThe applicant should submit the completed application to the prescribed authority on the portal specified for this purpose before the last date prescribed for receipt of applications.\nThe applicant can apply through the specified online portal of the State/UT and National Scholarship Portal.\nApplication Process: National Scholarship Portal-\nOnline submission for the scholarship can be done through the website of the National Scholarship Portal with the required documents: \nhttps://scholarships.gov.in/\nRegistration for New Applicant:\nStep 01:\n Open the official NSP website and click on '\nNew Registration\n' under Applicant Corner.\nStep 02:\n Read the Instruction/Guidelines, provide the undertaking by clicking on the Check box then click on Continue.\nStep 03:\n Start the registration by providing the required details.\nRegistered Applicant:\nStep 01: \nOpen the official NSP website and click on '\nFresh Application\n' under Applicant Corner.\nStep 02:\n Login with your application ID & password.\nStep 03:\n Select the Scholarship.\nStep 04:\n Fill out the applicant form.\nStep 05: \nUpload the required documents and Submit.\n(Note: The application processes may vary for the different State/UT, to avail of the benefits of the scholarship; eligible students may apply on the IT Portal of the concerned States and Union Territories.)\nSelection of Candidates:\nAll the eligible OBC/EBC/DNT candidates will be given scholarships subject to the condition of eligibility prescribed in the Scheme, Candidates belonging to one State, but studying in another State, will be awarded scholarships by the State to which they belong and will submit their applications to the competent authorities in that State. In the matter of exemption from fees or other concessions also, they will be treated as studying in their own State.\nTimelines for the Scheme:\nOpening of Portal for registration by students: 1st April\nClosing of Portal for registration: 30th June\nVerification by the institutions to be completed: 31st July\nVerification by the State Govt: 15th August\nRelease of Central Assistance into the SNA, as per the data uploaded on to the central portal: 31st August\nPayment of scholarships by the State Govt using the DBT process (before): 30th September\nProcess for Issue Freeship Card:\nAll eligible students shall be entitled to take admission in the institutions without prepayment of tuition fees and hostel fees as per the Scheme Guidelines. To enable this, a FREESHIP CARD will be issued by the State Government to the eligible students.\nThe student shall, well before the expected date of admission, register for issuance of a Freeship Card on the respective scholarship portal giving details like the Aadhaar number, the name of the course in which he/she wants to take admission (e.g. MBBS, B.Sc., Class XI etc.) and an undertaking that the institution's charges would be paid within 7 working days from the date of receipt of the scholarship amount in his/her account. For the purpose of registration of the Freeship Card, the portals shall remain open throughout the year.\nThe verification of the income, caste, and merit details should be automatically done from the databases which are linked online for instant verification. The process should be entirely paperless. Until the above system is brought into effect, the documents may be scanned and uploaded which include: a passport size photograph, copy of each of the certificates for diploma, degree, etc. in respect of all examinations passed, Caste certificate duly signed by the authorized officer, valid Income certificate issued by the competent authority as prescribed by the State Govt. etc.\nAfter the registration on the Portal, if the student is found eligible, all States/UTs will complete the verification process within 30 days from the receipt of the registration request from the students and issue the Freeship Card through the IT portal, mentioning the course for which application is made so that the eligible students are not denied admissions due to delay in depositing tuition fees. It should be possible for the student to download the Free Ship Card from the portal itself. Once complete digitization of all the required certificates is done, such a Freeship Card shall be automatically generated immediately on registration, if the student is found eligible.\nThe Freeship Card shall contain the details given in \nAnnexure-1\n and shall be digitally signed. For the purpose of admission, the Freeship card will remain valid for period of one year from the date of issue.\nIf a student wants to change his/her course before taking admission to an institution, he can do so by logging on IT portal and a fresh Freeship Card shall be issued automatically for all eligible students.\nIn case of renewal students, there shall be no need for fresh registration for the Freeship card and a card once issued to him/her shall be valid for the entire duration of the course.",
+        "application_url": null,
+        "description": "The “PM-YASASVI: Post-Matric Scholarship for OBC, EBC and DNT Students” is a sub-scheme under the umbrella scheme namely “PM Young Achievers Scholarship Award Scheme for Vibrant India for OBCs and Others (PM-YASASVI)”. This scheme is a Centrally Sponsored Scheme which was launched by the Ministry of Social Justice & Empowerment, Government of India to provide educational assistance to the students belonging to Other Backward Classes (OBCs), Economically Backward Classes (EBCs), and Denotified, Nomadic Tribes (DNT).\n> **Objective:**\n\nThe objective of the scheme is to provide financial assistance to the OBC, EBC, and DNT students studying at the post-matriculation or post-secondary stages to enable them to complete their education.\n> **Scope:**\n\n - These scholarships shall be available for studies in India only and will be awarded by the Government of State/Union Territory to which the applicant actually belongs, i.e. permanently settled. \n\n> **Definitions:**\n\n - \"**Group 1: Degree and Post Graduate level professional courses**\" shall mean all Professional courses in Medicine, Engineering, Technology, Planning, Architecture, Design, Fashion Technology, Agriculture, Veterinary & Allied Sciences, Management, Business Finance /Administration, Computer Science/ Applications (ii) Post Graduate Diploma courses in various branches of Management & Medicine(iii) C.A./I.C.W.A./C.S./1.C.F.A., etc. (iv) M.Phil., Ph.D. and Post-Doctoral Programmes (D.Lit., D.Sc. etc.) of Group I, Group II and Group Ill courses. (v) L.L.B, Integrated LL B, L.L.M (vi) Commercial Pilot License Courses from GoI institutes (including helicopter pilot and multiengine) (maximum 20 slots per annum) - \"**Group 2: Other Professional Courses leading to Degree, Diploma, Certificate**\" shall mean all Professional Courses leading to Degree, M Ed. / M. Pharma., Diploma, Certificate in areas like Pharmacy (B Pharma.), Nursing(B Nursing), BFS, other para-medical branches like rehabilitation, diagnostics, etc., Mass Communication, Hotel Management & Catering, Travel/Tourism/Hospitality Management, Interior Decoration, Nutrition& Dietetics, Commercial Art, Financial Services (e.g. Banking, Insurance, Taxation, etc.) for which entrance qualification is minimum Sr. Secondary (10+2) and Vocational stream, ITI courses and Polytechnic where entrance qualification is Class XII or above. - \"**Group 3: Graduate and Post Graduate course**\" shall mean: courses not covered under Group 1& Group 2 e.g. BA / B.Sc. / B.Com etc. M.A/ M. Sc./ M.Com etc. - \"**Group 4: All post-matriculation (Post Class X level) non-degree courses**\" shall mean All post-matriculation level non-degree courses for which entrance qualification is High School (Class X), e.g. Senior secondary certificate (Class XI and XII); both general and vocational stream, ITI courses, 3-year diploma courses in Polytechnics, etc. - The list of courses in various groups is indicative and States/UTs may add courses as per laid down standards in the State/UT.\n - \"**Freeship Card**\" shall mean: A card issued by the State Govt./UT Administration that entitles a student eligible for a scholarship under this Scheme, to take admission in an institution, without pre-payment of tuition fee and hostel fee.",
+        "source_url": "https://www.myscheme.gov.in/schemes/pm-yasasvipmsobcebcdnts",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
         "missing_fields": [],
         "manual_review_flags": [
-          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The applicant should belong to the Scheduled Caste (SC) category.\n- The applicant should have secured admission to a notified institution identified..."
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The scholarships will be open to Indian nationals belonging to OBCs, EBCs, and DNTs, as notified by the Central Govt./State Govt./ UT Admin. \n - The..."
         ]
       },
       {
-        "id": 628,
-        "name": "Indian Agricultural Research Institute - Scholarship",
+        "id": 45,
+        "name": "Persons With Disabilities Scheme In Colleges: Higher Education For Persons With Special Needs",
         "category": "Education & Learning",
         "government_name": "Central Government",
-        "similarity_score": 0.98,
+        "similarity_score": 1.0,
         "eligibility_criteria": {
-          "min_age": 21,
+          "min_age": null,
           "max_age": null,
-          "age_notes": "IARI Ph.D. Scholarship: minimum age 21 years.",
+          "age_notes": null,
           "income_ceiling": null,
           "bpl_required": false,
           "income_tiers": [],
           "gender": "All",
           "social_categories": [
-            "SC",
-            "ST"
+            "All"
           ],
           "occupations": [
-            "Student"
+            "All"
           ],
-          "disability_required": null,
-          "min_disability_percentage": null,
+          "disability_required": true,
+          "min_disability_percentage": 40,
           "state_restriction": null,
           "residence_requirement": null,
-          "other_conditions_text": "- **For the M.Sc./M.Tech. (Agricultural Engineering only) Courses:**\n\n - Only those candidates who had their Bachelor’s Degree Programmes under 10+2+4 OR 10+2+3 OR 10+1+4 system (OR awarded B.Sc. degree under 10+2+2 system prior to 1985) and fulfill the qualifications as prescribed in the Information Bulletin are eligible to apply for admission.\n\n - **For the Ph.D. Courses:**\n\n - Candidates must have obtained at least 60% marks OR an Overall Grade Point Average (OGPA) of 7.50 out of 10.00 OR 3.75 out of 5.00 OR 3.00 out of 4.00 OR 2.25 out of 3.00 (For SC/ST/PC candidates: 55% marks OR OGPA of 7.00 out of 10.00 OR 3.50 out of 5.00 OR 2.80 out of 4.00 OR 2.10 out of 3.00) in M.Sc. / M.Tech. degree program. In no case, the conversion of OGPA into percentage will be considered for the calculation of marks where the OGPA is awarded.\n - The scholarships will be admissible to students of Indian Nationality as defined in the constitution of India or persons domiciled in India, irrespective of sex, race, or religion.\n - A fellow will devote his/her whole time to the approved study and will not be allowed to accept or hold another appointment paid or otherwise.\n\n**Age Limit**\n\n - The minimum age limit for admission to Ph.D. shall be 21 years. The age shall be reckoned as of 31st July of the year of admission and no further relaxation will be given to the candidates",
+          "other_conditions_text": "- The college applying for a grant for any one of the components of the scheme should have enrolled disabled persons, including persons with visual impairment, hearing impairment, locomotor disability, etc., in various courses of the institute. The definitions of disability are in accordance with the [Persons with Disabilities Act 1995](https://thenationaltrust.gov.in/upload/uploadfiles/files/Persons%20with%20Disability%20Act%201995.pdf). 1. Institutions applying for the scheme should have been approved by the [UGC under Sections 2(f) and 12](https://www.ugc.gov.in/recog_college.aspx#:~:text=**%20Apart%20from%20inclusion%20of,funds%20from%20the%20Central%20Government.) B. 1. The college should have constituted an expert committee involving faculty members, experts in the field and differently-abled persons themselves. The committee should meet at least once a year to review the activities related to the concerned scheme(s).",
           "extraction_method": "audited_and_repaired",
           "confidence_score": 1.0,
           "confidence_components": {
@@ -1009,32 +1026,16 @@
           }
         },
         "benefits": {
-          "benefit_min": 10500.0,
-          "benefit_max": 10500.0,
+          "benefit_min": 4000.0,
+          "benefit_max": 4000.0,
           "benefit_type": "pension",
           "unit": "INR",
           "frequency": "per_month",
           "benefit_condition": null,
           "income_tiers": [],
-          "raw_text": "**Benefits**\nThe value of the M.Sc. and Ph.D. scholarship will be ₹ 7,560/- and ₹ 10,500/- per month, respectively. The scholarship shall be drawn in the extension period also where such extension beyond two/three years, respectively, has been granted. The scholarship will be inclusive of all fees and other charges of the teaching institution. In addition to the monthly amount of junior/senior scholarship a contingent grant of ₹ 6,000/- per academic year for M.Sc. students, and ₹ 10,000/- per academic year for Ph.D. students will be paid towards the cost of experimental material, books, the thesis and the study tours required for the study as recommended by the Chairperson/Professor concerned.\n\n**Scholarship to the In-service Candidates/ Departmental Students**\nAs per ICAR norms, the In-service candidates joining M.Sc./Ph.D. course on study leave/ deputation who are in receipt of study allowance/ halting allowance/deputation allowance, etc. in addition to full leave salary, the scholarship amount will be adjusted so that they will get a maximum benefit of ₹ 3,000/- p.m. only in addition to full leave salary. This is in addition to the payment of the contingent grant. Those in-service candidates who are not in receipt of JRF/SRF and receiving a partial salary (half or leave without pay) will also be eligible to get an Institute Scholarship of ₹ 3,000/- p.m. provided they are employed by ICAR/SAU system, either nominated by ICAR or selected for admission by any university and who opt to join at a place other than the one where working and provided further that the third degree is not from the same institute."
+          "raw_text": "**Provision of Facilities and Financial assistance** \nThe HEPSN scheme has three components. They are enumerated as follows: \n> **Component 1: Establishment of Enabling Units for differently-abled Persons** \n\nTo develop awareness in the higher education system and also to provide necessary guidance and counseling to differently-abled persons, it is proposed to establish resource units in colleges in the country, which will be called Enabling Units. The functions of this Enabling Unit will be to: \n- Facilitate admission of differently-abled persons in various courses; \n2. Provide guidance and counseling to differently-abled individuals; \n3. Create awareness about the needs of differently-abled persons, and other general issues concerning their learning; and \n4. Assist differently-abled graduates to gain successful employment in the public as well as private sectors. \nThe special unit will be coordinated by a faculty member to be nominated by the head of the institution. He/she will work as an honorary coordinator for which a token honorarium of Rs. 4000/- per month will be paid. The unit will also have a budgetary provision of ₹ 50,000/per year towards general administration, stationery, and contingencies, and to avail the services of experts and personnel for organizing awareness programs, counseling sessions, etc., for efficient and independent functioning in order to achieve its objectives.\n\n> **Component 2: Providing Access to Differently-abled Persons**\n\n- The UGC will make a one-time grant of up to ₹ 5,00,000 per college during the Plan period so that the colleges can address the accessibility issues pertaining to disability and make special arrangements in the environment for their mobility and independent functioning.\n- The colleges address accessibility-related issues as per the stipulations of the Persons with Disabilities Act 1995.\n- The colleges ensure that all existing structures as well as future construction projects in their campuses are made disabled-friendly. \n- The institutes create special facilities such as ramps, rails, and special toilets, and make other necessary changes to suit the special needs of differently-abled persons.\n\n> **Component 3: Providing Special Equipment to Augment Educational Services for Differently-abled Persons** \n\nDifferently-abled persons require special aids and appliances for their daily functioning. These aids are available through various schemes of the Ministry of Social Justice and Empowerment. In addition to the procurement of assistive devices through these schemes, higher education institutions may also need special learning and assessment devices to help differently-abled students enrolled in higher education. In addition, visually challenged students need Readers. Availability of devices such as computers with screen reading software, low-vision aids, scanners, mobility devices, etc., in the institutes, would enrich the educational experiences of differently-abled persons. Therefore, colleges are encouraged to procure such devices and provide the facility of Readers for visually challenged students. The UGC will provide an ad hoc one-time grant of up to ₹1,50,000 per college during the Twelfth Plan period"
         },
         "required_documents": [
-          {
-            "purpose": "general_verification",
-            "accepts": [
-              "Proof of date of birth."
-            ],
-            "required": true,
-            "notes": "Proof of date of birth."
-          },
-          {
-            "purpose": "category_proof",
-            "accepts": [
-              "Caste Certificate issued by competent Tehsildar / SDM"
-            ],
-            "required": true,
-            "notes": "Caste Certificate."
-          },
           {
             "purpose": "identity_proof",
             "accepts": [
@@ -1044,40 +1045,206 @@
               "Driving License"
             ],
             "required": true,
-            "notes": "Two passport-size photograph."
+            "notes": "Aadhaar Card."
+          },
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Residential Certificate."
+            ],
+            "required": true,
+            "notes": "Residential Certificate."
+          },
+          {
+            "purpose": "disability_proof",
+            "accepts": [
+              "UDID Card",
+              "Disability Certificate issued by Chief Medical Officer (CMO)"
+            ],
+            "required": true,
+            "notes": "Disability Certificate."
+          },
+          {
+            "purpose": "bank_account_proof",
+            "accepts": [
+              "Bank Passbook copy with IFSC",
+              "Cancelled Cheque"
+            ],
+            "required": true,
+            "notes": "Details of the Bank Account (Bank Name, Branch Name, Address, IFSC, etc)."
           }
         ],
-        "application_process": "Mode: Online\nURL: http://www.iari.res.in\nSteps: To request an application form and the Information Bulletin, send a crossed Demand Draft for ₹ 575/- drawn in favour of the Registrar, Post Graduate School, Indian Agricultural Research Institute, New Delhi 110 012, along with a written request clearly indicating your full and legible address.\nYou can also purchase the application form and the Information Bulletin in person at Syndicate Bank, Pusa Campus by making a payment of ₹ 500/- (₹ 250/- for SC/ST/PC candidates plus the charges prescribed by the Bank).\nYou can also download the Information Bulletin, Admit Cards, Application Form, and Acknowledgement Card from the Institute website at \nhttp://www.iari.res.in\n. In this case, you must enclose a Demand Draft of ₹ 500/- (for the General/ OBC category) and ₹ 250/- (for SC/ST/PC category) along with the Application Form.\nAll correspondence for admission should be addressed to the Registrar, Post Graduate School, Indian Agricultural Research Institute, New Delhi 110 012. Each application form will have a serial number. Please quote this number, as well as the program (M.Sc./M.Tech./Ph.D.) and the discipline to which you are seeking admission, in all correspondence regarding admission to this School.\nIf applicant is employed, then he/she must submit his/her application through his/her employer.",
-        "application_url": "http://www.iari.res.in",
-        "description": "The Awards shall be made by the Dean and Joint Director (Education) of the Institute on the advice of the “Standing Committee on Scholarships Financial Assistance and Academic Progress”, which shall take into consideration the merit of\neach applicant based initially on his admission and subsequently on his performance at the Post Graduate School. \n\n**Duration**\n\n - The normal duration of junior scholarships for M.Sc. course will be two years and that of senior scholarships for Ph.D. course will be three years. However, on the recommendation of the Chairperson of the student and Professor of the Division based on appraisal of the progress and details of justification for the extension needed, the period of junior/senior scholarships is extendable in exceptional cases for period not exceeding three months/six months, respectively. In the case of SC/ST/PC students, the scholarships are extendable upto a period of six months/one year, respectively.\n - The students who have undergone introductory courses on agriculture in the first year of their study at IARI shall be provided Institute scholarship for a period of one year in addition to the provisions mentioned above. \n - The scholarships shall be awarded initially for a period of one academic year from the date of joining the Post Graduate School or the commencement of the academic year, whichever is later, and can be renewed for another year in the case of M.Sc. and two years in the case of Ph.D. students, subject to the earning of Overall Grade Point Average for continuing in the Post Graduate School. \n - Requests for extension beyond these limits will be examined by the Dean on their merits. The total period for which scholarships shall be awarded including extension period shall not exceed three years and three months in the case of M.Sc. students, and four years and six months in the case of Ph.D. students.\n - The payment of scholarship/fellowship should be reviewed at the end of 3rd trimester and only those students will e permitted to continue getting fellowship who maintain the OGPA of 6.50 out of 10.00 at the end of 3rd trimester. All M.Sc./ Ph.D. students will be required to maintain the minimum OGPA of 6.00 out of 10.00 at the end of 3rd trimester to continue on the Post Graduate School rolls.\n - The scholarship shall be paid only for the period of residence of the recipient at Post Graduate School (inclusive of the summer vacation, the trimester breaks and such other leave as may be sanctioned under the rules) upto the date of final viva-voce (i.e. till they are on the rolls), subject to the condition that the maximum period of scholarship prescribed shall in no case be extended and provided he/she continues to reside in the Post Graduate Hostel and marks his/her attendance in the concerned division.",
-        "source_url": "https://www.myscheme.gov.in/schemes/iaris",
-        "verdict": "DOES_NOT_QUALIFY",
-        "reason": "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।",
-        "disqualification_reasons": [
-          "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।"
-        ],
+        "application_process": "Mode: Offline\nURL: https://www.ugc.gov.in/pdfnews/1112642_Person-with-Disability-guidelines.pdf\nSteps: Application for specific projects should be sent in the prescribed \nProforma For financial assistance under the scheme to assist for college to facilitate higher Education for Person (HEPSN) Scheme\non Page number 6 along with the College Development proposal.\n\nProcedure for release of grant\nComponent 1. \nHonorarium to the coordinator and other budgetary provisions @ Rs.50,000/- per year will be released for the 1st year after approval of the proposal. Subsequent grants will be released on the basis of an audited utilization certificate and statement of expenditure.\n\nComponent 2.\n The grant will be released upon receipt of detailed plans and estimate as per UGC building guidelines.\n\nComponent 3.\n 90% of the grant allocated will be released as 1st installment and the remaining 10% on a reimbursement basis, upon receipt of the audited statement of expenditure and utilization certificate.",
+        "application_url": "https://www.ugc.gov.in/pdfnews/1112642_Person-with-Disability-guidelines.pdf",
+        "description": "The Higher Education for Persons with Special Needs (HEPSN) scheme is meant for creating an environment at higher education institutions to enrich the higher education learning experiences of differently-abled persons. Creating awareness about the capabilities of differently-abled persons, construction aimed at improving accessibility, purchase of equipment to enrich learning, etc., are the broad categories of assistance under this scheme. \n> **Specific Objectives of HEPSN**\n\n> | The specific objectives of the HEPSN Scheme are as follows: \n\n- To provide equal educational opportunities to differently-abled persons in higher education institutions.\n- To create awareness among the functionaries of higher education about the specific educational needs of differently-abled persons. \n- To equip higher education institutions with the facilities to provide access to differently-abled persons.\n- To provide special devices to higher education institutions that will augment the learning experiences of differently-abled persons. \n- To monitor the implementation of all existing and future legislation and policies, which are about higher education of differently-abled persons.",
+        "source_url": "https://www.myscheme.gov.in/schemes/hepsn",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
         "missing_fields": [],
         "manual_review_flags": [
-          "अतिरिक्त शर्त (मैनुअल समीक्षा): - **For the M.Sc./M.Tech. (Agricultural Engineering only) Courses:**\n\n - Only those candidates who had their Bachelor’s Degree Programmes under 10+2+4..."
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The college applying for a grant for any one of the components of the scheme should have enrolled disabled persons, including persons with visual im..."
         ]
       },
       {
-        "id": 625,
-        "name": "Begum Hazrat Mahal National Scholarship Program",
+        "id": 644,
+        "name": "PM-YASASVI: Top Class College Education for OBC, EBC and DNT Students",
         "category": "Education & Learning",
         "government_name": "Central Government",
-        "similarity_score": 0.97,
+        "similarity_score": 1.0,
         "eligibility_criteria": {
           "min_age": null,
           "max_age": null,
           "age_notes": null,
-          "income_ceiling": 200000.0,
+          "income_ceiling": 250000.0,
           "bpl_required": false,
           "income_tiers": [
             {
               "tier_name": "Standard Eligibility",
               "min_income": 0.0,
-              "max_income": 200000.0,
+              "max_income": 250000.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "gender": "All",
+          "social_categories": [
+            "OBC",
+            "General"
+          ],
+          "occupations": [
+            "Student"
+          ],
+          "disability_required": null,
+          "min_disability_percentage": null,
+          "state_restriction": null,
+          "residence_requirement": null,
+          "other_conditions_text": "> **Eligibility of Students:**\n\n - The Scheme will cover OBC/EBC/DNT students for pursuing studies beyond Class XII.\n - Those OBC/EBC/DNT students having total annual family income from all sources up to ₹2.50 lakhs and have secured admission in a full-time prescribed course in any of the notified institutions according to the general selection criteria prescribed by the concerned institution, will be eligible for a scholarship under the Scheme to the extent of the number of scholarships (slots) allocated to the institution for the course.\n - The benefit of the Scheme will not be provided to more than 2 siblings in a family. The students will submit an affidavit to the Institution to certify that he/she is not the third sibling of the family who is availing of benefits under the scheme.\n\n**Note 01:** In case the institution finds that the number of eligible candidates in the 1st year is less than the number of slots allotted to it, the balance slots may be offered to eligible students studying in 2nd, the 3rd and 4th year, etc. on the basis of inter-se merit of previous year’s result giving priority to those with a higher number of years left to complete their respective course i.e. 2nd year students are to get priority over the 3rd year students and soon.\n**Note 02:** 30% of slots allotted to the Institution shall be reserved for eligible girl students as per their inter-se merit. In the absence of a sufficient number of girl students, the slots may be transferred to eligible boy students as per their inter-se merit.\n**Note 03:** However, the 30% slots as mentioned above will not include those girl students who are selected on the basis of their performance in the overall merit list of OBC/EBC/DNT students, as applicable, of the Institution.\n**Note 04:** The scholarship will be terminated if the student fails to get promoted to the next semester/class.\n**Note 05:** As the fund is majorly earmarked for OBC, preference would be given to the OBC students while considering under the scheme.\n**Note 06:** In case the number of eligible students admitted exceeds the number of slots allotted to the institution, the scholarship will be restricted to the top students in the inter-se merit list based on the admission criteria for the course. However, if there is more than one student with equal marks for the last available slot in an institution, preference should be given to the student with a lower family income. The remaining students from the OBC/EBC/DNT category admitted in the institution shall be eligible for the Post-Matric Scholarship (PMS) administered by this Ministry through State Governments/UT Administrations, provided such students are otherwise eligible under the said scheme.\n> **‘Top Class’ Institutions and Number of Scholarship Slots:**\n\n - All the IIMs / IITs/ IIITs / AIIMSs/ NITs/NIFTs/ NIDs/ Indian Institutes of Hotel Management, National Law Universities, and other Central Government Institutions will be eligible to be included in the Scheme, subject to their applying for being included in the Scheme and recommendation by the Selection Committee under the scheme, or if the Selection Committee itself recommends the name of the institute for inclusion in the list of empanelled institutes of the scheme. If an institution is not in any of the above categories, it has to be included in the current list or i). National Assessment and Accreditation Council (NAAC) A++ and A+ Accredited Institutions or ii) Top 100 National Institutional Ranking Framework (NIRF) Institutions or iii).Institutions of National Importance as per lists issued by the Ministry of Education (GoI) from time to time.\n - For Commercial Pilot Training Courses and Type Rating Courses all Government institutes approved by the Director General of Civil Aviation shall be eligible for empanelment under the scheme.\n - The overall number of fresh scholarships would be capped as per the budget earmarked for that financial year. The number of slots shall be distributed among types of institutions as per the recommendation of the committee.\n - The list of the ‘Top Class’ Institutions to be covered under the Scheme along with a number of scholarship slots will be notified by the Department of Social Justice and Empowerment. Any addition or deletion to the list shall be notified by the Ministry of Social Justice and Empowerment, Government of India, as and when required, based on the recommendations of the Steering Committee set up under the scheme.\n - Any institution not applying under the Scheme continuously for three years shall be removed from the list of notified institutions under the Scheme.",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
+          "confidence_components": {
+            "c_age": 1.0,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": 3000.0,
+          "benefit_max": 3000.0,
+          "benefit_type": "tiered",
+          "unit": "INR",
+          "frequency": "per_month",
+          "benefit_condition": null,
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 250000.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "raw_text": "The OBC/EBC/DNT students, who secure admission in the notified institutions, will be awarded scholarships to meet the requirements for:-\n\n - Full tuition fee and non-refundable charges (there will be a ceiling of ₹2.00 lakhs per annum per student for private sector institutions and ₹3.72 lakhs per annum per student for the private sector flying clubs for Commercial Pilot Training and Type Rating Courses)\n - Living expenses to the beneficiary @₹3,000/-per month per student\n - Books and stationery @ ₹5,000/- per annum per student\n - A latest computer/laptop of a reputed brand with accessories like UPS and printer limited to ₹45,000/- per student as one-time assistance during the course.\n\n**Note 01:** The scholarship will become payable immediately after a student has secured admission and has started attending the classes.\n**Note 02:** The payment of tuition fees and other non-refundable charges will be made directly to the institution by the Central Government through Direct Benefit Transfer mode.\n**Note 03:** Similarly, the payment of living expenses, books & stationery, and computer/laptop with accessories will be made directly to the student by the Central Government through Direct Benefit Transfer mode."
+        },
+        "required_documents": [
+          {
+            "purpose": "identity_proof",
+            "accepts": [
+              "Aadhaar Card",
+              "Voter ID Card",
+              "Passport",
+              "Driving License"
+            ],
+            "required": true,
+            "notes": "Aadhaar Card"
+          },
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Educational qualification marksheets/certificates"
+            ],
+            "required": true,
+            "notes": "Educational qualification marksheets/certificates"
+          },
+          {
+            "purpose": "income_proof",
+            "accepts": [
+              "Income Certificate issued by Revenue Authority / SDM",
+              "BPL / Ration Card"
+            ],
+            "required": true,
+            "notes": "Valid Income certificate issued by the competent Authority"
+          },
+          {
+            "purpose": "residence_proof",
+            "accepts": [
+              "Domicile Certificate",
+              "Voter ID Card",
+              "Electricity Bill",
+              "Ration Card"
+            ],
+            "required": true,
+            "notes": "Domicile Certificate"
+          },
+          {
+            "purpose": "category_proof",
+            "accepts": [
+              "Caste Certificate issued by competent Tehsildar / SDM"
+            ],
+            "required": true,
+            "notes": "Caste/Community Certificate issued by the competent authority"
+          },
+          {
+            "purpose": "disability_proof",
+            "accepts": [
+              "UDID Card",
+              "Disability Certificate issued by Chief Medical Officer (CMO)"
+            ],
+            "required": true,
+            "notes": "Disability certificate, if applicable"
+          },
+          {
+            "purpose": "bank_account_proof",
+            "accepts": [
+              "Bank Passbook copy with IFSC",
+              "Cancelled Cheque"
+            ],
+            "required": true,
+            "notes": "Bank Account details"
+          }
+        ],
+        "application_process": "Mode: Online\nURL: \nSteps: The students will submit their applications on the National Scholarship Portal (NSP). \nhttps://scholarships.gov.in/\nRegistration for New Applicant:\nStep 01: Open the official NSP website and click on '\nNew Registration\n' under Applicant Corner.\nStep 02: Read the Instruction/Guidelines, provide the undertaking by clicking on the Check box then click on Continue.\nStep 03: Start the registration by providing the required details.\nRegistered Applicant:\nStep 01: Open the official NSP website and click on '\nFresh Application\n' under Applicant Corner.\nStep 02: Login with your application ID & password.\nStep 03: Select the Scholarship.\nStep 04: Fill out the applicant form.\nStep 05: Upload the required documents and Submit.\nNote 01:\n In the case of new entrants i.e. to the first year of the course, the institution will select eligible OBC/EBC/DNT students on the basis of merit as per the entrance examination merit list. The entrance exam of each course will be considered as per the list given in \nAnnexure-I\n. The students are required to apply under the Scheme on the National Scholarship Portal (NSP).\nNote 02:\n In the case of application for renewal of scholarships by students joining second or subsequent years of the course, verification of an application by the institution would mean that the institution has promoted the student to the next class and the student has taken admission therein.\nNote 03:\n The student should purchase the computer/laptop including accessories in the first year he/she is awarded the scholarship. The student will submit the bill for the purchase of the same while applying for the scholarship in the subsequent year to the institution. If the amount of purchase is less than the amount released to him/her under this head, the institution will accordingly adjust the difference against the admissible grant to the student being proposed on the NSP.",
+        "application_url": null,
+        "description": "The “PM-YASASVI: Top Class College Education for OBC, EBC and DNT Students” is a sub-scheme under the umbrella scheme namely “PM Young Achievers Scholarship Award Scheme for Vibrant India for OBCs and Others (PM-YASASVI)”. The scheme was launched by the Ministry of Social Justice & Empowerment, Government of India to provide educational assistance to the students belonging to Other Backward Classes (OBCs), Economically Backward Classes (EBC), and Denotified, Nomadic Tribes (DNT). The Scheme will be funded by the Ministry of Social Justice and Empowerment on a 100% basis.\n> **Objective:**\n\nThe objective of the scheme is to recognize and promote quality education amongst Students belonging to OBC, EBC, and DNT categories by providing full financial support. The Scheme will cover OBC/EBC/DNT students for pursuing studies beyond Class XII. \n> **Scope and Coverage:**\n\n - The Scheme will operate in all the institutions notified by the Ministry of Social Justice and Empowerment for every financial year 2021-22 onwards.\n - The scholarship, once awarded, will continue till the completion of the course, subject to satisfactory performance of the student. The students are required to apply for scholarships every year even in case of renewal also.",
+        "source_url": "https://www.myscheme.gov.in/schemes/pm-yasasvitcceobcebcdnts",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): > **Eligibility of Students:**\n\n - The Scheme will cover OBC/EBC/DNT students for pursuing studies beyond Class XII.\n - Those OBC/EBC/DNT students hav..."
+        ]
+      },
+      {
+        "id": 461,
+        "name": "Jai Bhim Mukhyamantri Pratibha Vikas Yojana",
+        "category": "Education & Learning",
+        "government_name": "Delhi Government",
+        "similarity_score": 1.0,
+        "eligibility_criteria": {
+          "min_age": 3,
+          "max_age": null,
+          "age_notes": null,
+          "income_ceiling": 600000.0,
+          "bpl_required": false,
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 600000.0,
               "benefit_value": "Standard Scheme Entitlement",
               "benefit_type": "standard",
               "notes": null
@@ -1088,62 +1255,46 @@
             "SC",
             "ST",
             "OBC",
-            "Minority"
+            "Minority",
+            "EWS"
           ],
           "occupations": [
             "Student"
           ],
           "disability_required": null,
           "min_disability_percentage": null,
-          "state_restriction": null,
-          "residence_requirement": null,
-          "other_conditions_text": "- Only girl students belonging to six notified Minority Communities i.e. Muslims, Christians, Sikhs, Buddhists, Jains and Parsis are eligible.\n - The scholarship will be awarded to minority girl students who are studying in Class 9th to 12th and have secured at least 50% marks or equivalent grades in aggregate in the previous class/qualifying exam.\n - The annual income of the student’s parent/guardian from all sources does not exceed Rs.2.00 lakh.\n - An Income certificate, issued by a Competent Authority in the State/UTs Governments is required in respect of parent/guardian of the student.\n - A self-Certified Community Certificate is required from a student who has attained 18 years of age. For others, the Community Certificate certified by the parent/guardian of the student is required.\n - If a student violates school discipline or any other terms and conditions of the scholarship, the scholarship may be suspended or cancelled. The State Government/Union Territory Administration can also directly cancel the award if duly satisfied with the reasons of violation of these regulations governing the scheme.\n - If a student is found to have obtained a scholarship by false statement, her scholarship will be cancelled forthwith and the amount of the scholarship paid will be recovered by the concerned State/UT Govt.\n - The student obtaining benefits under this scheme shall not be allowed to avail of benefits under any other scheme for this purpose.\n - A student shall be eligible for only one scholarship out of all the available Scholarships of the Central Government meant for SC/ST/OBC/minority.\n - The scholarship will not be given to more than two students from a family of the same class\n - No scholarship shall be given for studies abroad for any course.",
+          "state_restriction": "Delhi",
+          "residence_requirement": "residing in delhi",
+          "other_conditions_text": "**Eligibility criteria for students:**\n\n - Only students belonging to the Scheduled Caste category residing in Delhi & who have passed 10th and 12th class (or studying in class XII) from the schools in Delhi, having a total family income of not more than ₹6.00 lakh per annum will be eligible under the scheme.\n - The students must have secured a prescribed percentage of marks in the qualifying examinations for which free coaching is proposed to be imparted under the scheme.\n\n**Note 01:** Sponsoring Department may also nominate some needy students for coaching under the selected institutions.\n**Note 02:** Income and Caste Certificates issued by the office of the concerned District Magistrate should be obtained from the Students by the selected institutes.\n**Note 03:** Where examination is conducted in two stages viz. Preliminary and Main, the candidates will be entitled to free coaching for both examinations. They will be entitled to free coaching for both Preliminary and Main examinations at their convenience. However, there will be no restriction on the number of chances for coaching for interview, if the candidate is selected for interview.\n**Note 04:** The selected students shall have to attend all classes. In the event of any student remaining absent for more than 15 days, without any valid reason, the benefits of free coaching to him/her shall be discontinued and another student shall be taken in his/her place.\n**Eligibility criteria for applying for Empanelment of Coaching Institutions:**\n\n - The institute should be a registered body or run by any organization registered under the Societies Registration Act, 1860/ Companies Act, 2013, or any other relevant Act of the State/Union Territory.\n - The institute should have experience of at least 3 years as of the date of notification inviting applications from institutions for empanelment by the Department.\n - The institute should have been fully functional for a minimum period of 3 years at the time of applying under this scheme and having a minimum enrolment of 100 students in the courses each year for at least two years, immediately prior to the year in which selected for empanelment.\n - The institute must have the proper infrastructure to meet the entire requirement for providing quality coaching in the courses applied.",
           "extraction_method": "audited_and_repaired",
-          "confidence_score": 1.0,
+          "confidence_score": 0.955,
           "confidence_components": {
-            "c_age": 1.0,
+            "c_age": 0.85,
             "c_income": 1.0,
             "c_gender": 1.0,
             "c_category": 1.0
           }
         },
         "benefits": {
-          "benefit_min": 5000.0,
-          "benefit_max": 5000.0,
+          "benefit_min": 0.0,
+          "benefit_max": 200000.0,
           "benefit_type": "tiered",
           "unit": "INR",
-          "frequency": null,
+          "frequency": "per_month",
           "benefit_condition": null,
           "income_tiers": [
             {
               "tier_name": "Standard Eligibility",
               "min_income": 0.0,
-              "max_income": 200000.0,
+              "max_income": 600000.0,
               "benefit_value": "Standard Scheme Entitlement",
               "benefit_type": "standard",
               "notes": null
             }
           ],
-          "raw_text": "- **For Class IX & X:** ₹5,000/- each. - **For Class XI & XII:** ₹6,000/- each."
+          "raw_text": "- A monthly stipend of ₹2500/- per student will be paid for local students for attending the coaching classes. \n - Under the scheme, 75% of the admissible coaching fee amount is to be provided by the Government and the remaining 25% is to be borne by the students. \n - In case of students having a total family income of up to ₹2.00 lacs, a full admissible coaching fee is to be provided by the Govt.\n\n**Note 01:** The institute would have to pay a stipend to each student on a monthly basis through PFMS/ ECS or cheque. Cash payment would not be allowed.\n**Note 02:** Benefits under the scheme can be availed by a particular student not more than twice, irrespective of the number of chances; he/she may be entitled to in a particular competitive examination. However, only 50 % of the admissible coaching fee is to be provided by the Govt. for students who avail of 2nd time coaching facility under the scheme. The coaching institution will also be required to take an undertaking from the students that they have not taken benefit more than twice under the scheme."
         },
         "required_documents": [
-          {
-            "purpose": "general_verification",
-            "accepts": [
-              "Aadhar card."
-            ],
-            "required": true,
-            "notes": "Aadhar card."
-          },
-          {
-            "purpose": "income_proof",
-            "accepts": [
-              "Income Certificate issued by Revenue Authority / SDM",
-              "BPL / Ration Card"
-            ],
-            "required": true,
-            "notes": "Family income certificate."
-          },
           {
             "purpose": "identity_proof",
             "accepts": [
@@ -1153,16 +1304,15 @@
               "Driving License"
             ],
             "required": true,
-            "notes": "Passport size photograph."
+            "notes": "Aadhaar Card of the applicant"
           },
           {
-            "purpose": "bank_account_proof",
+            "purpose": "general_verification",
             "accepts": [
-              "Bank Passbook copy with IFSC",
-              "Cancelled Cheque"
+              "Educational Certificate (10th & 12th mark sheet)"
             ],
             "required": true,
-            "notes": "Candidates bank account detail."
+            "notes": "Educational Certificate (10th & 12th mark sheet)"
           },
           {
             "purpose": "residence_proof",
@@ -1173,37 +1323,60 @@
               "Ration Card"
             ],
             "required": true,
-            "notes": "Domicile certificate."
+            "notes": "Residence proof"
+          },
+          {
+            "purpose": "category_proof",
+            "accepts": [
+              "Caste Certificate issued by competent Tehsildar / SDM"
+            ],
+            "required": true,
+            "notes": "Caste certificate"
+          },
+          {
+            "purpose": "bank_account_proof",
+            "accepts": [
+              "Bank Passbook copy with IFSC",
+              "Cancelled Cheque"
+            ],
+            "required": true,
+            "notes": "Bank account details"
           }
         ],
-        "application_process": "Mode: Online\nURL: https://scholarships.gov.in/\nSteps: New Registration\n:\nStep 1: \nVisit the \nNew Registration\n page of the National Scholarships Portal.\nStep 2:\n Guidelines for Registration will appear. Scroll to the bottom. Read the undertaking carefully and Accept the Terms. Click “Next”.\nStep 3:\n In the next window, enter your mobile number and OTP. Then click “Verify”.\nStep 4: \nAfter successful verification, continue with e-KYC process (as applicable).\nStep 5:\n Once completed, your reference number will be generated and the same will be sent to your registered phone number.\nProcess for OTR ID Number Generation\n:\nStep 1:\n Download and install \nAadhaarFaceRD\n services in the android device.\nStep 2:\n Download and install the \nNSP OTR\n App from the Google Play Store.\nStep 3:\n After opening the mobile app Select the option “eKYC with FaceAuth” highlighted in red.\nStep 4:\n Enter the allotted reference number and click on “Send OTP” to receive OTP on your mobile no.\nStep 5:\n Enter the received OTP and captcha in the screen and click Next.\nStep 6:\n Click on “Proceed for Face Authentication” button highlighted in red.\nStep 7:\n UIDAI AadhaarFaceRD services will be invoked for face authentication. Ensure AadhaarFaceRD services are preinstalled on your device.\nStep 8:\n On Successful completion of face-authentication OTR no. will be generated and will also be sent on your registered mobile no.\nFresh Application\n:\nStep 1:\n Visit the applicant \nLogin\npage of the National Scholarships Portal Enter your One Time Registration (OTR) number and password.\nStep 2: \nType the Captcha and click “Login”.\nStep 3: \nOn the next screen, provide the OTP received on your registered mobile number. You will be directed to the Password Reset screen. Create a new password and confirm.\nStep 4:\n Click “Submit”. You will be directed to the “Applicant’s Dashboard”.\nStep 5:\n On the left pane, click “Application Form”. The fields marked as * are compulsory. Fill in the details and upload the documents.\nStep 6: \nYou can either click on “Save as Draft” to complete the application later. Else, click “Final Submit” to submit the application.\nTrack Payment Status\n:\nThe student can track their payment status from the template “Know Your Payment” in the \nPublic Financial Management System (PFMS) Portal\n either by indicating their Aadhaar Number, Bank Account number or NSP Application ID.\nNOTE 1:\n The National Scholarships Portal will provide the timelines for opening & closing of the portal.\nNOTE 2:\n Online applications will be verified at two levels i.e. by the Institute, where the student is studying and thereafter by the concerned State Higher Education Department or any other Agency/ Official nominated by the State as State Nodal Agency (both for fresh and renewal applicants).\nNOTE 3: \nStudents will not be permanently debarred for scholarships due to delay in renewal or verification. However, students will have to submit renewal applications within a cut-off date. Renewal for that year will not be allowed if an applicant misses this deadline.\nStandard Operating Procedures: \nClick here\n.",
-        "application_url": "https://scholarships.gov.in/",
-        "description": "The Scheme of “Begum Hazrat Mahal National Scholarship” for Meritorious Girl Students belonging to the Minority Communities was earlier known as “Maulana Azad National Scholarship for Meritorious Girls belonging Minorities,” and the same was launched by the then Prime Minister of India (late) Atal Bihari Vajpayee at National Conference of Educational & Economic Development of Minorities held on 03.05.2003 at Vigyan Bhawan, New Delhi.",
-        "source_url": "https://www.myscheme.gov.in/schemes/bhmnsp",
-        "verdict": "DOES_NOT_QUALIFY",
-        "reason": "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।; यह योजना पूर्व-दशम (Pre-Matric, कक्षा 9-10) स्कूली छात्रों के लिए है; कॉलेज या 18+ वर्ष के छात्र इसके पात्र नहीं हैं।",
-        "disqualification_reasons": [
-          "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।",
-          "यह योजना पूर्व-दशम (Pre-Matric, कक्षा 9-10) स्कूली छात्रों के लिए है; कॉलेज या 18+ वर्ष के छात्र इसके पात्र नहीं हैं।"
-        ],
+        "application_process": "Mode: Offline\nURL: \nSteps: Step 01:\n The applicant needs to visit the concerned coaching institute (Reputed institutions/centers run by registered private institutions /NGOs.)\nStep 02:\n Now, the interested students will have to collect the registration form from the respective coaching institutes.\nStep 03:\n Fill in all the mandatory details and attach all the necessary documents with the application form.\nStep 04:\n Submit the filled application form to the respective coaching institute.\nStep 05:\n After successful verification, the students can avail the benefits of the scheme.\nNote 01:\n The students should be selected by the coaching institution based on academic criteria/eligibility tests prescribed by the institution itself. However, institutions may relax these criteria for SC candidates suitably. In the absence of any criteria fixed up by the institution, students should be selected based on merit prepared on the basis of marks obtained by them in the qualifying examinations for appearing in the relevant competitive examinations for which coaching is to be imparted.\nNote 02:\n Sponsoring Department may also nominate some needy students for coaching under the selected institutions.\nNote 03:\n With a view to giving the scheme wider publicity, the coaching institute will issue advertisements in the local newspapers and invite applications from eligible SC candidates as per the provisions of the scheme.",
+        "application_url": null,
+        "description": "The scheme “Jai Bhim Mukhyamantri Pratibha Vikas Yojana” was launched by the Department for the Welfare of SC/ST/OBC/Minorities, Government of NCT of Delhi vide Cabinet Decision No.2526 Dated 12-12-2017.\n**Objective:**\nThe objective of the scheme is to provide quality coaching for economically disadvantaged Scheduled Castes (SCs) candidates to enable them to compete in Competitive examinations and succeed in obtaining an appropriate job in the Public/Private sector.\n**The courses for which the Coaching will be imparted shall be as follows:**\n\n- Group A and B examinations are conducted by the Union Public Service Commission (UPSC), the Staff Selection Commission (SSC), various Railway Recruitment Boards (RRBs), and Judicial Services Examination.\n- Group A and B examinations conducted by the State Public Service Commission;\n- Officers’ Grade examinations conducted by Banks, Insurance Companies, and Public Sector Undertakings (PSUs)\n- Premier Entrance Examinations for admission in (a) engineering (e.g. IIT-JEE & AIEEE), (b) Medical (e.g. AIPMT), (c) professional courses like Management (e.g. CAT) and Law (e.g. CLAT) and (d) such other disciplines, Government may decide from time to time.\n\n**Quantum of Fee:** The admissible coaching fee in respect of various courses would be as under:- \nS**l. No. | Name of course for which coaching to be provided | Duration of Coaching | Maximum ceiling of Coaching fee paid to institution (inclusive of both govt. as well as student share) per candidate (in ₹)**1Civil Service (Preliminary)/State Civil Services (Preliminary)Minimum 5 Months40,0002Civil Service (Mains)/State Civil Services (Mains)Minimum 4 Months40,0003Entrance examinations for Engineering, Medical, MBA, and other professional coursesMinimum 4 Months40,0004Other Group A&B examinations conducted by UPSC, State Public Service Commissioners (SPSCs), Group B Examinations conducted by SSC and (SPSCs)Minimum 4 Months30,0005Officers Grade examinations for recruitment in the Banks, LIC, GICs, PSUsMinimum 4 Months30,000**The ratio of the Candidates:**\nThe ratio of students who have completed their studies from Govt. and Private Schools to be coached under the Scheme will be 75:25.",
+        "source_url": "https://www.myscheme.gov.in/schemes/jbmpvy",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
         "missing_fields": [],
         "manual_review_flags": [
-          "अतिरिक्त शर्त (मैनुअल समीक्षा): - Only girl students belonging to six notified Minority Communities i.e. Muslims, Christians, Sikhs, Buddhists, Jains and Parsis are eligible.\n - The ..."
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): **Eligibility criteria for students:**\n\n - Only students belonging to the Scheduled Caste category residing in Delhi & who have passed 10th and 12th c..."
         ]
       },
       {
-        "id": 621,
-        "name": "Awarding Teleeducation Scholarships To Afghan Students",
+        "id": 460,
+        "name": "Delhi Higher & Technical Education Support Scheme",
         "category": "Education & Learning",
-        "government_name": "Central Government",
-        "similarity_score": 0.967,
+        "government_name": "Delhi Government",
+        "similarity_score": 1.0,
         "eligibility_criteria": {
-          "min_age": 18,
-          "max_age": 35,
+          "min_age": null,
+          "max_age": null,
           "age_notes": null,
-          "income_ceiling": null,
+          "income_ceiling": 250000.0,
           "bpl_required": false,
-          "income_tiers": [],
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 250000.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
           "gender": "All",
           "social_categories": [
             "All"
@@ -1213,9 +1386,1110 @@
           ],
           "disability_required": null,
           "min_disability_percentage": null,
+          "state_restriction": "Delhi",
+          "residence_requirement": "resident of delhi",
+          "other_conditions_text": "- The applicant must be a bona fide resident of Delhi.\n - The applicant must have passed Class XII from a recognized school located in Delhi.\n - The applicant must be enrolled in a regular undergraduate programme in a Government Delhi State Public University, Government College, or Government Institution located in Delhi.\n - The applicant must be pursuing a regular degree course.\n - The applicant must not be pursuing the course through correspondence, distance mode, or diploma programmes.\n - The applicant must have a gross annual family income of up to ₹3,00,000/- from all sources.\n - The applicant must possess a valid Family Income Certificate issued by the Sub-Divisional Magistrate (SDM) or other competent authority of the Government of NCT of Delhi.\n - The applicant must have secured at least 75% marks in Class XII for assistance during the first year.\n - The applicant must secure at least 75% marks in the undergraduate course for assistance in subsequent years.\n - The applicant must not be receiving financial assistance under any other scholarship scheme for the same course.\n - The applicant must apply every academic year through the online portal.\n - The applicant must pass all subjects during the course.\n - The applicant must maintain good conduct and must not be involved in indiscipline, criminal behaviour, or ragging.",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 0.805,
+          "confidence_components": {
+            "c_age": 0.35,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": null,
+          "benefit_max": null,
+          "benefit_type": "tiered",
+          "unit": "INR",
+          "frequency": null,
+          "benefit_condition": null,
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 250000.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "raw_text": "- **Tuition Fee Assistance:** Financial assistance covering the tuition fee for eligible undergraduate students."
+        },
+        "required_documents": [
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Copy of Mark Sheet/Certificate of having passed class XII or qualifying examination."
+            ],
+            "required": true,
+            "notes": "Copy of Mark Sheet/Certificate of having passed class XII or qualifying examination."
+          },
+          {
+            "purpose": "category_proof",
+            "accepts": [
+              "Caste Certificate issued by competent Tehsildar / SDM"
+            ],
+            "required": true,
+            "notes": "Certificate related to SC/ST Category issued by Competent Authority, if applicable."
+          },
+          {
+            "purpose": "income_proof",
+            "accepts": [
+              "Income Certificate issued by Revenue Authority / SDM",
+              "BPL / Ration Card"
+            ],
+            "required": true,
+            "notes": "Copy of annual Family Income Certificate issued by the SDM/Competent Authority."
+          },
+          {
+            "purpose": "identity_proof",
+            "accepts": [
+              "Aadhaar Card",
+              "Voter ID Card",
+              "Passport",
+              "Driving License"
+            ],
+            "required": true,
+            "notes": "Aadhaar card of the parent(s) and student."
+          }
+        ],
+        "application_process": "Mode: Online\nURL: \nSteps: Step 1:\n The applicant must apply through the online portal of the Government of NCT of Delhi.\nStep 2:\n The applicant must submit the printed application along with the required documents to the concerned College, University, or Institution.\nStep 3:\n The concerned College or Institution verifies the application and recommends eligible cases to the affiliated University.\nStep 4:\n The concerned University verifies the applications and forwards eligible applications with the fund requirement to the Department of Higher Education.\nStep 5:\n The Department of Higher Education submits the proposal to the Trustees of the Delhi Higher Education Aid Trust for approval.\nStep 6:\n After approval, funds are released to the concerned University.\nStep 7:\n The University transfers the approved financial assistance to the beneficiary's Aadhaar-linked bank account through Direct Benefit Transfer (DBT).",
+        "application_url": null,
+        "description": "The Delhi Higher & Technical Education Support Scheme is implemented by the Higher Education Department, Government of NCT of Delhi under the aegis of The Delhi Higher Education Aid Trust. The scheme aims to provide financial support to meritorious students belonging to economically weaker sections of society through reimbursement of Tuition Fee Only for eligible undergraduate courses. It is applicable to students admitted to Government Universities, Colleges, and Institutions located in Delhi from the academic session 2022-2023 onwards. Applications are processed through the concerned College, University, and the Department of Higher Education, and the approved financial assistance is transferred directly to the beneficiary's Aadhaar-linked bank account through the Direct Benefit Transfer (DBT) mode.",
+        "source_url": "https://www.myscheme.gov.in/schemes/dhtess",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The applicant must be a bona fide resident of Delhi.\n - The applicant must have passed Class XII from a recognized school located in Delhi.\n - The a..."
+        ]
+      }
+    ],
+    "missing_facts": [
+      "document_income_certificate"
+    ],
+    "status": "results_ready",
+    "current_question_index": 9
+  },
+  "d8cd99e1-7b69-4ac9-a1db-a408510f2395": {
+    "conversation_id": "d8cd99e1-7b69-4ac9-a1db-a408510f2395",
+    "citizen_profile": {
+      "name": "सावित्री देवी",
+      "age": 59,
+      "gender": "Female",
+      "state": "Uttar Pradesh",
+      "district": "Barabanki",
+      "approx_income_bracket": "below_2_lakh",
+      "social_category": "ST",
+      "occupation": "Farmer",
+      "disability_status": true
+    },
+    "stated_need": "पेंशन मुफ्त इलाज और पक्का मकान बनवाने के लिए सहायता चाहिए",
+    "baseline_complete": true,
+    "collected_documents": [
+      {
+        "document_type": "document_aadhaar_card",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "04/06/2026",
+          "certificate_number": "UP-INC-2026-98744",
+          "annual_income": 48000,
+          "name": "सावित्री देवी",
+          "district": "Barabanki",
+          "tehsil": "DAR SEAL",
+          "social_category": "OBC",
+          "gender": "Female",
+          "document_type": "document_aadhaar_card",
+          "document_name": "आधार कार्ड (Aadhaar Card)",
+          "confidence": 0.944
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.944,
+        "confirmed_at": "2026-11-19T19:34:38.525533+00:00"
+      },
+      {
+        "document_type": "birth_certificate",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "04/06/2026",
+          "certificate_number": "UP-INC-2026-98744",
+          "annual_income": 48000,
+          "name": "सावित्री देवी",
+          "district": "Barabanki",
+          "tehsil": "DAR SEAL",
+          "social_category": "OBC",
+          "gender": "Female",
+          "document_type": "birth_certificate",
+          "document_name": "आयु / जन्म प्रमाण पत्र (Age / Birth Certificate)",
+          "confidence": 0.944
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.944,
+        "confirmed_at": "2026-11-19T19:35:12.496436+00:00"
+      }
+    ],
+    "conversation_history": [
+      {
+        "speaker": "citizen",
+        "text": "सावित्री देवी",
+        "timestamp": "2026-11-19T19:33:24.402827+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "59",
+        "timestamp": "2026-11-19T19:33:30.211286+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "महिला",
+        "timestamp": "2026-11-19T19:33:31.725723+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "उत्तर प्रदेश सोनभद्र",
+        "timestamp": "2026-11-19T19:33:38.752839+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "45000",
+        "timestamp": "2026-11-19T19:33:43.296291+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "अनुसूचित जनजाति (ST)",
+        "timestamp": "2026-11-19T19:33:46.902907+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "खेती / किसान",
+        "timestamp": "2026-11-19T19:33:54.973247+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "हां 45%",
+        "timestamp": "2026-11-19T19:34:07.780188+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "पेंशन मुफ्त इलाज और पक्का मकान बनवाने के लिए सहायता चाहिए",
+        "timestamp": "2026-11-19T19:34:18.251158+00:00"
+      },
+      {
+        "speaker": "assistant",
+        "text": "कृपया अपना आधार कार्ड फोटो लें और इसे स्कैन करें। आपका आधार कार्ड क्या है?",
+        "timestamp": "2026-11-19T19:34:28.435000+00:00"
+      }
+    ],
+    "candidate_schemes": [
+      {
+        "id": 505,
+        "name": "Divyang Pension Yojana",
+        "category": "Health & Wellness",
+        "government_name": "Uttar Pradesh Government",
+        "similarity_score": 1.0,
+        "eligibility_criteria": {
+          "min_age": 18,
+          "max_age": null,
+          "age_notes": "UP Divyang Pension: 18 years and above.",
+          "income_ceiling": 56460.0,
+          "bpl_required": false,
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 56460.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "gender": "All",
+          "social_categories": [
+            "All"
+          ],
+          "occupations": [
+            "All"
+          ],
+          "disability_required": true,
+          "min_disability_percentage": 40,
+          "state_restriction": "Uttar Pradesh",
+          "residence_requirement": "resident of uttar pradesh",
+          "other_conditions_text": "- The age of the applicant should be 18 years or more.\n - Applicant must be a permanent resident of Uttar Pradesh.\n - Should have a minimum of 40 percent disability.\n - The person getting pension/grant/assistance under the applicant's old age pension, widow pension, socialist pension or any other similar scheme and the person receiving free maintenance in government institutions/homes should not be eligible.\n - The annual income of the applicant or his family is within the definition of the poverty line (currently fixed at Rs. 46,080/- in rural areas and Rs. 56,460/- per family per year in urban areas) will be eligible for the grant.",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
+          "confidence_components": {
+            "c_age": 1.0,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": 1000.0,
+          "benefit_max": 1000.0,
+          "benefit_type": "tiered",
+          "unit": "INR",
+          "frequency": "per_month",
+          "benefit_condition": null,
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 56460.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "raw_text": "The Department of Empowerment of Persons with Disabilities provides a grant at the rate of Rs. 1,000/- per month per beneficiary"
+        },
+        "required_documents": [
+          {
+            "purpose": "identity_proof",
+            "accepts": [
+              "Aadhaar Card",
+              "Voter ID Card",
+              "Passport",
+              "Driving License"
+            ],
+            "required": true,
+            "notes": "Passport size colour photograph."
+          },
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Date of Birth/Age certificate."
+            ],
+            "required": true,
+            "notes": "Date of Birth/Age certificate."
+          },
+          {
+            "purpose": "disability_proof",
+            "accepts": [
+              "UDID Card",
+              "Disability Certificate issued by Chief Medical Officer (CMO)"
+            ],
+            "required": true,
+            "notes": "Disability certificate:"
+          }
+        ],
+        "application_process": "Mode: Online\nURL: https://sspy-up.gov.in/HindiPages/index_h.aspx\nSteps: First of all the applicant has to visit the \nofficial Portal.\nFill out the online application form \nfrom here.\nIn the Application form, the applicant has to fill following details:- Personal Details, Bank Details, Income Details, and a description of a disability.\nUpload the required documents (Photograph, Age Certificate and Disability Certificate).",
+        "application_url": "https://sspy-up.gov.in/HindiPages/index_h.aspx",
+        "description": "The pension scheme has been started by the state government to provide some financial assistance per month to the disabled person. This will help them a lot in running their livelihood, and the standard of living will be better. The pension amount given to them per month by the government is increased from time to time.",
+        "source_url": "https://www.myscheme.gov.in/schemes/dpyup",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The age of the applicant should be 18 years or more.\n - Applicant must be a permanent resident of Uttar Pradesh.\n - Should have a minimum of 40 perc..."
+        ]
+      },
+      {
+        "id": 477,
+        "name": "Surgical Grant For The Prevention Of Disability",
+        "category": "Health & Wellness",
+        "government_name": "Uttar Pradesh Government",
+        "similarity_score": 0.998,
+        "eligibility_criteria": {
+          "min_age": null,
+          "max_age": null,
+          "age_notes": "Surgical Grant: 5 was years of UP residence. No citizen age restriction.",
+          "income_ceiling": 60000.0,
+          "bpl_required": false,
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 60000.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "gender": "All",
+          "social_categories": [
+            "All"
+          ],
+          "occupations": [
+            "All"
+          ],
+          "disability_required": true,
+          "min_disability_percentage": 40,
+          "state_restriction": "Uttar Pradesh",
+          "residence_requirement": "resident of uttar pradesh or be a resident of the state for at least 5 years",
+          "other_conditions_text": "- The annual income of the applicant/applicant's guardian should not exceed Rs.60,000/-.\n- The applicant should be an Indian citizen.\n- Applicant should be a permanent resident of Uttar Pradesh or be a resident of the state for at least 5 years\n- Should not be guilty in any criminal case.",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
+          "confidence_components": {
+            "c_age": 1.0,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": 600000.0,
+          "benefit_max": 600000.0,
+          "benefit_type": "tiered",
+          "unit": "INR",
+          "frequency": null,
+          "benefit_condition": null,
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 60000.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "raw_text": "- A maximum of Rs. 6,00,000/- will be provided to Each disabled person."
+        },
+        "required_documents": [
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Photograph"
+            ],
+            "required": true,
+            "notes": "Photograph"
+          },
+          {
+            "purpose": "income_proof",
+            "accepts": [
+              "Income Certificate issued by Revenue Authority / SDM",
+              "BPL / Ration Card"
+            ],
+            "required": true,
+            "notes": "Income Proof."
+          },
+          {
+            "purpose": "disability_proof",
+            "accepts": [
+              "UDID Card",
+              "Disability Certificate issued by Chief Medical Officer (CMO)"
+            ],
+            "required": true,
+            "notes": "A certificate of disability granted by a competent medical authority."
+          }
+        ],
+        "application_process": "Mode: Offline\nURL: \nSteps: Download the \napplication form\n from page no. 18.\nFill out the application form\nThe following documents shall be attached to the application\n(a). A certificate of disability granted by a competent medical authority.\n(b). Certificate of annual income (from all sources).\n(c). Estimated expenditure details of the surgery by the superintendent/in charge of the State Hospital.\nSubmit the application to the District Disabled Welfare Officer along with the recommendation through whom the application along with its recommendation will be sent to the Director.\nIn case of emergency, applications can be sent directly to the Director.",
+        "application_url": null,
+        "description": "The main objective of the scheme is to provide surgical assistance for the prevention of disability to poor and helpless disabled persons. \n\nThe financial grant will be provided for the following medical treatment. \n\n- **Surgery for visually handicapped.**\ni. Intraocular lens implant.\nii. Cranioplasty.\niii. Cranial repair\n- **Surgery for the hearing impaired.**\ni. Cochlear implant.\nii. Tympanic membrane repair.\niii. Mastoid surgery.\n- **Surgery for orthopedically handicapped**\ni. S P Nail Operation.\nii. Orthosis.\niii. Artificial prosthesis. \niv. External fixation. \nv. Replacement implant.\nvi. Surgery for knee, hip and ankle correction.\nvii. Shoulder, elbow and wrist correction surgery.\nviii. Postpolio correction surgery.\nix. Contracture Repair.\nx. Ligament repair.\nxi. Tendon transplant.\nxii Soft tissue release surgery.\nxiii. Contracture correction surgery.\nxiv. Elizarob Landing and Corrective Surgery.\n- **Post-leprosy-cured disability**\ni. Reconstructive Surgery Hand.\nii. Reconstructive Surgery Foot.",
+        "source_url": "https://www.myscheme.gov.in/schemes/sgpd",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The annual income of the applicant/applicant's guardian should not exceed Rs.60,000/-.\n- The applicant should be an Indian citizen.\n- Applicant shou..."
+        ]
+      },
+      {
+        "id": 657,
+        "name": "Indira Gandhi National Disability Pension Scheme",
+        "category": "Health & Wellness",
+        "government_name": "Central Government",
+        "similarity_score": 0.904,
+        "eligibility_criteria": {
+          "min_age": 18,
+          "max_age": null,
+          "age_notes": "Indira Gandhi Disability Pension: 18 years and above.",
+          "income_ceiling": null,
+          "bpl_required": false,
+          "income_tiers": [],
+          "gender": "All",
+          "social_categories": [
+            "All"
+          ],
+          "occupations": [
+            "All"
+          ],
+          "disability_required": true,
+          "min_disability_percentage": 80,
+          "state_restriction": null,
+          "residence_requirement": "resident of india",
+          "other_conditions_text": "- The age of the applicant should be 18 years and above.\n- The applicant should be a resident of India.\n- The applicant should be a physically or mentally disabled person.\n- The applicant’s disability should be more than 80%.\n- Dwarfs are also eligible for this scheme.\n- The applicant should belong to the below poverty line.",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
+          "confidence_components": {
+            "c_age": 1.0,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": 300.0,
+          "benefit_max": 300.0,
+          "benefit_type": "pension",
+          "unit": "INR",
+          "frequency": "per_month",
+          "benefit_condition": null,
+          "income_tiers": [],
+          "raw_text": "- A pension of ₹300/- per month is provided to Divyangjan between 18-79 years. \n- A pension of ₹500/- per month will be provided to Divyangjan aged 80 years and above."
+        },
+        "required_documents": [
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "BPL Card"
+            ],
+            "required": true,
+            "notes": "BPL Card"
+          },
+          {
+            "purpose": "identity_proof",
+            "accepts": [
+              "Aadhaar Card",
+              "Voter ID Card",
+              "Passport",
+              "Driving License"
+            ],
+            "required": true,
+            "notes": "Aadhaar card"
+          },
+          {
+            "purpose": "disability_proof",
+            "accepts": [
+              "UDID Card",
+              "Disability Certificate issued by Chief Medical Officer (CMO)"
+            ],
+            "required": true,
+            "notes": "Disability certificate:- Disability certificate (80% and More) issued from Chief Medical Officer, Community Health Centre or Primary Health Centre will be accepted."
+          }
+        ],
+        "application_process": "Mode: Online\nURL: https://web.umang.gov.in/web_new/home \nSteps: Step 01:\n Applicants can apply online through the UMANG App or the official \nNational Social Assistance Programme (NSAP) Portal.\nStep 02: \nLogin using the registered mobile number and OTP/MPIN.\nStep 03: \nSearch for “NSAP” or “Indira Gandhi National Disability Pension Scheme (IGNDPS)”.\nStep 04: \nClick on “Apply Online”.\nStep 05: \nFill in the required details such as personal information, Aadhaar number, bank account details, and disability-related information.\nStep 06: \nChoose the preferred mode of pension payment.\nStep 07: \nUpload the required documents and photograph.\nStep 08: \nReview the application details and click on “Submit” to complete the application process.\nStep 09: \nApplicants may also track the application and beneficiary payment status through the UMANG platform.\n\nMode: Offline\nURL: \nSteps: Individuals can submit completely filled applications to the Gram Panchayat / Block Office in the rural area and the Municipality / Municipal Council in the urban area, as per eligibility.\nA Verification Officer or Verification Team under an authorized officer verifies the applications with reference to facts related to eligibility\nThe Verification Officer make the necessary recommendation for sanction or rejection with reasons.\nThe list of applicants with the recommendations of the Verifying Authority is discussed in the Gram Sabha in rural areas or Ward Sabha / Area Sabha as designated by the State Government in urban areas and thereafter in the Gram Panchayats and Municipalities.\nIf the time limits are not adhered to by Gram Sabha / Ward Sabhas, Gram Panchayats / Municipalities the Verification Officer directly submits his recommendations to the Sanctioning Authority under intimation to the Gram Panchayat / Municipality.\nAfter receipt of applications which are verified and recommended by the Gram Sabha / Ward Committee / Area Sabha, the Sanctioning Authority convey approval to the applicant in the form of a Sanction Order with a copy to Gram Panchayat / Municipality concerned.\nThe Sanctioning Authority issues Sanction Order under his seal\nEvery beneficiary who has been sanctioned pension under schemes of NSAP are issued a Pension Passbook. The Passbook contain details of the Sanction Order, particulars of the pensioner and disbursement details\nThe list of beneficiaries to whom sanctions are issued is displayed at the Gram Panchayat / Ward / Municipal Office and updated every three months.\nThe Pension amount is directly paid to the beneficiaries through the Direct Benefit Transfer (DBT) process to their post office or bank account.",
+        "application_url": "https://web.umang.gov.in/web_new/home ",
+        "description": "The \"Indira Gandhi National Disability Scheme\" was launched in February 2009 by the Ministry of Rural Development, headed by the central government, to support disabled people in our country. This scheme, introduced under the National Social Assistance Program provides a monthly pension to disabled people for the prosperity of their lives. Any disabled person whose age is more than 18 years, and with a disability of 80% or more belonging to the poverty line can apply for this scheme.",
+        "source_url": "https://www.myscheme.gov.in/schemes/igndps",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The age of the applicant should be 18 years and above.\n- The applicant should be a resident of India.\n- The applicant should be a physically or ment..."
+        ]
+      },
+      {
+        "id": 517,
+        "name": "Nirmaan Kamgar Mrtyu Va Divyangta Sahayta Yojana",
+        "category": "Health & Wellness",
+        "government_name": "Uttar Pradesh Government",
+        "similarity_score": 1.0,
+        "eligibility_criteria": {
+          "min_age": null,
+          "max_age": 21,
+          "age_notes": null,
+          "income_ceiling": null,
+          "bpl_required": false,
+          "income_tiers": [],
+          "gender": "All",
+          "social_categories": [
+            "All"
+          ],
+          "occupations": [
+            "Worker"
+          ],
+          "disability_required": true,
+          "min_disability_percentage": 40,
+          "state_restriction": "Uttar Pradesh",
+          "residence_requirement": null,
+          "other_conditions_text": "- Applicant/Beneficiary must be registered with labor department.\n- Only family member will able to get the death benefits:\n\n - Depended parents.\n - Spouse (Husband/Wife).\n - Daughter.\n - Son ( Only If below 21 years old)\n\n- Death benefit will not be applicable in the case of suicide. \n- Deaths due to murder, snakebite, lightning, childbirth and other natural calamities will be considered as normal deaths and benefits will be admissible accordingly.\n- In death benefit claim of a construction worker, Aadhaar authentication of the dependent will be required if the dependent applies.",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 0.955,
+          "confidence_components": {
+            "c_age": 0.85,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": 9395.0,
+          "benefit_max": 9395.0,
+          "benefit_type": "pension",
+          "unit": "INR",
+          "frequency": "per_month",
+          "benefit_condition": null,
+          "income_tiers": [],
+          "raw_text": "> **Death Benefits for register construction worker who die due to an accident:**\n\n- Total amount will be ₹5,25,000/-.\n\n- To dependents of a registered construction worker who dies due to an accident : ₹5,00,000/- as approximately ₹ 9,395/- per month for 5 years (as per interest rate).\n- For funeral expenses: ₹25,000/- lump sum.\n\n> **Death Benefits for register construction worker who die due to natural causes:**\n\n- Total amount will be ₹2,25,000/-.\n\n- To dependents of a registered construction worker who dies due to an accident : ₹2,00,000/- as approximately ₹ 8,736/- per month for 2 years (as per interest rate).\n- For funeral expenses: ₹25,000/- lump sum.\n\n> **Death Benefits for register construction worker who die due at the work place:**\n\n- Total amount: ₹1,00,000/- lump sum.\n\n> **Disability Benefits for register construction worker who suffer 100% permanent disability due to an accident or illness**\n\n- Total amount will be ₹4,00,000/-.\n\n- Beneficiary will get approximately ₹ 9,172/- per month for 4 years (as per interest rate).\n\n> **Disability Benefits for registered construction workers with permanent disabilities between 50% and 99% due to accidents or illness.**\n\n- Total amount will be ₹3,00,000/-.\n\n- Beneficiary will get approximately ₹ 8,953/- per month for 3 years (as per interest rate).\n\n> **Disability Benefits for registered construction workers with permanent disabilities between 26% and 49% due to accidents or illness.**\n\n- Total amount will be ₹2,00,000/-.\n\n- Beneficiary will get approximately ₹ 8,736/- per month for 2 years (as per interest rate)."
+        },
+        "required_documents": [
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Death certificate:"
+            ],
+            "required": true,
+            "notes": "Death certificate:"
+          },
+          {
+            "purpose": "bank_account_proof",
+            "accepts": [
+              "Bank Passbook copy with IFSC",
+              "Cancelled Cheque"
+            ],
+            "required": true,
+            "notes": "Bank account photocopy:"
+          },
+          {
+            "purpose": "identity_proof",
+            "accepts": [
+              "Aadhaar Card",
+              "Voter ID Card",
+              "Passport",
+              "Driving License"
+            ],
+            "required": true,
+            "notes": "A photocopy of the applicant's Aadhaar-linked bank account passbook."
+          },
+          {
+            "purpose": "disability_proof",
+            "accepts": [
+              "UDID Card",
+              "Disability Certificate issued by Chief Medical Officer (CMO)"
+            ],
+            "required": true,
+            "notes": "Disability documentation:"
+          }
+        ],
+        "application_process": "Mode: Online\nURL: \nSteps: How to get register\nApplicant must visit the \nofficial web portal.\nProvide the required details\nEnter Aadhaar Number.\nChoose Circle.\nChoose District.\nMobile Number.\nSubmit the registration request.\n\nHow to submit the application\nApplicant must visit the official \nweb portal\n.\nProvide the required details\nChoose Circle.\nChoose Scheme name.\nEnter Registered Aadhaar Number.\nEnter Registered Mobile Number.\nClick on \"Open Application form\".\nProvide the required details in application form.\nApplicant/Worker details\nChild details\nBank Account Details\nSubmit the required documents\nSubmit the application request.\n\nMode: Offline\nURL: \nSteps: How to get register and apply for the scheme\nApplicant must visit the below offices\nNearest labor office.\nTehsildar of the concerned tehsil.\nBlock Development Officer of the concerned development block.\nGet the application form and fill out the completely.\nAttach required documents in the prescribed format.\nSubmit the application form in the same office.",
+        "application_url": null,
+        "description": "The Nirman Kamgar Mrtyu Va Divyangta Sahayata Yojana Uttar Pradesh is a crucial scheme launched by the Uttar Pradesh government for the welfare of registered construction workers in the state. It provides financial assistance to the families of construction workers in case of death or disability due to accident or illness.",
+        "source_url": "https://www.myscheme.gov.in/schemes/nkmds",
+        "verdict": "DOES_NOT_QUALIFY",
+        "reason": "नागरिक की आयु (59 वर्ष) अधिकतम अनुमत आयु (21 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 21 years).; यह योजना Worker वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Farmer।",
+        "disqualification_reasons": [
+          "नागरिक की आयु (59 वर्ष) अधिकतम अनुमत आयु (21 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 21 years).",
+          "यह योजना Worker वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Farmer।"
+        ],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - Applicant/Beneficiary must be registered with labor department.\n- Only family member will able to get the death benefits:\n\n - Depended parents.\n - S..."
+        ]
+      },
+      {
+        "id": 486,
+        "name": "SC/ST Pre Matric Scholarship - Uttar Pradesh",
+        "category": "Education & Learning",
+        "government_name": "Uttar Pradesh Government",
+        "similarity_score": 0.893,
+        "eligibility_criteria": {
+          "min_age": 12,
+          "max_age": 20,
+          "age_notes": null,
+          "income_ceiling": 56460.0,
+          "bpl_required": false,
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 56460.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "gender": "All",
+          "social_categories": [
+            "SC",
+            "ST"
+          ],
+          "occupations": [
+            "Student"
+          ],
+          "disability_required": null,
+          "min_disability_percentage": null,
+          "state_restriction": "Uttar Pradesh",
+          "residence_requirement": "resident of uttar pradesh",
+          "other_conditions_text": "- Beneficiary must be a resident of Uttar Pradesh.\n- Beneficiary must belong to the Scheduled Caste (SC) or Scheduled Tribe(ST) category.\n- Beneficiaries who are dependents of people in occupations traditionally considered untouchable.\n- Financial:\n\n - Component 1: Beneficiaries' parents' annual income should not be more than ₹2,50,000/-.\n - Component 2: No income criteria.\n\n- All the children of the applicant's parents will be eligible.\n- Students cannot receive other scholarships alongside this one (with some exceptions).\n- Beneficiary's age limit is 12 to 20 years old (as of July 1st).",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
+          "confidence_components": {
+            "c_age": 1.0,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": 3500.0,
+          "benefit_max": 3500.0,
+          "benefit_type": "tiered",
+          "unit": "INR",
+          "frequency": null,
+          "benefit_condition": null,
+          "income_tiers": [
+            {
+              "tier_name": "Standard Eligibility",
+              "min_income": 0.0,
+              "max_income": 56460.0,
+              "benefit_value": "Standard Scheme Entitlement",
+              "benefit_type": "standard",
+              "notes": null
+            }
+          ],
+          "raw_text": "- Component-1\n\n - ₹3,500/- per annum (Day Students).\n - ₹7,000/- per annum (residential students).\n\n- Component-2\n\n - ₹3,500/- per annum (Day Students).\n - ₹8,000/- per annum (residential students)."
+        },
+        "required_documents": [
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Mark sheet of your last qualifying examination."
+            ],
+            "required": true,
+            "notes": "Mark sheet of your last qualifying examination."
+          },
+          {
+            "purpose": "category_proof",
+            "accepts": [
+              "Caste Certificate issued by competent Tehsildar / SDM"
+            ],
+            "required": true,
+            "notes": "Caste certificate."
+          },
+          {
+            "purpose": "income_proof",
+            "accepts": [
+              "Income Certificate issued by Revenue Authority / SDM",
+              "BPL / Ration Card"
+            ],
+            "required": true,
+            "notes": "Income certificate of your family."
+          },
+          {
+            "purpose": "bank_account_proof",
+            "accepts": [
+              "Bank Passbook copy with IFSC",
+              "Cancelled Cheque"
+            ],
+            "required": true,
+            "notes": "Bank passbook photocopy (where the scholarship amount will be deposited)."
+          },
+          {
+            "purpose": "identity_proof",
+            "accepts": [
+              "Aadhaar Card",
+              "Voter ID Card",
+              "Passport",
+              "Driving License"
+            ],
+            "required": true,
+            "notes": "Latest passport-sized photograph."
+          }
+        ],
+        "application_process": "Mode: Online\nURL: \nSteps: Registration\n:\nStep-1: Applicant need to visit the \nofficial website\n.\nStep-2: Click \nRegistration\n under Student option.\nStep-3: Select the option among the following:\nFor ST,SC,General Category) (Fresh)\nFor OBC Category\nFor Minority Category\nFor children studying in class 9 and 10 of parents engaged in unclean profession.\nStep-4: Select the further option accordingly\nPre-matric (Fresh).\nPost-matric Intermediate (Fresh).\nPost-matric Other Than Intermediate (Fresh).\nPost-matric Other State (Fresh).\nStep-5: Provide the required information for registration and click on submit.\nStep-6: Now, note down the registration number from the screen.\n\nLogin\n:\nStep-1: Applicant need to visit the \nofficial website.\nStep-2: Click Fresh Login under Student option.\nStep-3: Fill out the required details.\nRegistration Number.\nMobile Number.\nPassword.\nStep-4: Complete the DigiLocker verification.\nStep-5: Fill out the application form.\nRegistration Details\nPersonnel Details.\nBank Details.\nStep-6: Upload required documents.\nStep-7: Complete NPCI verification.\nStep-8: Download the application form.\nStep-9: Submit the application form to the institute with all required documents.",
+        "application_url": null,
+        "description": "The Uttar Pradesh Social Welfare Department offers a Pre Matric Scholarship specifically designed to support Scheduled Caste (SC) or Scheduled Tribe (ST) students who are financially disadvantaged and pursuing secondary education in Class 9 or 10. This scholarship program recognizes the importance of education in empowering students from marginalized communities and aims to bridge the financial gap that might otherwise hinder their academic progress. By providing financial assistance, the scholarship helps alleviate the financial burden on SC families and encourages students to complete their matriculation, opening doors to further educational opportunities and brighter futures.",
+        "source_url": "https://www.myscheme.gov.in/schemes/pmcup",
+        "verdict": "DOES_NOT_QUALIFY",
+        "reason": "नागरिक की आयु (59 वर्ष) अधिकतम अनुमत आयु (20 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 20 years).; यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Farmer।; यह योजना पूर्व-दशम (Pre-Matric, कक्षा 9-10) स्कूली छात्रों के लिए है; कॉलेज या 18+ वर्ष के छात्र इसके पात्र नहीं हैं।",
+        "disqualification_reasons": [
+          "नागरिक की आयु (59 वर्ष) अधिकतम अनुमत आयु (20 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 20 years).",
+          "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Farmer।",
+          "यह योजना पूर्व-दशम (Pre-Matric, कक्षा 9-10) स्कूली छात्रों के लिए है; कॉलेज या 18+ वर्ष के छात्र इसके पात्र नहीं हैं।"
+        ],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - Beneficiary must be a resident of Uttar Pradesh.\n- Beneficiary must belong to the Scheduled Caste (SC) or Scheduled Tribe(ST) category.\n- Beneficiar..."
+        ]
+      }
+    ],
+    "missing_facts": [
+      "document_aadhaar_card"
+    ],
+    "status": "results_ready",
+    "current_question_index": 9
+  },
+  "423cdbbb-16c7-40ca-bfbb-9e02948f6daa": {
+    "conversation_id": "423cdbbb-16c7-40ca-bfbb-9e02948f6daa",
+    "citizen_profile": {
+      "name": "रमेश कुमार",
+      "age": 36,
+      "gender": "Male",
+      "state": "Uttar Pradesh",
+      "district": "Barabanki",
+      "approx_income_bracket": "below_2_lakh",
+      "social_category": "SC",
+      "occupation": "मैं सड़क पर ठेला लगाता हूं और एक फेरीवाला हूं",
+      "disability_status": false
+    },
+    "stated_need": "ठेला लगाने के लिए बिना ब्याज का कर्ज और श्रमिक सहायता",
+    "baseline_complete": true,
+    "collected_documents": [
+      {
+        "document_type": "custom_for_1st_loan",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "14/06/2026",
+          "certificate_number": "UP-INC-2026-98741",
+          "annual_income": 48000,
+          "date_of_death": "14/06/2026",
+          "name": "रमेश कुमार",
+          "district": "Barabanki",
+          "tehsil": "DAR",
+          "social_category": "OBC",
+          "gender": "Male",
+          "document_type": "custom_for_1st_loan",
+          "document_name": "custom_for_1st_loan",
+          "confidence": 0.948
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.948,
+        "confirmed_at": "2026-11-19T19:57:26.385889+00:00"
+      },
+      {
+        "document_type": "aadhaar_card",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-4431",
+          "dob": "15/07/1981",
+          "gender": "Male",
+          "name": "Ramesh Kumar",
+          "district": "Barabanki",
+          "state": "Uttar Pradesh",
+          "document_type": "aadhaar_card",
+          "document_name": "आधार कार्ड (Aadhaar Card)",
+          "confidence": 0.903
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.903,
+        "confirmed_at": "2026-11-19T19:58:28.458860+00:00"
+      },
+      {
+        "document_type": "bank_passbook",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-2026",
+          "dob": "14/06/2026",
+          "certificate_number": "UP-INC-2026-98741",
+          "annual_income": 48000,
+          "date_of_death": "14/06/2026",
+          "name": "रमेश कुमार",
+          "district": "Barabanki",
+          "tehsil": "DAR",
+          "social_category": "OBC",
+          "gender": "Male",
+          "bank_name": "State Bank of India (भारतीय स्टेट बैंक)",
+          "account_number": "XXXX-XXXX-4589",
+          "ifsc_code": "SBIN0001234",
+          "document_type": "bank_passbook",
+          "document_name": "बैंक पासबुक (Bank Passbook)",
+          "confidence": 0.948
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.948,
+        "confirmed_at": "2026-11-19T19:58:47.231118+00:00"
+      },
+      {
+        "document_type": "custom_for_1st_loan",
+        "extracted_fields": {
+          "name": "रमेश कुमार",
+          "district": "Barabanki",
+          "state": "Uttar Pradesh",
+          "certificate_number": "DOC-CUSTOM-2026-8841",
+          "verification_status": "प्रमाणित (Verified)",
+          "document_type": "custom_for_1st_loan",
+          "loan_account_number": "LN-UP-2026-44120",
+          "status": "सक्रिय (Active)",
+          "document_name": "custom_for_1st_loan",
+          "confidence": 0.94
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.94,
+        "confirmed_at": "2026-11-19T20:26:07.849928+00:00"
+      },
+      {
+        "document_type": "aadhaar_card",
+        "extracted_fields": {
+          "dob": "15/07/1984",
+          "gender": "Male",
+          "name": "Ramesh Kumar",
+          "document_type": "aadhaar_card",
+          "document_name": "आधार कार्ड (Aadhaar Card)",
+          "confidence": 0.783
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.783,
+        "confirmed_at": "2026-11-19T20:28:10.614071+00:00"
+      },
+      {
+        "document_type": "aadhaar_card",
+        "extracted_fields": {
+          "aadhaar_number": "XXXX-XXXX-4431",
+          "dob": "15/07/1981",
+          "gender": "Male",
+          "name": "Ramesh Kumar",
+          "district": "Barabanki",
+          "state": "Uttar Pradesh",
+          "document_type": "aadhaar_card",
+          "document_name": "आधार कार्ड (Aadhaar Card)",
+          "confidence": 0.827
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.827,
+        "confirmed_at": "2026-11-19T20:28:52.835911+00:00"
+      },
+      {
+        "document_type": "bank_passbook",
+        "extracted_fields": {
+          "name": "रमेश कुमार",
+          "district": "Barabanki",
+          "state": "Uttar Pradesh",
+          "certificate_number": "DOC-BANK_P-2026-8841",
+          "verification_status": "प्रमाणित (Verified)",
+          "document_type": "bank_passbook",
+          "document_name": "बैंक पासबुक (Bank Passbook)",
+          "confidence": 0.94
+        },
+        "verification_status": "verified",
+        "confidence_score": 0.94,
+        "confirmed_at": "2026-11-19T20:29:04.163106+00:00"
+      }
+    ],
+    "conversation_history": [
+      {
+        "speaker": "citizen",
+        "text": "रमेश कुमार",
+        "timestamp": "2026-11-19T19:51:22.378435+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "36",
+        "timestamp": "2026-11-19T19:51:31.383313+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "पुरुष",
+        "timestamp": "2026-11-19T19:51:33.616127+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "वाराणसी उत्तर प्रदेश",
+        "timestamp": "2026-11-19T19:51:39.095348+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "80000",
+        "timestamp": "2026-11-19T19:51:44.054104+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "अनुसूचित जाति (SC)",
+        "timestamp": "2026-11-19T19:51:48.310315+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "मैं सड़क पर ठेला लगाता हूं और एक फेरीवाला हूं",
+        "timestamp": "2026-11-19T19:51:56.619472+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "नहीं",
+        "timestamp": "2026-11-19T19:52:00.343894+00:00"
+      },
+      {
+        "speaker": "citizen",
+        "text": "ठेला लगाने के लिए बिना ब्याज का कर्ज और श्रमिक सहायता",
+        "timestamp": "2026-11-19T19:52:09.553234+00:00"
+      },
+      {
+        "speaker": "assistant",
+        "text": "कृपया अपना आधार कार्ड फोटो लें और इसे स्कैन करें। आपका आधार कार्ड क्या है?",
+        "timestamp": "2026-11-19T19:52:19.684815+00:00"
+      }
+    ],
+    "candidate_schemes": [
+      {
+        "id": 542,
+        "name": "PM Street Vendor’s AtmaNirbhar Nidhi (PM SVANidhi)",
+        "category": "Labour, Employment & Worker Welfare",
+        "government_name": "Central Government",
+        "similarity_score": 1.0,
+        "eligibility_criteria": {
+          "min_age": null,
+          "max_age": null,
+          "age_notes": null,
+          "income_ceiling": null,
+          "bpl_required": false,
+          "income_tiers": [],
+          "gender": "All",
+          "social_categories": [
+            "All"
+          ],
+          "occupations": [
+            "Street Vendor"
+          ],
+          "disability_required": null,
+          "min_disability_percentage": null,
           "state_restriction": null,
           "residence_requirement": null,
-          "other_conditions_text": "- The applicant must be a national of Afghanistan.\n - The applicant must possess a valid Afghan National ID or Passport.\n - The applicant must be between 18 to 35 years of age as on July 1 of the academic year.\n - The applicant must meet the minimum academic qualifications required by the respective Indian university for the chosen program.\n - The applicant must ensure proficiency in English to understand and complete the program, as the medium of instruction is English.\n - The applicant must apply only for one program under the e-VB project.\n - The applicant must not be enrolled in any other ongoing program under the e-VB project.\n\n> **Note:**\n\n - Applicants must check the eligibility criteria/pre-requisites for admission to a particular programme/course on the respective university portal and then apply.\n - Students who have already obtained a degree under e-VB project (at the time of announcement of the new academic session) and willing to avail scholarship under e-VB project for pursuing another degree, may also apply afresh through iLearn portal to process their application",
+          "other_conditions_text": "- Street vendors in possession of Certificate of Vending / Identity Card issued by Urban Local Bodies (ULBs).\n - The vendors, who have been identified in the survey but have not been issued Certificate of Vending / Identity Card.\n - Street Vendors left out of the ULB-led identification survey or who have started vending after completion of the survey and have been issued a Letter of Recommendation (LoR) to that effect by the ULB / Town Vending Committee (TVC).\n - The vendors of surrounding development/ peri-urban/rural areas vending in the geographical limits of the ULBs, who have been issued a Letter of Recommendation (LoR) to that effect by the ULB / TVC.",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
+          "confidence_components": {
+            "c_age": 1.0,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": 100.0,
+          "benefit_max": 100.0,
+          "benefit_type": "loan",
+          "unit": "INR",
+          "frequency": "per_month",
+          "benefit_condition": null,
+          "income_tiers": [],
+          "raw_text": "> **Working Capital Loan:**\n\n - **1st Tranche:** Loan up to ₹15,000/-; repayment within 12 months. - **2nd Tranche:** Loan up to ₹25,000/-; repayment within 18 months. - **3rd Tranche:** Loan up to ₹50,000/-; repayment within 36 months. - Next tranche available on timely or early repayment.\n - No prepayment penalty on early repayment.\n\n> **Interest Subsidy:**\n\n - Subsidy at 7% per annum on loan amount.\n - Credited quarterly to beneficiary’s bank account.\n - Applicable only for standard (non-NPA) accounts.\n - Valid up to 31st March 2033.\n\n> **Digital Transaction Cashback:**\n\n - Cashback up to ₹100/- per month for digital transactions.\n\n> **Credit Guarantee Support:**\n\n - 31.87% guarantee cover for 1st tranche loan.\n - 8.25% guarantee cover for 2nd tranche loan.\n - 6% guarantee cover for 3rd tranche loan.\n - No charges for lending institutions.\n\n> **UPI Linked RuPay Credit Card:**\n\n - Initial credit limit of ₹10,000/-; extendable up to ₹30,000/-.\n - Validity of 5 years.\n - Available after successful repayment of 2nd tranche loan."
+        },
+        "required_documents": [
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "For 1st Loan :"
+            ],
+            "required": true,
+            "notes": "For 1st Loan :"
+          },
+          {
+            "purpose": "identity_proof",
+            "accepts": [
+              "Aadhaar Card",
+              "Voter ID Card",
+              "Passport",
+              "Driving License"
+            ],
+            "required": true,
+            "notes": "Identity Card"
+          },
+          {
+            "purpose": "bank_account_proof",
+            "accepts": [
+              "Bank Passbook copy with IFSC",
+              "Cancelled Cheque"
+            ],
+            "required": true,
+            "notes": "Copy of Account Statement/Passbook"
+          }
+        ],
+        "application_process": "Mode: Online\nURL: https://pmsvanidhi.mohua.gov.in/\nSteps: Step 1:\n Visit \nhttps://pmsvanidhi.mohua.gov.in/\nand click on the \"Log In\" button on the homepage.\nStep 2:\n Enter Mobile number and captcha. Click request OTP.\nStep 3:\n After successful login, select valid \"vendor category\" among the available options. Enter \"\nSurvey Reference Number\n\" (SRN) which is mandatory.\nStep 4: \nOn entering these basic details, fill the application form online, upload the relevant documents and submit.\nNote:\nFor any kind of clarification and access detailed stepwise process, refer \nUser Manual\n.\nFor any query one can call on the toll free number i.e 1800111979 between 9.30 AM to 6.00 PM on Monday to Saturday except national holidays.\nContact Details:\n \nClick here\n.\n\nMode: Offline\nURL: \nSteps: Step 1:\n Understand the information documents required to fill out the \nLoan application form (LAF)\n for the Scheme.\nStep 2:\n Keep all the information ready before you start the application process.\nStep 3:\n Ensure the mobile phone is linked to the Aadhaar number.\nStep 4:\n This will be required for e-KYC/Aadhaar validation during online application process.\nStep 5:\n It will also help you to get a letter of Recommendation from ULB (in case required).\nStep 6:\n It will also help you avail future benefits under Government welfare schemes.\nStep 7:\n Check your eligibility status as per the scheme Rules.\nStep 8:\n One will fall in one of the \n4 categories of Street vendors\n.\nStep 9:\n Check your status and the documents/ information that you need to keep ready.",
+        "application_url": "https://pmsvanidhi.mohua.gov.in/",
+        "description": "The scheme \"PM Street Vendor’s AtmaNirbhar Nidhi (PM SVANidhi)\" by the Ministry of Housing and Urban Affairs, Government of India aims to formalize street vendors and enhance their economic opportunities through providing collateral-free working capital loans, interest subsidy, and digital transaction incentives to street vendors. It was launched on 1st June 2020 as a central sector scheme. The scheme supports vendors in restarting and expanding their businesses. It also promotes digital payments to increase financial inclusion. Street vendors include hawkers, thelewala, rehriwala, and others engaged in small-scale vending activities.\nThe scheme aims to formalize the street vendors and open up new opportunities for this sector to move up the economic ladder. Street vendors represent a very important constituent of the urban informal economy and play a significant role in ensuring availability of the goods and services at affordable rates at the doorstep of the city dwellers. They are known as vendors, hawkers, thelewala, rehriwala, theliphadwala, etc. in different areas/ contexts. The goods supplied by them include vegetables, fruits, ready-to-eat street food, tea, pakodas, bread, eggs, textile, apparel, footwear, artisan products, books/ stationary, etc. The services include barber shops, cobblers, pan shops, laundry services, etc.",
+        "source_url": "https://www.myscheme.gov.in/schemes/pm-svanidhi",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - Street vendors in possession of Certificate of Vending / Identity Card issued by Urban Local Bodies (ULBs).\n - The vendors, who have been identified..."
+        ]
+      },
+      {
+        "id": 481,
+        "name": "Gambhir Bimari Sahayata Yojana",
+        "category": "Labour, Employment & Worker Welfare",
+        "government_name": "Uttar Pradesh Government",
+        "similarity_score": 0.834,
+        "eligibility_criteria": {
+          "min_age": null,
+          "max_age": null,
+          "age_notes": "Gambhir Bimari: 21 was dependent son's age. Applicant has no max age limit.",
+          "income_ceiling": null,
+          "bpl_required": false,
+          "income_tiers": [],
+          "gender": "All",
+          "social_categories": [
+            "All"
+          ],
+          "occupations": [
+            "Worker"
+          ],
+          "disability_required": null,
+          "min_disability_percentage": null,
+          "state_restriction": "Uttar Pradesh",
+          "residence_requirement": null,
+          "other_conditions_text": "- Applicant must be registered workers under labor department. \n- Beneficiary can not get the similar type of government scheme benefits like Pradhan Mantri Jan-Arogya Yojana and Chief Minister Jan-Arogya Yojana.\n- Only below family members are covered\n\n - Self.\n - Depended parents.\n - Spouse (Husband/Wife).\n - Daughter.\n - Son (only if below 21 years of age)",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
+          "confidence_components": {
+            "c_age": 1.0,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": null,
+          "benefit_max": null,
+          "benefit_type": "unstructured",
+          "unit": "INR",
+          "frequency": null,
+          "benefit_condition": null,
+          "income_tiers": [],
+          "raw_text": "- Full reimbursement of an amount equivalent to the benefit payable under Ayushman Bharat Scheme on treatment in government/autonomous hospitals or SACHIS empaneled hospitals.\n- In case of medical/surgical treatment, advance amount can also be paid to the hospital after the hospital gives the estimate for the treatment.\n- No maximum amount is fixed.\n- The scheme covers the cost of treatment for a variety of serious illnesses, including:\n\n - Heart surgery.\n - Kidney transplant.\n - Liver transplant.\n - Brain surgery.\n - Changing the knees of the legs.\n - Cancer treatment.\n - HIV AIDS disease.\n - Eye surgery.\n - Stone Surgery.\n - Appendix surgery.\n - Hydrocele surgery.\n - Surgery for breast cancer in women.\n - Surgery for cervical cancer.\n\n- Also cover the diseases which comes under Ayushman Bharat Pradhan-mantri Jan-arogya Yojana and Mukhya-mantri Jan-arogya Yojana."
+        },
+        "required_documents": [
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Copy of construction worker registration card."
+            ],
+            "required": true,
+            "notes": "Copy of construction worker registration card."
+          },
+          {
+            "purpose": "bank_account_proof",
+            "accepts": [
+              "Bank Passbook copy with IFSC",
+              "Cancelled Cheque"
+            ],
+            "required": true,
+            "notes": "Copy of bank passbook for account number, branch name and IFSC code."
+          }
+        ],
+        "application_process": "Mode: Offline\nURL: \nSteps: How to get register and apply for the scheme\nApplicant must visit the below offices\nNearest labor office.\nTehsildar of the concerned tehsil.\nBlock Development Officer of the concerned development block.\nGet the application form and fill out the completely.\nAttach required documents in the prescribed format.\nSubmit the application form in the same office.\n\nMode: Online\nURL: \nSteps: How to get register\nApplicant must visit the \nofficial web portal.\nProvide the required details\nEnter Aadhaar Number.\nChoose Circle.\nChoose District.\nMobile Number.\nSubmit the registration request.\n\nHow to submit the application\nApplicant must visit the official \nweb portal\n.\nProvide the required details\nChoose Circle.\nChoose Scheme name.\nEnter Registered Aadhaar Number.\nEnter Registered Mobile Number.\nClick on \"Open Application form\".\nProvide the required details in application form.\nApplicant/Worker details\nChild details\nBank Account Details\nSubmit the required documents\nSubmit the application request.",
+        "application_url": null,
+        "description": "The Uttar Pradesh Gambhir Bimari Sahayata Yojana is a government-funded scheme that provides financial assistance to such construction workers who are not covered under \"Ayushman Bharat Jan Arogya Yojana\" and \"Pradhan Mantri Jan Aarogya Yojana\" in the UP Building and Other Construction Workers Welfare Board.\n\nBenefits will be provided to the family member of the construction worker in case of illness, for treatment in any government hospital or autonomous hospital of the Government of India or Uttar Pradesh Government or such hospitals which have been empanelled by the National Health Authority of Ayushman Bharat Pradhan Mantri Jan Arogya Yojana or SACHIS (State Agency For Comprehensive Health Insurance and Integrated Services) functioning at the state level.",
+        "source_url": "https://www.myscheme.gov.in/schemes/gbsy",
+        "verdict": "QUALIFIES",
+        "reason": "नागरिक सभी निर्धारित पात्रता शर्तों को पूरा करते हैं।",
+        "disqualification_reasons": [],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - Applicant must be registered workers under labor department. \n- Beneficiary can not get the similar type of government scheme benefits like Pradhan ..."
+        ]
+      },
+      {
+        "id": 479,
+        "name": "Awasiya Vidyala Yojana",
+        "category": "Education & Learning",
+        "government_name": "Uttar Pradesh Government",
+        "similarity_score": 0.837,
+        "eligibility_criteria": {
+          "min_age": 6,
+          "max_age": 14,
+          "age_notes": null,
+          "income_ceiling": null,
+          "bpl_required": false,
+          "income_tiers": [],
+          "gender": "All",
+          "social_categories": [
+            "All"
+          ],
+          "occupations": [
+            "Worker"
+          ],
+          "disability_required": null,
+          "min_disability_percentage": null,
+          "state_restriction": "Uttar Pradesh",
+          "residence_requirement": null,
+          "other_conditions_text": "- Parent must be registered construction workers.\n- Child must be fall within the range of 6 to 14 years.",
           "extraction_method": "regex_unverified",
           "confidence_score": 1.0,
           "confidence_components": {
@@ -1233,31 +2507,167 @@
           "frequency": null,
           "benefit_condition": null,
           "income_tiers": [],
-          "raw_text": "The scholarship amount covers the entire degree programme fee including:\n\n - Tuition fees,\n - Admission fees,\n - Examination fees,\n - E-content charges,\n - Other charges like registration fee, re-examination, and award of degree, etc.\n\n> **Note:** \n\n - The passed students are awarded Degree online and physical copies of degrees/certificates are also sent to Indian Mission in Kabul, and students need to collect from Indian Mission in Kabul."
+          "raw_text": "- Free residential education for all registered construction workers' sons/daughters.\n- Free accommodation, clothing, food and other facilities available."
         },
         "required_documents": [
           {
             "purpose": "general_verification",
             "accepts": [
-              "Valid academic records/ transcripts/ certificates, as required by the respective Indian University/Institute."
+              "Photocopy of registration certificate."
             ],
             "required": true,
-            "notes": "Valid academic records/ transcripts/ certificates, as required by the respective Indian University/Institute."
+            "notes": "Photocopy of registration certificate."
           }
         ],
-        "application_process": "Mode: Online\nURL: \nSteps: Registration of Learners at iLearn Portal:\nStep 1: \nVisit \niLearn\nportal and Click \"Login/Register\".\nStep 2: \nOn the sign-up page, click on “Sign Up Now”. Enter Email ID and click “Send Verification Code”.\nStep 3: \nEnter Verification Code sent to your mail ID and enter - New Password & Confirm New Password & Display Name & click \"CREATE\".\nStep 4: \nEnter details like First Name, Last Name, Mobile Number, Country residing in currently and Learning Center and click on “I’M NOT A ROBOT”, then Click \"Register\". New User ID will be created for that particular Name and ID.\nSelection of Programme and Universities:\nStep 1: \nUpon Login, students can explore programs based on degree type and category by clicking on “Explore Programmes”.\nStep 2: \nClick on Browse more to get the More filters like- Course Duration, Course Exam Date, Course Term and Partner Institutions.\nSubmission of Enrolment form at University/HEI Portal:\nStep 1: \nClick on the course to select the particular university and the particular course where the page will be directed to the respective university's Signup/ Registration page.\nStep 2: \nClick on “Click here for new Registration” to sign up. Enter the email ID and captcha and click on “Verify”\nStep 3: \nOnce verified click on Sign In and enter the below details and click on “Login”.\nStep 4: \nOnce Login Student will be redirected into University Application forms.\nStep 5: \nFill in all the tabs with required details and clock on submit to complete the enrollment form submission.\nICCR e-VB Alumni:\nStudent should fill up the Alumni Form available on \niLearn\nportal ICCR as well as on \nIndia Alumni\n portal after completing the course and before award of final degree. This will help alumni of e-VB to be in touch for future eVB activities and will also be helpful in future for Indian Missions/Posts abroad. to remain engaged with the Alumni.\nContact Us:\n support@ilearn.gov.in",
+        "application_process": "Mode: Offline\nURL: \nSteps: How to get register and apply for the scheme\nApplicant must visit the below offices\nNearest labor office.\nTehsildar of the concerned tehsil.\nBlock Development Officer of the concerned development block.\nGet the application form and fill out the completely.\nAttach required documents in the prescribed format.\nSubmit the application form in the same office.",
         "application_url": null,
-        "description": "The \"Awarding Teleeducation Scholarships To Afghan Students\" scheme under e-VidyaBharati Network Project, launched by the Ministry of External Affairs in October 2019, aims to provide 1000 scholarships annually to Afghan students for pursuing various UGC-approved online Undergraduate and Postgraduate programs from Indian universities. It promotes India as a global hub for higher education and enables Afghan nationals to receive quality education in fields such as Business Administration, Commerce, Computer Science, Arts, and more.\n> **Tenure of scholarship:**\n\nIt should be the endeavor of each student to complete the UG, PG, programmes within prescribed time period of 3 years, 2 years, respectively. However, any relaxation will be strictly as per UGC guidelines.",
-        "source_url": "https://www.myscheme.gov.in/schemes/atestas",
+        "description": "It is often seen that children of construction workers stay with their parents at the work site. Due to poverty and lack of resources of the parents, such children are not able to take admission in any school or are not able to continue their education after taking admission.\nRealizing the need to start residential schools for such children of construction workers, a residential school scheme has been proposed. The objective of the scheme is to provide quality education to the children of registered construction workers in the age group of 6 to 14 years by providing them the facilities of primary, junior high school and secondary education.\n\n**Scope of the plan:**\nInitially, residential school scheme will be operated in districts Etawah, Bhadohi, Kannauj, Moradabad, Firozabad, Lalitpur, Bahraich, Ghaziabad, Kanpur, Azamgarh, Agra and Meerut. Later, based on the experiences and needs gained, this scheme will be expanded to other districts.",
+        "source_url": "https://www.myscheme.gov.in/schemes/avy",
         "verdict": "DOES_NOT_QUALIFY",
-        "reason": "नागरिक की आयु (45 वर्ष) अधिकतम अनुमत आयु (35 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 35 years).; यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।",
+        "reason": "नागरिक की आयु (36 वर्ष) अधिकतम अनुमत आयु (14 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 14 years).",
         "disqualification_reasons": [
-          "नागरिक की आयु (45 वर्ष) अधिकतम अनुमत आयु (35 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 35 years).",
-          "यह योजना Student वर्ग के लिए लक्षित है; नागरिक का व्यवसाय: Daily Wage Laborer।"
+          "नागरिक की आयु (36 वर्ष) अधिकतम अनुमत आयु (14 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 14 years)."
         ],
         "missing_fields": [],
         "manual_review_flags": [
-          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The applicant must be a national of Afghanistan.\n - The applicant must possess a valid Afghan National ID or Passport.\n - The applicant must be betw..."
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - Parent must be registered construction workers.\n- Child must be fall within the range of 6 to 14 years...."
+        ]
+      },
+      {
+        "id": 506,
+        "name": "Kaushal Vikas Yojana",
+        "category": "Labour, Employment & Worker Welfare",
+        "government_name": "Uttar Pradesh Government",
+        "similarity_score": 0.835,
+        "eligibility_criteria": {
+          "min_age": 18,
+          "max_age": 35,
+          "age_notes": "UP Kaushal Vikas: registered worker training age 18-35.",
+          "income_ceiling": null,
+          "bpl_required": false,
+          "income_tiers": [],
+          "gender": "All",
+          "social_categories": [
+            "All"
+          ],
+          "occupations": [
+            "Worker"
+          ],
+          "disability_required": null,
+          "min_disability_percentage": null,
+          "state_restriction": "Uttar Pradesh",
+          "residence_requirement": null,
+          "other_conditions_text": "- Applicant himself or his/her husband/wife/father must be a registered construction worker and his/her contribution must be updated.\n- If the registered worker himself wants to undergo training, then his/her age should be between 18-35.\n- Age dependencies: \n\n - Dependent wife/ unmarried daughter has no age limit. \n - The maximum age of dependent son is 21 years",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
+          "confidence_components": {
+            "c_age": 1.0,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": null,
+          "benefit_max": null,
+          "benefit_type": "unstructured",
+          "unit": "INR",
+          "frequency": null,
+          "benefit_condition": null,
+          "income_tiers": [],
+          "raw_text": "- **Training fees and materials:** Board will reimburse expenses of institute-fixed fees, textbooks, and other training-related stationery.1. **Exam:** After training, will have to pass an assessment test.1. **Wages**: In case the registered worker himself receives training, an amount equivalent to the minimum wage of the unskilled worker will be reimbursed but only registered workers are eligible, not dependents."
+        },
+        "required_documents": [
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Photocopy of registration certificate."
+            ],
+            "required": true,
+            "notes": "Photocopy of registration certificate."
+          }
+        ],
+        "application_process": "Mode: Offline\nURL: \nSteps: How to get register and apply for the scheme\nApplicant must visit the below offices\nNearest labor office.\nTehsildar of the concerned tehsil.\nBlock Development Officer of the concerned development block.\nGet the application form and fill out the completely.\nAttach required documents in the prescribed format.\nSubmit the application form in the same office.",
+        "application_url": null,
+        "description": "This scheme aims to address the skill gap faced by construction workers registered with the Board by providing them with access to essential training opportunities for competency development and technical advancement. Currently, construction workers rely solely on on-the-job experience, lacking formal technical training due to institutional limitations. This hinders their ability to secure fair wages and access better services. Recognizing the financial constraints often preventing workers and their families from pursuing formal training, this scheme offers reimbursement for both training costs and lost wages. By bridging this financial gap, the initiative empowers individuals to elevate their skillsets and career prospects.",
+        "source_url": "https://www.myscheme.gov.in/schemes/kvy",
+        "verdict": "DOES_NOT_QUALIFY",
+        "reason": "नागरिक की आयु (36 वर्ष) अधिकतम अनुमत आयु (35 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 35 years).",
+        "disqualification_reasons": [
+          "नागरिक की आयु (36 वर्ष) अधिकतम अनुमत आयु (35 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 35 years)."
+        ],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - Applicant himself or his/her husband/wife/father must be a registered construction worker and his/her contribution must be updated.\n- If the registe..."
+        ]
+      },
+      {
+        "id": 499,
+        "name": "Sant Ravidaas Shiksha Protsaahan Yojana",
+        "category": "Education & Learning",
+        "government_name": "Uttar Pradesh Government",
+        "similarity_score": 0.832,
+        "eligibility_criteria": {
+          "min_age": 6,
+          "max_age": 35,
+          "age_notes": "Sant Ravidas: 6-8 was only Class 1-2. Scheme covers Class 1 through higher education up to age 35.",
+          "income_ceiling": null,
+          "bpl_required": false,
+          "income_tiers": [],
+          "gender": "All",
+          "social_categories": [
+            "All"
+          ],
+          "occupations": [
+            "Worker"
+          ],
+          "disability_required": null,
+          "min_disability_percentage": null,
+          "state_restriction": "Uttar Pradesh",
+          "residence_requirement": null,
+          "other_conditions_text": "- The construction worker must be registered with the Board and be actively updated.\n- The construction worker must have completed at least one year (365 days) of membership with the Board after registration.\n- The age of the child should be as follows according to the class on July 1 of each year:\n\n - Class 1 and 2: Maximum age 6 to 8 years\n - Class 3 to 5: Maximum age 8 to 11 years\n - Class 6 to 8: Maximum age 11 to 14 years\n - Class 9 to 12: Maximum age 14 to 18 years\n - Graduate and postgraduate: Maximum age 18 to 25 years\n - Graduate (MBBS) and postgraduate degree/diploma in medicine from any government educational institution: Maximum age 25 to 35 years\n - Research in any subject: Maximum age 25 to 35 years\n - Study at Indian Institute of Management (IIM), Indian Institute of Technology (IIT), National Institute of Technology (NIT), National Institute of Fashion Technology (NIFT), and National Law University: Maximum age 25 to 35 years\n\n- Aadhaar certification of the construction worker's children is required for the benefits of the scheme.\n- The child must be enrolled in an educational institution that is recognized by a government-established education board/university.\n- The benefits will be payable to a maximum of two children of registered construction workers.\n- Registered construction workers' sons/daughters will be eligible to receive a subsidy for purchasing a bicycle to go to school after passing class 9, 10, 11, or 12 and entering the next class.",
+          "extraction_method": "audited_and_repaired",
+          "confidence_score": 1.0,
+          "confidence_components": {
+            "c_age": 1.0,
+            "c_income": 1.0,
+            "c_gender": 1.0,
+            "c_category": 1.0
+          }
+        },
+        "benefits": {
+          "benefit_min": 0.0,
+          "benefit_max": 2000.0,
+          "benefit_type": "fixed",
+          "unit": "INR",
+          "frequency": "one_time",
+          "benefit_condition": null,
+          "income_tiers": [],
+          "raw_text": "**Financial Support:**\n\n- **Lump sum amounts awarded for different grades and courses**\n\n - Class 1-5: ₹2,000/-\n - Class 6-10: ₹2,500/-\n - Class 11-12: ₹3,000/-\n - Undergraduate: ₹12,000/-\n - ITI/Polytechnic/Vocational: ₹12,000/-\n - Following professional degrees course (minimum 2 years): Fees or up to ₹60,000/-\n\n - Management - MBA, BBA\n - Engineering - B.Tech and B.Arch, M.Tech, ME, BE\n - Computer Application - BCA, MCA\n - Fine Arts - BFA\n - Education - B.Ed, B.P.Ed, C.P.Ed, M.Ed\n - Designing - Fashion/Interior/Web\n - Mass Communication/Journalism - BJMC\n - Pharmacy - B.Pharma, M.Pharma\n - Hospitality - Hotel Management\n - Medical - B.D.S, B.A.M.S, B.H.M.S, B.U.M.S\n - Nursing - B.Sc, M.Sc\n - Finance - B.Com/CA/CFA/CS\n - Architecture - B.Arch\n - Law - LLB, LLM\n - Agriculture\n\n - Post-graduate: ₹24,000/-\n - Research: ₹1,00,000/-\n - Medical Undergraduate (MBBS) and Post Graduate Degree/Diploma, IIM/IIT/NIT/NIFT/Law: Full fee reimbursement.\n\n- **Additional Incentives:**\n\n - Bicycle subsidy for school commute (once only).\n - Passing high school/intermediate with 70% marks: ₹5,000/- (boys) or ₹8,000/- (girls).\n - Passing graduation/post-graduation with 60% marks: ₹10,000/- (boys) or ₹12,000/- (girls)."
+        },
+        "required_documents": [
+          {
+            "purpose": "general_verification",
+            "accepts": [
+              "Mark sheets & fee receipts for current and next class."
+            ],
+            "required": true,
+            "notes": "Mark sheets & fee receipts for current and next class."
+          }
+        ],
+        "application_process": "Mode: Online\nURL: \nSteps: How to get register\nApplicant must visit the \nofficial web portal.\nProvide the required details\nEnter Aadhaar Number.\nChoose Circle.\nChoose District.\nMobile Number.\nSubmit the registration request.\n\nHow to submit the application\nApplicant must visit the official \nweb portal\n.\nProvide the required details\nChoose Circle.\nChoose Scheme name.\nEnter Registered Aadhaar Number.\nEnter Registered Mobile Number.\nClick on \"Open Application form\".\nProvide the required details in application form.\nApplicant/Worker details\nChild details\nBank Account Details\nSubmit the required documents\nSubmit the application request.",
+        "application_url": null,
+        "description": "The objective of \"Sant Ravidas Shiksha Protsahan Yojana\" is to encourage the children of construction workers registered in the Building and Other Construction Workers Welfare Board towards education by providing scholarships and incentive funds to their meritorious children and connecting them to the mainstream of education by motivating them for higher and professional education. \n\nUnder the scheme, the sons/daughters of registered construction workers, after passing class 9, class 10, class 11 or class 12 and entering the next class, are motivated to pursue further studies and provide them facilities to go to school. For the purpose of getting the bicycle purchased, a lump sum amount as prescribed by the Board will be provided in the form of subsidy.",
+        "source_url": "https://www.myscheme.gov.in/schemes/srspy",
+        "verdict": "DOES_NOT_QUALIFY",
+        "reason": "नागरिक की आयु (36 वर्ष) अधिकतम अनुमत आयु (35 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 35 years).; यह योजना पूर्व-दशम (Pre-Matric, कक्षा 9-10) स्कूली छात्रों के लिए है; कॉलेज या 18+ वर्ष के छात्र इसके पात्र नहीं हैं।",
+        "disqualification_reasons": [
+          "नागरिक की आयु (36 वर्ष) अधिकतम अनुमत आयु (35 वर्ष) से अधिक है (Citizen age exceeds maximum permissible age of 35 years).",
+          "यह योजना पूर्व-दशम (Pre-Matric, कक्षा 9-10) स्कूली छात्रों के लिए है; कॉलेज या 18+ वर्ष के छात्र इसके पात्र नहीं हैं।"
+        ],
+        "missing_fields": [],
+        "manual_review_flags": [
+          "अतिरिक्त शर्त (मैनुअल समीक्षा): - The construction worker must be registered with the Board and be actively updated.\n- The construction worker must have completed at least one year (..."
         ]
       }
     ],
