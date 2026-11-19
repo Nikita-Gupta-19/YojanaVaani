@@ -9,6 +9,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -21,6 +22,7 @@ interface DocumentCaptureScreenProps {
   conversationId: string;
   documentType: string;
   documentDisplayName?: string;
+  citizenProfile?: Record<string, any>;
   alreadyVerifiedDocTypes?: string[];
   onConfirmationComplete: (nextAction: any, confirmedFields?: any, updatedProfile?: any) => void;
   onCancel: () => void;
@@ -30,6 +32,7 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
   conversationId,
   documentType,
   documentDisplayName,
+  citizenProfile,
   alreadyVerifiedDocTypes = [],
   onConfirmationComplete,
   onCancel,
@@ -44,6 +47,8 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const [isProcessingOcr, setIsProcessingOcr] = useState<boolean>(false);
   const [isSubmittingConfirm, setIsSubmittingConfirm] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editableFields, setEditableFields] = useState<Record<string, any>>({});
   const [ocrData, setOcrData] = useState<{
     extracted_fields: Record<string, any>;
     confidence_scores: Record<string, number>;
@@ -52,39 +57,49 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
   } | null>(null);
 
   const getMockFieldsForDocType = (docType: string, citizenName?: string) => {
-    const name = citizenName || 'नागरिक';
+    const name = citizenProfile?.name || citizenName || 'नागरिक';
+    const district = citizenProfile?.district || 'लखनऊ';
+    const state = citizenProfile?.state || 'उत्तर प्रदेश';
+    const category = citizenProfile?.social_category || 'General';
+    const income =
+      citizenProfile?.approx_income_bracket === 'above_5_lakh'
+        ? 600000
+        : citizenProfile?.approx_income_bracket === '2_to_5_lakh'
+        ? 240000
+        : 48000;
+    const gender = citizenProfile?.gender || 'Male';
     const d = (docType || '').toLowerCase();
 
     if (d.includes('aadhaar') || d.includes('आधार') || d.includes('identity')) {
       return {
-        fields: { aadhaar_number: 'XXXX-XXXX-8812', name, dob: '12/05/1998', gender: 'Female' },
-        scores: { aadhaar_number: 0.96, dob: 0.92, gender: 0.90, name: 0.95 },
+        fields: { aadhaar_number: 'XXXX-XXXX-8812', name, dob: '15/07/1981', gender, district, state },
+        scores: { aadhaar_number: 0.96, dob: 0.92, gender: 0.90, name: 0.95, district: 0.92, state: 0.92 },
         mean: 0.94,
-        text: 'भारत सरकार पहचान पत्र आधार कार्ड UIDAI - 12/05/1998',
+        text: `भारत सरकार पहचान पत्र आधार कार्ड UIDAI - ${name} - ${district}, ${state}`,
       };
     }
     if (d.includes('income') || d.includes('आय प्रमाण')) {
       return {
-        fields: { annual_income: 48000, name, district: 'बाराबंकी' },
-        scores: { annual_income: 0.96, name: 0.92, district: 0.91 },
+        fields: { annual_income: income, name, district, state, social_category: category },
+        scores: { annual_income: 0.96, name: 0.92, district: 0.91, state: 0.91, social_category: 0.93 },
         mean: 0.93,
-        text: 'उत्तर प्रदेश शासन राजस्व विभाग आय प्रमाण पत्र वार्षिक आय ₹48,000',
+        text: `${state} शासन राजस्व विभाग आय प्रमाण पत्र वार्षिक आय ₹${income.toLocaleString('en-IN')} जिला ${district}`,
       };
     }
     if (d.includes('ration') || d.includes('राशन') || d.includes('bpl')) {
       return {
-        fields: { ration_card_number: '2458963204', family_members_count: 5, card_category: 'AAY', name },
-        scores: { ration_card_number: 0.95, family_members_count: 0.90, card_category: 0.93 },
+        fields: { ration_card_number: '2458963204', family_members_count: 4, card_category: 'PHH', name, district, state },
+        scores: { ration_card_number: 0.95, family_members_count: 0.90, card_category: 0.93, district: 0.91, state: 0.91 },
         mean: 0.93,
-        text: 'खाद्य एवं रसद विभाग राशन कार्ड अन्त्योदय परिवार संख्या 5',
+        text: `खाद्य एवं रसद विभाग राशन कार्ड प्राथमिकता गृहस्थी (PHH) जिला ${district}`,
       };
     }
     if (d.includes('khasra') || d.includes('land') || d.includes('खसरा') || d.includes('खतौनी')) {
       return {
-        fields: { land_holding_area_hectares: 0.84, khasra_number: '42/2', name, district: 'बाराबंकी' },
-        scores: { land_holding_area_hectares: 0.94, khasra_number: 0.92, name: 0.90 },
+        fields: { land_holding_area_hectares: 1.25, khasra_number: '142/1', name, district, state },
+        scores: { land_holding_area_hectares: 0.94, khasra_number: 0.92, name: 0.90, district: 0.91, state: 0.91 },
         mean: 0.92,
-        text: 'राजस्व परिषद उत्तर प्रदेश खसरा खतौनी भू-अभिलेख रकबा 0.84 हेक्टेयर',
+        text: `राजस्व परिषद ${state} खसरा खतौनी भू-अभिलेख रकबा 1.25 हेक्टेयर जिला ${district}`,
       };
     }
     if (d.includes('bank') || d.includes('passbook') || d.includes('बैंक') || d.includes('पासबुक')) {
@@ -102,83 +117,139 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
     }
     if (d.includes('caste') || d.includes('जाति')) {
       return {
-        fields: { caste_category: 'OBC / अन्य पिछड़ा वर्ग', certificate_number: 'UP-CST-2026-88741', name },
-        scores: { caste_category: 0.95, certificate_number: 0.93, name: 0.91 },
+        fields: { caste_category: category, certificate_number: 'UP-CST-2026-88741', name, district, state },
+        scores: { caste_category: 0.95, certificate_number: 0.93, name: 0.91, district: 0.91, state: 0.91 },
         mean: 0.93,
-        text: 'उत्तर प्रदेश शासन जाति प्रमाण पत्र सामाजिक श्रेणी अन्य पिछड़ा वर्ग OBC',
+        text: `${state} शासन जाति प्रमाण पत्र सामाजिक श्रेणी ${category} जिला ${district}`,
       };
     }
     if (d.includes('disability') || d.includes('divyang') || d.includes('दिव्यांग')) {
       return {
-        fields: { disability_type: 'चलन दिव्यांगता (Locomotor)', disability_percentage: '80%', udid_number: 'UP7894561230', name },
-        scores: { disability_type: 0.93, disability_percentage: 0.96, udid_number: 0.95 },
+        fields: { disability_type: 'चलन दिव्यांगता (Locomotor)', disability_percentage: '80%', udid_number: 'UP7894561230', name, district, state },
+        scores: { disability_type: 0.93, disability_percentage: 0.96, udid_number: 0.95, district: 0.91, state: 0.91 },
         mean: 0.95,
-        text: 'भारत सरकार विशिष्ट दिव्यांगता पहचान पत्र UDID 80% दिव्यांगता प्रमाण',
+        text: `भारत सरकार विशिष्ट दिव्यांगता पहचान पत्र UDID 80% दिव्यांगता प्रमाण ${district}`,
       };
     }
     if (d.includes('domicile') || d.includes('residence') || d.includes('निवास')) {
       return {
-        fields: { domicile_state: 'उत्तर प्रदेश', certificate_number: 'UP-DOM-2026-44120', name },
-        scores: { domicile_state: 0.95, certificate_number: 0.92, name: 0.90 },
+        fields: { domicile_state: state, district, certificate_number: 'UP-DOM-2026-44120', name },
+        scores: { domicile_state: 0.95, district: 0.92, certificate_number: 0.92, name: 0.90 },
         mean: 0.92,
-        text: 'तहसीलदार कार्यालय सामान्य निवास प्रमाण पत्र उत्तर प्रदेश',
+        text: `तहसीलदार कार्यालय सामान्य निवास प्रमाण पत्र ${district}, ${state}`,
       };
     }
     if (d.includes('death') || d.includes('मृत्यु')) {
       return {
-        fields: { deceased_name: 'स्वर्गीय रमेश कुमार', date_of_death: '14/02/2024', registration_number: 'DTH-2024-55412' },
-        scores: { deceased_name: 0.92, date_of_death: 0.94, registration_number: 0.95 },
+        fields: { deceased_name: `स्वर्गीय ${name}`, date_of_death: '14/02/2024', registration_number: 'DTH-2024-55412', district, state },
+        scores: { deceased_name: 0.92, date_of_death: 0.94, registration_number: 0.95, district: 0.91, state: 0.91 },
         mean: 0.94,
-        text: 'जन्म एवं मृत्यु पंजीयन प्रमाण पत्र मृत्यु दिनांक 14/02/2024',
+        text: `जन्म एवं मृत्यु पंजीयन प्रमाण पत्र मृत्यु दिनांक 14/02/2024 जिला ${district}`,
       };
     }
     if (d.includes('birth') || d.includes('age') || d.includes('जन्म')) {
       return {
-        fields: { dob: '15/08/1982', place_of_birth: 'बाराबंकी, उत्तर प्रदेश', name },
+        fields: { dob: '15/08/1982', place_of_birth: `${district}, ${state}`, name },
         scores: { dob: 0.95, place_of_birth: 0.90, name: 0.92 },
         mean: 0.92,
-        text: 'जन्म प्रमाण पत्र जन्म तिथि 15/08/1982',
+        text: `जन्म प्रमाण पत्र जन्म तिथि 15/08/1982 जिला ${district}`,
       };
     }
     if (d.includes('academic') || d.includes('marksheet') || d.includes('education') || d.includes('अंकतालिका')) {
       return {
-        fields: { qualification: '10वीं उत्तीर्ण (High School Pass)', board: 'माध्यमिक शिक्षा परिषद उत्तर प्रदेश', name },
+        fields: { qualification: '10वीं उत्तीर्ण (High School Pass)', board: `माध्यमिक शिक्षा परिषद ${state}`, name },
         scores: { qualification: 0.94, board: 0.92, name: 0.90 },
         mean: 0.92,
-        text: 'हाई स्कूल परीक्षा अंकतालिका एवं प्रमाण पत्र',
+        text: `हाई स्कूल परीक्षा अंकतालिका एवं प्रमाण पत्र ${state}`,
       };
     }
     if (d.includes('job') || d.includes('mgnrega') || d.includes('मनरेगा')) {
       return {
-        fields: { job_card_number: 'UP-08-012-004-001/4521', name, status: 'सक्रिय (Active)' },
-        scores: { job_card_number: 0.95, name: 0.92, status: 0.93 },
+        fields: { job_card_number: 'UP-08-012-004-001/4521', name, district, status: 'सक्रिय (Active)' },
+        scores: { job_card_number: 0.95, name: 0.92, status: 0.93, district: 0.91 },
         mean: 0.93,
-        text: 'महात्मा गांधी राष्ट्रीय ग्रामीण रोजगार गारंटी अधिनियम जॉब कार्ड',
+        text: `महात्मा गांधी राष्ट्रीय ग्रामीण रोजगार गारंटी अधिनियम जॉब कार्ड जिला ${district}`,
       };
     }
     if (d.includes('kcc') || d.includes('kisan credit') || d.includes('क्रेडिट')) {
       return {
-        fields: { kcc_number: 'KCC-6548-9987-1234', credit_limit: '₹1,50,000', bank_name: 'Bank of Baroda', name },
-        scores: { kcc_number: 0.94, credit_limit: 0.92, name: 0.90 },
+        fields: { kcc_number: 'KCC-6548-9987-1234', credit_limit: '₹1,50,000', bank_name: 'Bank of Baroda', name, district },
+        scores: { kcc_number: 0.94, credit_limit: 0.92, name: 0.90, district: 0.91 },
         mean: 0.92,
-        text: 'किसान क्रेडिट कार्ड KCC Limit ₹1,50,000',
+        text: `किसान क्रेडिट कार्ड KCC Limit ₹1,50,000 जिला ${district}`,
       };
     }
     if (d.includes('voter') || d.includes('मतदाता') || d.includes('epic')) {
       return {
-        fields: { epic_number: 'UP/54/214/987456', constituency: 'हैदरगढ़ (विधानसभा)', name },
-        scores: { epic_number: 0.96, constituency: 0.91, name: 0.93 },
+        fields: { epic_number: 'UP/54/214/987456', constituency: `${district} (संसदीय/विधानसभा)`, name, district, state },
+        scores: { epic_number: 0.96, constituency: 0.91, name: 0.93, district: 0.91, state: 0.91 },
         mean: 0.93,
-        text: 'भारत निर्वाचन आयोग मतदाता फोटो पहचान पत्र EPIC',
+        text: `भारत निर्वाचन आयोग मतदाता फोटो पहचान पत्र EPIC ${district}`,
+      };
+    }
+    if (d.includes('vending') || d.includes('vendor') || d.includes('विक्रेता') || d.includes('cov')) {
+      return {
+        fields: {
+          document_type: 'स्ट्रीट वेंडर पहचान पत्र (Certificate of Vending)',
+          certificate_number: 'UP-VND-2026-88412',
+          vending_zone: `नगर निकाय क्षेत्र, ${district}`,
+          name,
+          district,
+          state,
+          verification_status: 'प्रमाणित (Verified)',
+        },
+        scores: { document_type: 0.95, certificate_number: 0.94, vending_zone: 0.92, name: 0.95, district: 0.92, state: 0.92, verification_status: 0.96 },
+        mean: 0.94,
+        text: `शहरी स्थानीय निकाय स्ट्रीट वेंडर प्रमाण पत्र क्रमांक UP-VND-2026-88412 विक्रेता ${name} जिला ${district}`,
+      };
+    }
+    if (d.includes('recommendation') || d.includes('संस्तुति') || d.includes('lor')) {
+      return {
+        fields: {
+          document_type: 'संस्तुति पत्र (Letter of Recommendation / LoR)',
+          lor_number: 'ULB-LOR-2026-5541',
+          issuing_authority: `टाउन वेंडिंग कमेटी (TVC), ${district}`,
+          name,
+          district,
+          state,
+          verification_status: 'अनुशंसित (Recommended)',
+        },
+        scores: { document_type: 0.95, lor_number: 0.94, issuing_authority: 0.92, name: 0.95, district: 0.92, state: 0.92, verification_status: 0.96 },
+        mean: 0.94,
+        text: `टाउन वेंडिंग कमेटी संस्तुति पत्र Letter of Recommendation LoR क्रमांक ULB-LOR-2026-5541 नाम ${name} जिला ${district}`,
+      };
+    }
+    if (d.includes('loan') || d.includes('ऋण')) {
+      return {
+        fields: {
+          document_type: 'ऋण संबंधित दस्तावेज़ (Loan Document)',
+          loan_account_number: 'LN-2026-44120',
+          bank_name: 'State Bank of India',
+          loan_status: 'सक्रिय / अद्यतन (Active / Standard)',
+          name,
+          district,
+          state,
+        },
+        scores: { document_type: 0.95, loan_account_number: 0.94, bank_name: 0.95, loan_status: 0.93, name: 0.95, district: 0.92, state: 0.92 },
+        mean: 0.94,
+        text: `ऋण प्रमाण पत्र खाता संख्या LN-2026-44120 बैंक State Bank of India नाम ${name} जिला ${district}`,
       };
     }
 
     // Generic / custom document fallback
+    const cleanDocTitle = docType.replace('custom_', '').replace(/_/g, ' ').toUpperCase();
     return {
-      fields: { document_type: docType, certificate_number: 'DOC-2026-78412', verification_status: 'प्रमाणित (Verified)', name },
-      scores: { document_type: 0.92, certificate_number: 0.90, verification_status: 0.94 },
-      mean: 0.92,
-      text: `सक्षम प्राधिकारी द्वारा जारी प्रमाण पत्र (${docType})`,
+      fields: {
+        document_name: cleanDocTitle,
+        certificate_number: 'DOC-2026-78412',
+        verification_status: 'प्रमाणित (Verified)',
+        name,
+        district,
+        state,
+      },
+      scores: { document_name: 0.94, certificate_number: 0.92, verification_status: 0.95, name: 0.94, district: 0.92, state: 0.92 },
+      mean: 0.93,
+      text: `सक्षम प्राधिकारी द्वारा जारी प्रमाण पत्र (${cleanDocTitle}) जिला ${district}, ${state}`,
     };
   };
 
@@ -253,20 +324,23 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
       }
 
       const data = await response.json();
+      const fields = data.extracted_fields || {};
       setOcrData({
-        extracted_fields: data.extracted_fields || {},
+        extracted_fields: fields,
         confidence_scores: data.confidence_scores || {},
         mean_confidence: data.mean_confidence || 0.92,
         raw_text: data.raw_text || '',
       });
+      setEditableFields(fields);
     } catch (_err) {
       const mock = getMockFieldsForDocType(activeDocType);
       setOcrData({
         extracted_fields: mock.fields,
-        confidence_scores: mock.scores,
+        confidence_scores: mock.scores as unknown as Record<string, number>,
         mean_confidence: mock.mean,
         raw_text: mock.text,
       });
+      setEditableFields(mock.fields || {});
     } finally {
       setIsProcessingOcr(false);
     }
@@ -290,6 +364,8 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
         mediaType: 'photo',
         cameraType: 'back',
         quality: 0.8,
+        maxWidth: 1600,
+        maxHeight: 1600,
         includeBase64: true,
         saveToPhotos: false,
       });
@@ -322,6 +398,8 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
       const result = await launchImageLibrary({
         mediaType: 'photo',
         quality: 0.8,
+        maxWidth: 1600,
+        maxHeight: 1600,
         includeBase64: true,
       });
 
@@ -368,20 +446,23 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
       }
 
       const data = await response.json();
+      const fields = data.extracted_fields || {};
       setOcrData({
-        extracted_fields: data.extracted_fields || {},
+        extracted_fields: fields,
         confidence_scores: data.confidence_scores || {},
         mean_confidence: data.mean_confidence || 0.94,
         raw_text: data.raw_text || '',
       });
+      setEditableFields(fields);
     } catch (_err) {
       const mock = getMockFieldsForDocType(sampleKey);
       setOcrData({
         extracted_fields: mock.fields,
-        confidence_scores: mock.scores,
+        confidence_scores: mock.scores as unknown as Record<string, number>,
         mean_confidence: mock.mean,
         raw_text: mock.text,
       });
+      setEditableFields(mock.fields || {});
     } finally {
       setIsProcessingOcr(false);
     }
@@ -393,7 +474,7 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
   const handleConfirm = async (confirmed: boolean) => {
     setIsSubmittingConfirm(true);
     const confirmedFields = {
-      ...(ocrData ? ocrData.extracted_fields : {}),
+      ...(Object.keys(editableFields).length > 0 ? editableFields : (ocrData ? ocrData.extracted_fields : {})),
       document_type: activeDocType,
       document_name: activeDisplayName,
       confidence: ocrData ? ocrData.mean_confidence : 0.94,
@@ -628,9 +709,20 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
                       />
                     </View>
                   )}
-                  <Text style={styles.resultsHeader}>
-                    दस्तावेज़ से प्राप्त विवरण (Extracted Facts):
-                  </Text>
+                  <View style={styles.headerActionRow}>
+                    <Text style={styles.resultsHeader}>
+                      दस्तावेज़ से प्राप्त विवरण (Extracted Facts):
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.editToggleBtn}
+                      onPress={() => setIsEditing(!isEditing)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.editToggleBtnText}>
+                        {isEditing ? '✓ संपादन पूर्ण' : '✏️ विवरण सुधारें'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                   <View style={styles.confidenceRow}>
                     <Text style={styles.confidenceLabel}>विश्वसनीयता स्कोर:</Text>
                     <View style={styles.confidenceBadge}>
@@ -640,66 +732,115 @@ export const DocumentCaptureScreen: React.FC<DocumentCaptureScreenProps> = ({
                     </View>
                   </View>
 
-                  {/* List extracted fields */}
-                  {Object.entries(ocrData.extracted_fields).map(([key, val]) => {
-                    const fieldLabels: Record<string, string> = {
-                      annual_income: 'वार्षिक आय (Annual Income)',
-                      name: 'आवेदक का नाम (Name)',
-                      district: 'जिला (District)',
-                      state: 'राज्य (State)',
-                      tehsil: 'तहसील (Tehsil)',
-                      pincode: 'पिन कोड (Pincode)',
-                      dob: 'जन्म तिथि (DOB)',
-                      gender: 'लिंग (Gender)',
-                      aadhaar_number: 'आधार कार्ड संख्या (Aadhaar No)',
-                      ration_card_number: 'राशन कार्ड संख्या (Ration No)',
-                      card_category: 'कार्ड श्रेणी (Category)',
-                      family_members_count: 'कुल सदस्य (Family Members)',
-                      certificate_number: 'प्रमाण पत्र क्रमांक (Cert No)',
-                      social_category: 'सामाजिक वर्ग (Social Category)',
-                      land_holding_area_hectares: 'भूमि रकबा (Land Area)',
-                      khasra_number: 'खसरा / गाटा संख्या (Plot No)',
-                    };
+                  {isEditing ? (
+                    <View style={styles.editingContainer}>
+                      <Text style={styles.editHintText}>
+                        💡 किसी भी विवरण में सुधार करने के लिए सीधे नीचे दिए गए बॉक्स में लिखें:
+                      </Text>
+                      {Object.entries(editableFields).map(([key, val]) => {
+                        const fieldLabels: Record<string, string> = {
+                          annual_income: 'वार्षिक आय (Annual Income)',
+                          name: 'आवेदक का नाम (Name)',
+                          district: 'जिला (District)',
+                          state: 'राज्य (State)',
+                          tehsil: 'तहसील (Tehsil)',
+                          pincode: 'पिन कोड (Pincode)',
+                          dob: 'जन्म तिथि (DOB)',
+                          gender: 'लिंग (Gender)',
+                          aadhaar_number: 'आधार कार्ड संख्या (Aadhaar No)',
+                          ration_card_number: 'राशन कार्ड संख्या (Ration No)',
+                          card_category: 'कार्ड श्रेणी (Category)',
+                          family_members_count: 'कुल सदस्य (Family Members)',
+                          certificate_number: 'प्रमाण पत्र क्रमांक (Cert No)',
+                          social_category: 'सामाजिक वर्ग (Social Category)',
+                          land_holding_area_hectares: 'भूमि रकबा (Land Area)',
+                          khasra_number: 'खसरा / गाटा संख्या (Plot No)',
+                        };
 
-                    let formattedVal = String(val);
-                    if (key === 'annual_income' && typeof val === 'number') {
-                      formattedVal = `₹${val.toLocaleString('en-IN')}`;
-                    } else if (key === 'land_holding_area_hectares') {
-                      formattedVal = `${val} हेक्टेयर`;
-                    } else if (key === 'family_members_count') {
-                      formattedVal = `${val} सदस्य`;
-                    } else if (key === 'gender') {
-                      formattedVal = val === 'Male' ? 'पुरुष (Male)' : val === 'Female' ? 'महिला (Female)' : String(val);
-                    }
+                        return (
+                          <View key={key} style={styles.fieldRowStacked}>
+                            <Text style={styles.fieldKeyStacked}>
+                              {fieldLabels[key] || key}:
+                            </Text>
+                            <TextInput
+                              style={styles.fieldInput}
+                              value={String(val !== undefined && val !== null ? val : '')}
+                              onChangeText={(newTxt) => {
+                                setEditableFields((prev) => ({
+                                  ...prev,
+                                  [key]: key === 'annual_income' ? (parseFloat(newTxt) || newTxt) : newTxt,
+                                }));
+                              }}
+                              placeholderTextColor="#64748B"
+                            />
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <>
+                      {/* List extracted fields */}
+                      {Object.entries(editableFields).map(([key, val]) => {
+                        const fieldLabels: Record<string, string> = {
+                          annual_income: 'वार्षिक आय (Annual Income)',
+                          name: 'आवेदक का नाम (Name)',
+                          district: 'जिला (District)',
+                          state: 'राज्य (State)',
+                          tehsil: 'तहसील (Tehsil)',
+                          pincode: 'पिन कोड (Pincode)',
+                          dob: 'जन्म तिथि (DOB)',
+                          gender: 'लिंग (Gender)',
+                          aadhaar_number: 'आधार कार्ड संख्या (Aadhaar No)',
+                          ration_card_number: 'राशन कार्ड संख्या (Ration No)',
+                          card_category: 'कार्ड श्रेणी (Category)',
+                          family_members_count: 'कुल सदस्य (Family Members)',
+                          certificate_number: 'प्रमाण पत्र क्रमांक (Cert No)',
+                          social_category: 'सामाजिक वर्ग (Social Category)',
+                          land_holding_area_hectares: 'भूमि रकबा (Land Area)',
+                          khasra_number: 'खसरा / गाटा संख्या (Plot No)',
+                        };
 
-                    const isLongVal = formattedVal.length > 22 || formattedVal.includes('\n');
+                        let formattedVal = String(val);
+                        if (key === 'annual_income' && typeof val === 'number') {
+                          formattedVal = `₹${val.toLocaleString('en-IN')}`;
+                        } else if (key === 'land_holding_area_hectares') {
+                          formattedVal = `${val} हेक्टेयर`;
+                        } else if (key === 'family_members_count') {
+                          formattedVal = `${val} सदस्य`;
+                        } else if (key === 'gender') {
+                          formattedVal = val === 'Male' ? 'पुरुष (Male)' : val === 'Female' ? 'महिला (Female)' : String(val);
+                        }
 
-                    if (isLongVal) {
-                      return (
-                        <View key={key} style={styles.fieldRowStacked}>
-                          <Text style={styles.fieldKeyStacked}>
-                            {fieldLabels[key] || key}:
-                          </Text>
-                          <View style={styles.fieldValBox}>
-                            <Text style={styles.fieldValStacked} selectable={true}>
+                        const isLongVal = formattedVal.length > 22 || formattedVal.includes('\n');
+
+                        if (isLongVal) {
+                          return (
+                            <View key={key} style={styles.fieldRowStacked}>
+                              <Text style={styles.fieldKeyStacked}>
+                                {fieldLabels[key] || key}:
+                              </Text>
+                              <View style={styles.fieldValBox}>
+                                <Text style={styles.fieldValStacked} selectable={true}>
+                                  {formattedVal}
+                                </Text>
+                              </View>
+                            </View>
+                          );
+                        }
+
+                        return (
+                          <View key={key} style={styles.fieldRow}>
+                            <Text style={styles.fieldKey}>
+                              {fieldLabels[key] || key}:
+                            </Text>
+                            <Text style={styles.fieldVal} selectable={true}>
                               {formattedVal}
                             </Text>
                           </View>
-                        </View>
-                      );
-                    }
-
-                    return (
-                      <View key={key} style={styles.fieldRow}>
-                        <Text style={styles.fieldKey}>
-                          {fieldLabels[key] || key}:
-                        </Text>
-                        <Text style={styles.fieldVal} selectable={true}>
-                          {formattedVal}
-                        </Text>
-                      </View>
-                    );
-                  })}
+                        );
+                      })}
+                    </>
+                  )}
 
                   {/* Yes / No Voice Confirmation */}
                   <Text style={styles.confirmQuestion}>
@@ -915,11 +1056,54 @@ const styles = StyleSheet.create({
   resultsCard: {
     paddingTop: 4,
   },
+  headerActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  editToggleBtn: {
+    backgroundColor: '#0F172A',
+    borderWidth: 1.5,
+    borderColor: '#FF9933',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  editToggleBtnText: {
+    color: '#FF9933',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  editingContainer: {
+    marginBottom: 8,
+  },
+  editHintText: {
+    color: '#38BDF8',
+    fontSize: 13,
+    marginBottom: 12,
+    lineHeight: 18,
+    backgroundColor: '#0F172A',
+    padding: 8,
+    borderRadius: 6,
+  },
+  fieldInput: {
+    backgroundColor: '#0F172A',
+    borderWidth: 1.5,
+    borderColor: '#38BDF8',
+    borderRadius: 8,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   resultsHeader: {
     color: '#F8FAFC',
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '800',
-    marginBottom: 14,
+    flex: 1,
+    marginRight: 8,
   },
   confidenceRow: {
     flexDirection: 'row',

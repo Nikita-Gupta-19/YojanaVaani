@@ -639,6 +639,56 @@ export const getDocumentTypeInfo = (docName: string): DocumentTypeInfo => {
     };
   }
 
+  // 15. Vendor Certificate / Identity Card (e.g. PM SVANidhi)
+  if (dLower.includes('vending') || dLower.includes('vendor') || dLower.includes('विक्रेता') || dLower.includes('cov')) {
+    return {
+      key: 'vending_certificate',
+      displayName: 'स्ट्रीट वेंडर पहचान पत्र (Certificate of Vending / CoV)',
+      hindiName: 'स्ट्रीट वेंडर प्रमाण पत्र',
+      emoji: '🛒',
+    };
+  }
+
+  // 16. Letter of Recommendation (LoR)
+  if (dLower.includes('recommendation') || dLower.includes('संस्तुति') || dLower.includes('lor')) {
+    return {
+      key: 'letter_of_recommendation',
+      displayName: 'संस्तुति पत्र (Letter of Recommendation / LoR)',
+      hindiName: 'संस्तुति पत्र (LoR)',
+      emoji: '📜',
+    };
+  }
+
+  // 17. Loan Document / Loan Closure
+  if (dLower.includes('loan closure') || dLower.includes('loan document') || dLower.includes('ऋण')) {
+    return {
+      key: 'loan_document',
+      displayName: 'ऋण चुकता / अनापत्ति प्रमाण (Loan Closure Document)',
+      hindiName: 'ऋण संबंधित दस्तावेज़',
+      emoji: '🏦',
+    };
+  }
+
+  // 18. PAN Card
+  if (dLower.includes('pan card') || dLower.includes('पैन कार्ड')) {
+    return {
+      key: 'pan_card',
+      displayName: 'पैन कार्ड (PAN Card)',
+      hindiName: 'पैन कार्ड',
+      emoji: '💳',
+    };
+  }
+
+  // 19. Driving License
+  if (dLower.includes('driving license') || dLower.includes('ड्राइविंग लाइसेंस')) {
+    return {
+      key: 'driving_license',
+      displayName: 'ड्राइविंग लाइसेंस (Driving License)',
+      hindiName: 'ड्राइविंग लाइसेंस',
+      emoji: '🪪',
+    };
+  }
+
   // Clean custom document slug
   const rawClean = cleanText(docName);
   const slug = rawClean
@@ -712,6 +762,26 @@ const getDocumentList = (docs: any): FormattedDocItem[] => {
       rawName = String(item);
     }
 
+    const rawTrimmed = (rawName || '').trim();
+    const rawLower = rawTrimmed.toLowerCase();
+
+    // Skip scraped section headings, tranches, and notes that are NOT real documents
+    if (
+      rawTrimmed.endsWith(':') ||
+      rawLower.startsWith('for 1st loan') ||
+      rawLower.startsWith('for first loan') ||
+      rawLower.startsWith('for second loan') ||
+      rawLower.startsWith('for 2nd loan') ||
+      rawLower.startsWith('for 3rd tranche') ||
+      rawLower.startsWith('for category') ||
+      rawLower.startsWith('kyc documents required') ||
+      rawLower.startsWith('for letter of recommendation') ||
+      rawLower.startsWith('documents required:') ||
+      rawTrimmed.length < 3
+    ) {
+      continue;
+    }
+
     const info = getDocumentTypeInfo(rawName);
 
     // Contextual purpose description based on detected document key
@@ -741,6 +811,12 @@ const getDocumentList = (docs: any): FormattedDocItem[] => {
       purpose = 'संस्थागत कृषि ऋण खाता प्रमाण';
     } else if (info.key === 'voter_id') {
       purpose = 'निर्वाचन पहचान एवं निवास प्रमाण';
+    } else if (info.key === 'vending_certificate') {
+      purpose = 'स्थानीय निकाय (ULB) द्वारा जारी विक्रेता प्रमाण पत्र / वेंडर कार्ड';
+    } else if (info.key === 'letter_of_recommendation') {
+      purpose = 'टाउन वेंडिंग कमेटी (TVC) द्वारा जारी संस्तुति पत्र';
+    } else if (info.key === 'loan_document') {
+      purpose = 'पूर्व ऋण चुकता अथवा खाता अद्यतन प्रमाण';
     }
 
     result.push({
