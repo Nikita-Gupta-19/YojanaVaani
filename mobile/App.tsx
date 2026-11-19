@@ -39,6 +39,14 @@ export default function App(): React.JSX.Element {
 
   const navigateToConversation = () => {
     stopTTSAudio().catch(() => {});
+    setActiveConversationId('');
+    setCitizenProfile({});
+    setResultsSchemes([]);
+    setResultsSpokenText('');
+    setResultsAudioBase64(undefined);
+    setSelectedScheme(null);
+    setVerifiedDocuments([]);
+    setSessionKey((prev) => prev + 1);
     setHasStartedConversation(true);
     setCurrentScreen('Conversation');
   };
@@ -218,6 +226,7 @@ export default function App(): React.JSX.Element {
             conversationId={activeConversationId}
             documentType={targetDocumentType}
             documentDisplayName={targetDocumentDisplayName}
+            citizenProfile={citizenProfile}
             alreadyVerifiedDocTypes={verifiedDocuments.map((d) => d.document_type)}
             onConfirmationComplete={handleDocumentConfirmationComplete}
             onCancel={() => {
@@ -242,6 +251,7 @@ export default function App(): React.JSX.Element {
             onViewReport={navigateToReport}
             onStartNewConversation={handleRestart}
             onBackToQuestionnaire={() => {
+              stopTTSAudio().catch(() => {});
               setHasStartedConversation(true);
               setCurrentScreen('Conversation');
             }}
@@ -271,7 +281,11 @@ export default function App(): React.JSX.Element {
             onSelectScheme={navigateToSchemeDetail}
             onViewReport={navigateToReport}
             onStartNewConversation={handleRestart}
-            onBackToQuestionnaire={() => setCurrentScreen('Conversation')}
+            onBackToQuestionnaire={() => {
+              stopTTSAudio().catch(() => {});
+              setHasStartedConversation(true);
+              setCurrentScreen('Conversation');
+            }}
           />
         );
 
@@ -330,7 +344,10 @@ export default function App(): React.JSX.Element {
           }}
         >
           <ConversationScreen
-            key={`conv_session_${sessionKey}`}
+            key={activeConversationId ? `conv_${activeConversationId}` : `conv_session_${sessionKey}`}
+            conversationIdProp={activeConversationId}
+            initialProfile={citizenProfile}
+            initialSchemes={resultsSchemes}
             isActive={currentScreen === 'Conversation'}
             onNavigateToDocument={(cid, dt) => navigateToDocument(cid, dt, 'conversation')}
             onNavigateToResults={navigateToResults}

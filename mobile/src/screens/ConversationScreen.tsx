@@ -18,7 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { API_ENDPOINTS } from '../config';
 import { SCHEME_GENERATION_LOADING_AUDIO_BASE64 } from '../services/schemeLoadingAudio';
-import { saveUserSession } from '../services/userHistoryService';
+import { saveUserSession, getUserSessionById } from '../services/userHistoryService';
 import {
   enqueueResponse,
   flushOfflineQueue,
@@ -46,8 +46,178 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface BaselineFieldMeta {
+  index: number;
+  field: string;
+  label: string;
+  question: string;
+  options: string[];
+}
+
+export const BASELINE_FIELDS: BaselineFieldMeta[] = [
+  {
+    index: 0,
+    field: 'name',
+    label: 'नाम (Name)',
+    question: 'नमस्ते! आपका नाम क्या है?',
+    options: ['रामवती देवी', 'रमेश कुमार', 'सुनीता शर्मा', 'अमित सिंह'],
+  },
+  {
+    index: 1,
+    field: 'age',
+    label: 'उम्र (Age)',
+    question: 'आपकी उम्र कितने साल है?',
+    options: ['25 साल', '35 साल', '45 साल', '59 साल', '65 साल'],
+  },
+  {
+    index: 2,
+    field: 'gender',
+    label: 'लिंग (Gender)',
+    question: 'आप महिला हैं या पुरुष?',
+    options: ['महिला', 'पुरुष', 'किन्नर / अन्य'],
+  },
+  {
+    index: 3,
+    field: 'state_district',
+    label: 'राज्य व ज़िला (Location)',
+    question: 'आप किस राज्य और ज़िले में रहते हैं?',
+    options: ['उत्तर प्रदेश, लखनऊ', 'उत्तर प्रदेश, बाराबंकी', 'बिहार, पटना', 'दिल्ली, शाहदरा'],
+  },
+  {
+    index: 4,
+    field: 'approx_income_bracket',
+    label: 'वार्षिक आय (Income)',
+    question: 'साल भर में आपके पूरे घर की कुल कमाई कितनी हो जाती है — 2 लाख से कम, 2 से 5 लाख, या 5 लाख से ज़्यादा?',
+    options: ['2 लाख से कम', 'दो से पांच लाख', 'पांच लाख से ज्यादा'],
+  },
+  {
+    index: 5,
+    field: 'social_category',
+    label: 'सामाजिक वर्ग (Category)',
+    question: 'आप किस जाति या वर्ग में आते हैं — सामान्य, ओबीसी, अनुसूचित जाति (SC), या अनुसूचित जनजाति (ST)?',
+    options: ['सामान्य', 'ओबीसी', 'अनुसूचित जाति (SC)', 'अनुसूचित जनजाति (ST)'],
+  },
+  {
+    index: 6,
+    field: 'occupation',
+    label: 'पेशा (Occupation)',
+    question: 'आप क्या काम करते हैं — जैसे खेती, मजदूरी, दुकान, या घर का काम?',
+    options: ['खेती / किसान', 'दिहाड़ी मजदूरी', 'विद्यार्थी / छात्र', 'दुकानदार / छोटा व्यापार', 'गृहणी'],
+  },
+  {
+    index: 7,
+    field: 'disability_status',
+    label: 'दिव्यांगता (Disability)',
+    question: 'क्या परिवार में किसी को कोई शारीरिक परेशानी या दिव्यांगता (हाथ-पैर की दिक्कत) है?',
+    options: ['नहीं', 'हाँ'],
+  },
+  {
+    index: 8,
+    field: 'stated_need',
+    label: 'योजना की आवश्यकता (Need)',
+    question: 'आपको सरकार से किस काम के लिए मदद चाहिए — जैसे खेती, मकान, पेंशन, या बच्चों की पढ़ाई?',
+    options: [
+      'खेत के लिए सोलर पंप और खाद-बीज की सहायता चाहिए',
+      'बेटी की पढ़ाई और शादी के लिए सरकारी योजना',
+      'मकान बनाने के लिए सहायता या लोन',
+      'वृद्धावस्था या विधवा पेंशन योजना',
+    ],
+  },
+];
+
+export const getFormattedValueForField = (field: string, profile: any): string => {
+  if (!profile) return '';
+  if (field === 'name') return profile.name || '';
+  if (field === 'age') return profile.age ? `${profile.age} साल` : '';
+  if (field === 'gender') {
+    if (profile.gender === 'Female') return 'महिला';
+    if (profile.gender === 'Male') return 'पुरुष';
+    return profile.gender || '';
+  }
+  if (field === 'state_district') {
+    const sMap: Record<string, string> = {
+      'Uttar Pradesh': 'उत्तर प्रदेश',
+      'Bihar': 'बिहार',
+      'Delhi': 'दिल्ली',
+      'Madhya Pradesh': 'मध्य प्रदेश',
+    };
+    const dMap: Record<string, string> = {
+      'Barabanki': 'बाराबंकी',
+      'Lucknow': 'लखनऊ',
+      'Patna': 'पटना',
+      'Shahdara': 'शाहदरा',
+    };
+    const s = sMap[profile.state] || profile.state || '';
+    const d = dMap[profile.district] || profile.district || '';
+    return [s, d].filter(Boolean).join(', ');
+  }
+  if (field === 'approx_income_bracket') {
+    const b = profile.approx_income_bracket;
+    if (b === 'below_2_lakh') return '2 लाख से कम';
+    if (b === '2_to_5_lakh') return 'दो से पांच लाख';
+    if (b === 'above_5_lakh') return 'पांच लाख से ज्यादा';
+    return b || '';
+  }
+  if (field === 'social_category') {
+    const c = profile.social_category;
+    if (c === 'General') return 'सामान्य';
+    if (c === 'OBC') return 'ओबीसी';
+    if (c === 'SC') return 'अनुसूचित जाति (SC)';
+    if (c === 'ST') return 'अनुसूचित जनजाति (ST)';
+    return c || '';
+  }
+  if (field === 'occupation') {
+    const o = profile.occupation;
+    if (o === 'Farmer') return 'खेती / किसान';
+    if (o === 'Daily Wage Laborer') return 'दिहाड़ी मजदूरी';
+    if (o === 'Student') return 'विद्यार्थी / छात्र';
+    if (o === 'Small Business / Self-Employed') return 'दुकानदार / छोटा व्यापार';
+    if (o === 'Homemaker') return 'गृहणी';
+    return o || '';
+  }
+  if (field === 'disability_status') {
+    if (profile.disability_status === true) return 'हाँ';
+    if (profile.disability_status === false) return 'नहीं';
+    return '';
+  }
+  if (field === 'stated_need') {
+    return profile.stated_need || '';
+  }
+  return '';
+};
+
+export const reconstructMessagesFromProfile = (profile: any, need?: string): ChatMessage[] => {
+  const msgs: ChatMessage[] = [];
+  const merged = { ...profile, stated_need: need || profile?.stated_need };
+  const baseTime = Date.now() - 60000;
+
+  BASELINE_FIELDS.forEach((item, idx) => {
+    const val = getFormattedValueForField(item.field, merged);
+    msgs.push({
+      id: `q_${idx}_${item.field}`,
+      speaker: 'assistant',
+      text: item.question,
+      timestamp: baseTime + idx * 2000,
+    });
+
+    if (val && String(val).trim().length > 0) {
+      msgs.push({
+        id: `a_${idx}_${item.field}`,
+        speaker: 'citizen',
+        text: String(val).trim(),
+        timestamp: baseTime + idx * 2000 + 1000,
+      });
+    }
+  });
+
+  return msgs;
+};
+
 interface ConversationScreenProps {
   isActive?: boolean;
+  conversationIdProp?: string;
+  initialProfile?: Record<string, any>;
+  initialSchemes?: any[];
   onNavigateToDocument: (conversationId: string, documentType: string) => void;
   onNavigateToResults: (
     conversationId: string,
@@ -62,23 +232,50 @@ interface ConversationScreenProps {
 
 export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   isActive = true,
+  conversationIdProp,
+  initialProfile,
+  initialSchemes,
   onNavigateToDocument,
   onNavigateToResults,
   onNavigateToEscalation,
   onBackToOnboarding,
 }) => {
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const isEditingExistingSession = Boolean(
+    (conversationIdProp && conversationIdProp.length > 0) ||
+    (initialProfile && Object.keys(initialProfile).length > 0)
+  );
+
+  const [conversationId, setConversationId] = useState<string | null>(conversationIdProp || null);
+  const [citizenProfileState, setCitizenProfileState] = useState<Record<string, any>>(initialProfile || {});
+  const [candidateSchemesState, setCandidateSchemesState] = useState<any[]>(initialSchemes || []);
+  const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
+  const [showReviewDrawer, setShowReviewDrawer] = useState<boolean>(true);
+
+  // Initialize messages: if loading an existing profile, populate with all 9 Q&As immediately!
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (initialProfile && Object.keys(initialProfile).length > 0) {
+      return reconstructMessagesFromProfile(initialProfile);
+    }
+    return [];
+  });
   const [assistantState, setAssistantState] = useState<'speaking' | 'listening' | 'thinking'>('listening');
-  const [currentPrompt, setCurrentPrompt] = useState<string>('नमस्ते! आपका नाम क्या है?');
+  const [currentPrompt, setCurrentPrompt] = useState<string>(() => {
+    if (isEditingExistingSession) {
+      return 'सहेजे गए उत्तर लोड हो गए हैं। किसी भी उत्तर में सुधार करने हेतु उस पर दबाएं।';
+    }
+    return 'नमस्ते! आपका नाम क्या है?';
+  });
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [textInputFallback, setTextInputFallback] = useState<string>('');
   const [showTextInput, setShowTextInput] = useState<boolean>(true);
   const [isOffline, setIsOffline] = useState<boolean>(false);
   const [queuedItemsCount, setQueuedItemsCount] = useState<number>(0);
-  const [currentField, setCurrentField] = useState<string>('name');
+  const [currentField, setCurrentField] = useState<string>(() => {
+    if (isEditingExistingSession) return 'stated_need';
+    return 'name';
+  });
   const [questionProgress, setQuestionProgress] = useState<{ current: number; total: number }>({
-    current: 1,
+    current: isEditingExistingSession ? 9 : 1,
     total: 9,
   });
   const [quickOptions, setQuickOptions] = useState<string[]>([]);
@@ -381,6 +578,55 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   const hasInitializedRef = useRef<boolean>(false);
 
+  // If conversationIdProp is present, load full state and history
+  useEffect(() => {
+    if (!conversationIdProp) return;
+
+    let isCancelled = false;
+    const fetchFullState = async () => {
+      try {
+        const local = getUserSessionById(conversationIdProp);
+        if (local && !isCancelled) {
+          if (local.citizenProfile && Object.keys(local.citizenProfile).length > 0) {
+            setCitizenProfileState((prev) => ({ ...local.citizenProfile, ...prev }));
+          }
+          if (local.recommendedSchemes && local.recommendedSchemes.length > 0) {
+            setCandidateSchemesState(local.recommendedSchemes);
+          }
+        }
+
+        const res = await fetch(API_ENDPOINTS.conversationState(conversationIdProp));
+        if (res.ok && !isCancelled) {
+          const data = await res.json();
+          if (data.citizen_profile) {
+            setCitizenProfileState(data.citizen_profile);
+          }
+          if (data.candidate_schemes) {
+            setCandidateSchemesState(data.candidate_schemes);
+          }
+          if (data.conversation_history && data.conversation_history.length > 0) {
+            const mappedTurns: ChatMessage[] = data.conversation_history.map(
+              (turn: any, idx: number) => ({
+                id: `hist_${idx}_${Date.now()}`,
+                speaker: turn.speaker === 'assistant' ? 'assistant' : 'citizen',
+                text: turn.text,
+                timestamp: Date.now() - (data.conversation_history.length - idx) * 1000,
+              })
+            );
+            setMessages(mappedTurns);
+          }
+        }
+      } catch (_e) {
+        // Fallback profile is already in state
+      }
+    };
+
+    fetchFullState();
+    return () => {
+      isCancelled = true;
+    };
+  }, [conversationIdProp]);
+
   /**
    * Initializes the session on screen mount via POST /conversation/start.
    */
@@ -419,27 +665,192 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   }, [handleAction]);
 
   useEffect(() => {
+    if (conversationIdProp) return;
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
     initSession();
-  }, [initSession]);
+  }, [initSession, conversationIdProp]);
+
+  const handleReturnToResults = () => {
+    stopTTSAudio().catch(() => {});
+    const targetCid = conversationId || conversationIdProp || `conv_${Date.now()}`;
+    onNavigateToResults(
+      targetCid,
+      candidateSchemesState,
+      'अद्यतन परिणाम प्रस्तुत हैं',
+      undefined,
+      citizenProfileState
+    );
+  };
+
+  const handleStartEditingField = (fieldIndex: number) => {
+    const meta = BASELINE_FIELDS[fieldIndex];
+    if (!meta) return;
+    stopTTSAudio().catch(() => {});
+    setEditingFieldIndex(fieldIndex);
+    setCurrentField(meta.field);
+    setQuestionProgress({ current: fieldIndex + 1, total: 9 });
+    const currentVal = getFormattedValueForField(meta.field, citizenProfileState);
+    const prompt = `${meta.label} सुधारें:\n${meta.question}${
+      currentVal ? `\n(वर्तमान उत्तर: "${currentVal}")` : ''
+    }`;
+    setCurrentPrompt(prompt);
+    setQuickOptions(meta.options);
+    setTextInputFallback('');
+    setTempSpokenText('');
+    setPendingConfirmation(null);
+    setAssistantState('listening');
+
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 150);
+  };
+
+  const handleCancelEditingField = () => {
+    setEditingFieldIndex(null);
+    setCurrentPrompt('सहेजे गए उत्तर लोड हो गए हैं। किसी भी उत्तर में सुधार करने हेतु उस पर दबाएं।');
+    setQuickOptions([]);
+    setQuestionProgress({ current: 9, total: 9 });
+    setTextInputFallback('');
+    setTempSpokenText('');
+    setPendingConfirmation(null);
+  };
 
   /**
-   * Submits a spoken or text response to POST /conversation/{id}/respond.
+   * Submits a spoken or text response to POST /conversation/{id}/respond or edit_answer.
    */
   const submitCitizenResponse = async (responseText: string) => {
-    if (!responseText.trim() || !conversationId) return;
+    if (!responseText.trim()) return;
+    const targetCid = conversationId || conversationIdProp;
+    if (!targetCid) return;
 
     // Immediately dismiss any pending comprehension box and temp previews
     setPendingConfirmation(null);
     setTempSpokenText('');
     setTextInputFallback('');
 
-    // If answering the final baseline question, trigger the dedicated scheme generation loading view
-    if (questionProgress.current >= questionProgress.total) {
-      setIsGeneratingSchemes(true);
+    // If editing a specific field or in editing mode
+    if (editingFieldIndex !== null || isEditingExistingSession) {
+      const activeIdx =
+        editingFieldIndex !== null
+          ? editingFieldIndex
+          : Math.min(questionProgress.current - 1, 8);
+      const meta = BASELINE_FIELDS[activeIdx] || BASELINE_FIELDS[8];
+      const targetField = currentField || meta.field;
+
       setAssistantState('thinking');
-      setCurrentPrompt('आपकी जानकारी दर्ज कर ली गई है। उपयुक्त सरकारी योजनाएं खोजी जा रही हैं...');
+      setCurrentPrompt(`उत्तर अद्यतन किया जा रहा है: "${responseText.trim()}"...`);
+
+      try {
+        const editRes = await fetch(API_ENDPOINTS.conversationEditAnswer(targetCid), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ field_name: targetField, text: responseText.trim() }),
+        });
+
+        let updatedProfile = { ...citizenProfileState };
+        let updatedSchemes = candidateSchemesState;
+
+        if (editRes.ok) {
+          const editData = await editRes.json();
+          if (editData.citizen_profile) {
+            updatedProfile = editData.citizen_profile;
+          }
+          if (editData.action?.schemes) {
+            updatedSchemes = editData.action.schemes;
+          }
+        } else {
+          updatedProfile[targetField] = responseText.trim();
+        }
+
+        setCitizenProfileState(updatedProfile);
+        setCandidateSchemesState(updatedSchemes);
+
+        saveUserSession({
+          id: targetCid,
+          citizenProfile: updatedProfile,
+          recommendedSchemes: updatedSchemes,
+          statedNeed:
+            targetField === 'stated_need' ? responseText.trim() : updatedProfile.stated_need,
+        });
+
+        // Update the citizen message in the chat transcript
+        setMessages((prev) => {
+          const updated = [...prev];
+          const aId = `a_${activeIdx}_${targetField}`;
+          const existingIdx = updated.findIndex(
+            (m) =>
+              m.id === aId ||
+              (m.speaker === 'citizen' &&
+                (updated[updated.indexOf(m) - 1]?.text === meta.question ||
+                  updated[updated.indexOf(m) - 1]?.text?.includes(meta.question)))
+          );
+          if (existingIdx >= 0) {
+            updated[existingIdx] = {
+              ...updated[existingIdx],
+              text: responseText.trim(),
+              timestamp: Date.now(),
+            };
+          } else {
+            updated.push({
+              id: `msg_edit_${Date.now()}`,
+              speaker: 'citizen',
+              text: responseText.trim(),
+              timestamp: Date.now(),
+            });
+          }
+          return updated;
+        });
+
+        setAssistantState('speaking');
+        setCurrentPrompt(
+          `✓ उत्तर सुरक्षित हुआ: "${responseText.trim()}"। आप कोई अन्य उत्तर बदल सकते हैं या ऊपर "योजनाएं देखें" दबाएं।`
+        );
+        setEditingFieldIndex(null);
+        setQuickOptions([]);
+        setQuestionProgress({ current: 9, total: 9 });
+        setIsOffline(false);
+        return;
+      } catch (_err) {
+        const updatedProfile = { ...citizenProfileState, [targetField]: responseText.trim() };
+        setCitizenProfileState(updatedProfile);
+        saveUserSession({
+          id: targetCid,
+          citizenProfile: updatedProfile,
+          recommendedSchemes: candidateSchemesState,
+          statedNeed:
+            targetField === 'stated_need' ? responseText.trim() : updatedProfile.stated_need,
+        });
+        setMessages((prev) => {
+          const updated = [...prev];
+          const aId = `a_${activeIdx}_${targetField}`;
+          const existingIdx = updated.findIndex((m) => m.id === aId);
+          if (existingIdx >= 0) {
+            updated[existingIdx] = {
+              ...updated[existingIdx],
+              text: responseText.trim(),
+              timestamp: Date.now(),
+            };
+          } else {
+            updated.push({
+              id: `msg_offline_${Date.now()}`,
+              speaker: 'citizen',
+              text: responseText.trim(),
+              timestamp: Date.now(),
+            });
+          }
+          return updated;
+        });
+        setEditingFieldIndex(null);
+        setQuickOptions([]);
+        setQuestionProgress({ current: 9, total: 9 });
+        setAssistantState('listening');
+        setCurrentPrompt(`✓ उत्तर स्थानीय रूप से सहेजा गया: "${responseText.trim()}"।`);
+        return;
+      }
     }
 
     // Record citizen answer to visual transcript
@@ -460,7 +871,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     setAssistantState('thinking');
 
     try {
-      const response = await fetch(API_ENDPOINTS.conversationRespond(conversationId), {
+      const response = await fetch(API_ENDPOINTS.conversationRespond(targetCid), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -491,11 +902,11 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         }));
       }
 
-      handleAction(turnData.action, conversationId, turnData.citizen_profile);
+      handleAction(turnData.action, targetCid, turnData.citizen_profile);
     } catch (_err) {
       setIsGeneratingSchemes(false);
       // Offline fallback: Queue the response locally
-      enqueueResponse(conversationId, responseText.trim());
+      enqueueResponse(targetCid, responseText.trim());
       setQueuedItemsCount(getQueuedCount());
       setIsOffline(true);
       setAssistantState('listening');
@@ -785,10 +1196,23 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         <View style={styles.topTitleContainer}>
           <Text style={styles.topTitle}>योजनावाणी सहायक</Text>
           <Text style={styles.progressText}>
-            प्रश्न {questionProgress.current} / {questionProgress.total}
+            {editingFieldIndex !== null
+              ? `संशोधन: सवाल ${editingFieldIndex + 1} / 9`
+              : isEditingExistingSession
+              ? 'सहेजा गया रिकॉर्ड (9/9)'
+              : `प्रश्न ${questionProgress.current} / ${questionProgress.total}`}
           </Text>
         </View>
         <View style={styles.topRightActions}>
+          {(isEditingExistingSession || Object.keys(citizenProfileState).length > 0) && (
+            <TouchableOpacity
+              onPress={handleReturnToResults}
+              style={styles.viewResultsTopButton}
+              accessibilityLabel="योजनाएं देखें"
+            >
+              <Text style={styles.viewResultsTopButtonText}>योजनाएं देखें →</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             onPress={() => setShowTextInput(!showTextInput)}
             style={styles.keyboardToggle}
@@ -796,7 +1220,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           >
             <Text style={styles.keyboardToggleText}>{showTextInput ? '⌨️' : '🎙️'}</Text>
           </TouchableOpacity>
-          {questionProgress.current > 1 && (
+          {questionProgress.current > 1 && !isEditingExistingSession && (
             <TouchableOpacity
               onPress={handleGoBackQuestion}
               style={styles.undoButton}
@@ -840,6 +1264,112 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           {assistantState === 'thinking' && '⏳ जानकारी जाँची जा रही है, थोड़ा रुकें...'}
         </Text>
       </View>
+
+      {/* Review & Edit Answers Section for Saved Records / Completed Interview */}
+      {(isEditingExistingSession || Object.keys(citizenProfileState).length > 0) && (
+        <View style={styles.reviewContainer}>
+          <TouchableOpacity
+            style={styles.reviewHeader}
+            onPress={() => setShowReviewDrawer(!showReviewDrawer)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="उत्तर सूची देखें या छिपाएं"
+          >
+            <View style={styles.reviewHeaderTitleRow}>
+              <Text style={styles.reviewHeaderIcon}>📋</Text>
+              <Text style={styles.reviewHeaderTitle}>
+                दिए गए उत्तर (Review & Edit Answers)
+              </Text>
+            </View>
+            <View style={styles.reviewHeaderBadge}>
+              <Text style={styles.reviewHeaderBadgeText}>
+                {showReviewDrawer ? '▲ छिपाएं' : '▼ सभी 9 उत्तर देखें'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {showReviewDrawer && (
+            <View style={styles.reviewContent}>
+              <Text style={styles.reviewInstructions}>
+                💡 किसी भी उत्तर में सुधार करने हेतु नीचे दिए गए '✏️ बदलें' बटन पर दबाएं:
+              </Text>
+              <View style={styles.reviewGrid}>
+                {BASELINE_FIELDS.map((item) => {
+                  const val = getFormattedValueForField(item.field, citizenProfileState);
+                  const isBeingEdited = editingFieldIndex === item.index;
+                  return (
+                    <TouchableOpacity
+                      key={`rev_field_${item.field}`}
+                      style={[
+                        styles.reviewItemCard,
+                        isBeingEdited && styles.reviewItemCardActive,
+                      ]}
+                      onPress={() => handleStartEditingField(item.index)}
+                      activeOpacity={0.7}
+                      accessibilityLabel={`${item.label} बदलें`}
+                    >
+                      <View style={styles.reviewItemLeft}>
+                        <Text style={styles.reviewItemLabel}>
+                          {item.index + 1}. {item.label}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.reviewItemValue,
+                            !val && styles.reviewItemValueEmpty,
+                          ]}
+                          numberOfLines={2}
+                        >
+                          {val || 'उत्तर नहीं दिया गया'}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.reviewItemButton,
+                          isBeingEdited && styles.reviewItemButtonActive,
+                        ]}
+                      >
+                        <Text style={styles.reviewItemButtonText}>
+                          {isBeingEdited ? 'सुधार जारी...' : '✏️ बदलें'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <TouchableOpacity
+                style={styles.returnResultsBannerButton}
+                onPress={handleReturnToResults}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="योजनाएं देखें"
+              >
+                <Text style={styles.returnResultsBannerButtonText}>
+                  ✓ योजनाएं देखें (View Welfare Schemes) →
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Active Editing Indicator Banner */}
+      {editingFieldIndex !== null && (
+        <View style={styles.activeEditingBanner}>
+          <View style={styles.activeEditingLeft}>
+            <Text style={styles.activeEditingBadge}>✏️ सुधार मोड (Editing):</Text>
+            <Text style={styles.activeEditingTitle}>
+              सवाल {editingFieldIndex + 1}: {BASELINE_FIELDS[editingFieldIndex].label}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={handleCancelEditingField}
+            style={styles.activeEditingCancelBtn}
+            accessibilityLabel="सुधार रद्द करें"
+          >
+            <Text style={styles.activeEditingCancelText}>✕ रद्द करें</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Floating Current Question Pill (Only visible if the citizen has scrolled upwards into past chat) */}
       {isScrolledAwayFromBottom && (
@@ -932,6 +1462,22 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         }}
         renderItem={({ item, index }) => {
           const isLatestAssistant = item.speaker === 'assistant' && index === messages.length - 1;
+          let matchedFieldIndex = -1;
+          if (item.speaker === 'citizen') {
+            const prevMsg = index > 0 ? messages[index - 1] : null;
+            if (prevMsg && prevMsg.speaker === 'assistant') {
+              matchedFieldIndex = BASELINE_FIELDS.findIndex(
+                (bf) => prevMsg.text.includes(bf.question) || bf.question.includes(prevMsg.text)
+              );
+            }
+            if (matchedFieldIndex === -1) {
+              const parts = item.id.split('_');
+              if (parts.length >= 2 && !isNaN(Number(parts[1]))) {
+                matchedFieldIndex = Number(parts[1]);
+              }
+            }
+          }
+
           return (
             <View
               style={[
@@ -944,9 +1490,19 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                 <Text style={[styles.speakerLabel, isLatestAssistant && styles.speakerLabelActive]}>
                   {item.speaker === 'assistant'
                     ? (isLatestAssistant ? `🤖 वर्तमान सवाल (सवाल ${questionProgress.current})` : '🤖 योजनावाणी सहायक')
-                    : '👤 आप (Whisper ASR)'}
+                    : '👤 आप (उत्तर)'}
                 </Text>
                 {isLatestAssistant && <View style={styles.activeDotBadge} />}
+                {item.speaker === 'citizen' && matchedFieldIndex >= 0 && (
+                  <TouchableOpacity
+                    onPress={() => handleStartEditingField(matchedFieldIndex)}
+                    style={styles.bubbleEditBadge}
+                    activeOpacity={0.7}
+                    accessibilityLabel="यह उत्तर बदलें"
+                  >
+                    <Text style={styles.bubbleEditText}>✏️ बदलें</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <Text style={[styles.bubbleText, isLatestAssistant && styles.bubbleTextActive]}>
                 {item.text}
@@ -1790,5 +2346,195 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#FFD166',
+  },
+  viewResultsTopButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginRight: 4,
+  },
+  viewResultsTopButtonText: {
+    color: '#0A0F1D',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  reviewContainer: {
+    backgroundColor: '#1E293B',
+    marginHorizontal: 12,
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#3B82F6',
+    overflow: 'hidden',
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#162238',
+  },
+  reviewHeaderTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reviewHeaderIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  reviewHeaderTitle: {
+    color: '#F8FAFC',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  reviewHeaderBadge: {
+    backgroundColor: '#1E3A5F',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#3B82F6',
+  },
+  reviewHeaderBadgeText: {
+    color: '#93C5FD',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  reviewContent: {
+    padding: 12,
+    backgroundColor: '#0F172A',
+  },
+  reviewInstructions: {
+    color: '#CBD5E1',
+    fontSize: 13,
+    marginBottom: 10,
+    fontWeight: '500',
+  },
+  reviewGrid: {
+    gap: 8,
+  },
+  reviewItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1E293B',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  reviewItemCardActive: {
+    borderColor: '#FF9933',
+    backgroundColor: '#262E40',
+    borderWidth: 2,
+  },
+  reviewItemLeft: {
+    flex: 1,
+    marginRight: 10,
+  },
+  reviewItemLabel: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  reviewItemValue: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  reviewItemValueEmpty: {
+    color: '#64748B',
+    fontStyle: 'italic',
+  },
+  reviewItemButton: {
+    backgroundColor: '#334155',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#64748B',
+  },
+  reviewItemButtonActive: {
+    backgroundColor: '#FF9933',
+    borderColor: '#FF9933',
+  },
+  reviewItemButtonText: {
+    color: '#F8FAFC',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  returnResultsBannerButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 12,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  returnResultsBannerButtonText: {
+    color: '#0A0F1D',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  activeEditingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#2D1B00',
+    borderWidth: 1.5,
+    borderColor: '#FF9933',
+    marginHorizontal: 12,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  activeEditingLeft: {
+    flex: 1,
+  },
+  activeEditingBadge: {
+    color: '#FFD166',
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  activeEditingTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  activeEditingCancelBtn: {
+    backgroundColor: '#472B00',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FF9933',
+  },
+  activeEditingCancelText: {
+    color: '#FFD166',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  bubbleEditBadge: {
+    backgroundColor: '#334155',
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#64748B',
+    marginLeft: 8,
+  },
+  bubbleEditText: {
+    color: '#FFD166',
+    fontSize: 12,
+    fontWeight: '800',
   },
 });

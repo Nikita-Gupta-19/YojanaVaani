@@ -15,6 +15,7 @@ export const API_ENDPOINTS = {
   conversationStart: `${BACKEND_BASE_URL}/conversation/start`,
   conversationRespond: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/respond`,
   conversationBack: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/back`,
+  conversationEditAnswer: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/edit_answer`,
   conversationDocument: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/document`,
   conversationConfirm: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}/confirm_document`,
   conversationState: (id: string) => `${BACKEND_BASE_URL}/conversation/${id}`,

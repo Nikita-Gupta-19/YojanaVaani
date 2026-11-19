@@ -175,9 +175,9 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     stopTTSAudio().catch(() => {});
     if (onSelectHistorySession) {
       const convId = item.conversation_id || item.id || '';
-      const schemes = item.recommended_schemes || [];
-      const profile = item.citizen_profile || {};
-      const need = item.stated_need || 'पात्रता खोज';
+      const schemes = item.recommended_schemes || item.recommendedSchemes || [];
+      const profile = item.citizen_profile || item.citizenProfile || {};
+      const need = item.stated_need || item.statedNeed || profile.stated_need || 'पात्रता खोज';
       const text = `सहेजा गया रिकॉर्ड: ${profile.name || 'नागरिक'} (${need})`;
       onSelectHistorySession(convId, schemes, profile, text);
     }

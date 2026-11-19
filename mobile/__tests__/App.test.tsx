@@ -540,4 +540,154 @@ describe('Phase 7 React Native Mobile App Tests', () => {
       renderer.unmount();
     });
   });
+
+  test('Saved record answers display automatically when clicking edit answers from results screen', async () => {
+    const { saveUserSession } = require('../src/services/userHistoryService');
+    const mockProfile = {
+      name: 'सुनीता शर्मा',
+      age: 42,
+      gender: 'Female',
+      state: 'Uttar Pradesh',
+      district: 'Barabanki',
+      approx_income_bracket: 'below_2_lakh',
+      social_category: 'OBC',
+      occupation: 'Farmer',
+      disability_status: false,
+      stated_need: 'खेत के लिए सोलर पंप',
+    };
+
+    saveUserSession({
+      id: 'saved_session_999',
+      citizenProfile: mockProfile,
+      recommendedSchemes: [
+        {
+          id: 1,
+          name: 'PM-KISAN Samman Nidhi',
+          category: 'Agriculture',
+          verdict: 'QUALIFIES',
+        },
+      ],
+      statedNeed: 'खेत के लिए सोलर पंप',
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <ConversationScreen
+          conversationIdProp="saved_session_999"
+          initialProfile={mockProfile}
+          initialSchemes={[{ id: 1, name: 'PM-KISAN Samman Nidhi' }]}
+          onNavigateToDocument={jest.fn()}
+          onNavigateToResults={jest.fn()}
+          onNavigateToEscalation={jest.fn()}
+          onBackToOnboarding={jest.fn()}
+        />
+      );
+    });
+
+    const root = renderer!.root;
+
+    // 1. Verify that previously given answers are automatically rendered on screen
+    expect(root.findAllByProps({ children: 'सुनीता शर्मा' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: '42 साल' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: 'महिला' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: 'उत्तर प्रदेश, बाराबंकी' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: '2 लाख से कम' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: 'ओबीसी' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: 'खेती / किसान' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: 'खेत के लिए सोलर पंप' }).length).toBeGreaterThanOrEqual(1);
+
+    // 2. Verify header shows saved record progress (9/9)
+    expect(root.findAllByProps({ children: 'सहेजा गया रिकॉर्ड (9/9)' }).length).toBeGreaterThanOrEqual(1);
+
+    // 3. Verify "योजनाएं देखें →" button is visible to immediately return to results
+    const viewResultsBtns = root.findAllByProps({ children: 'योजनाएं देखें →' });
+    expect(viewResultsBtns.length).toBeGreaterThanOrEqual(1);
+
+    // 4. Verify editing mode activates when selecting a field
+    const editChips = root.findAllByProps({ children: '✏️ बदलें' });
+    expect(editChips.length).toBeGreaterThanOrEqual(1);
+
+    await ReactTestRenderer.act(async () => {
+      renderer.unmount();
+    });
+  });
+
+  test('Full App flow: opening saved record from history and clicking edit answers shows answers automatically', async () => {
+    const { saveUserSession } = require('../src/services/userHistoryService');
+    const fullProfile = {
+      name: 'रामवती देवी',
+      age: 45,
+      gender: 'Female',
+      state: 'Uttar Pradesh',
+      district: 'Barabanki',
+      approx_income_bracket: 'below_2_lakh',
+      social_category: 'OBC',
+      occupation: 'Farmer',
+      disability_status: false,
+      stated_need: 'खेत के लिए सोलर पंप',
+    };
+
+    saveUserSession({
+      id: 'flow_session_777',
+      citizenProfile: fullProfile,
+      recommendedSchemes: [
+        {
+          id: 1,
+          name: 'PM-KISAN',
+          category: 'Agriculture',
+          verdict: 'QUALIFIES',
+        },
+      ],
+      statedNeed: 'खेत के लिए सोलर पंप',
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+
+    const root = renderer!.root;
+
+    // 1. App starts on OnboardingScreen; open the history modal
+    const historyBtn = root.findByProps({ accessibilityLabel: 'सहेजे गए आवेदन व पिछला इतिहास देखें' });
+    expect(historyBtn).toBeTruthy();
+
+    await ReactTestRenderer.act(async () => {
+      historyBtn.props.onPress();
+    });
+
+    // 2. Select the saved session
+    const selectSessionLabel = root.findAllByProps({ children: '➔ परिणाम व रिपोर्ट देखें' });
+    expect(selectSessionLabel.length).toBeGreaterThanOrEqual(1);
+    const selectTouchable = findParentWithProp(selectSessionLabel[0], 'onPress');
+    expect(selectTouchable).toBeTruthy();
+
+    await ReactTestRenderer.act(async () => {
+      selectTouchable.props.onPress();
+    });
+
+    // 3. User is now on ResultsScreen; find "प्रश्नावली पर वापस जाएं (Edit Answers)" button
+    const backToQuestionnaireBtn = root.findByProps({ accessibilityLabel: 'प्रश्नावली पर वापस जाएं और उत्तर बदलें' });
+    expect(backToQuestionnaireBtn).toBeTruthy();
+
+    await ReactTestRenderer.act(async () => {
+      backToQuestionnaireBtn.props.onPress();
+    });
+
+    // 4. User is on ConversationScreen: verify Ramwati Devi and her answers are displayed automatically!
+    expect(root.findAllByProps({ children: 'रामवती देवी' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: '45 साल' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: 'महिला' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: 'उत्तर प्रदेश, बाराबंकी' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: '2 लाख से कम' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: 'खेती / किसान' }).length).toBeGreaterThanOrEqual(1);
+
+    // 5. Ensure it is in saved record mode and NOT asking question 1
+    expect(root.findAllByProps({ children: 'सहेजा गया रिकॉर्ड (9/9)' }).length).toBeGreaterThanOrEqual(1);
+
+    await ReactTestRenderer.act(async () => {
+      renderer.unmount();
+    });
+  });
 });
